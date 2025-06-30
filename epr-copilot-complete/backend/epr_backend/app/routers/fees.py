@@ -1,11 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 from pydantic import BaseModel
 from decimal import Decimal, ROUND_HALF_EVEN
-from datetime import datetime
+from datetime import datetime, timezone
 from ..database import get_db, Material
 from ..auth import get_current_user
+from ..cache import cache_result
+from ..validation_schemas import FeeCalculationValidationSchema
 
 router = APIRouter(prefix="/api/fees", tags=["fees"])
 
@@ -16,7 +18,7 @@ def calculate_epr_fee(
     material_type: Optional[str] = None,
     apply_volume_discount: bool = False,
     generate_audit: bool = False
-) -> Decimal | tuple[Decimal, Dict[str, Any]]:
+):
     """
     Calculate EPR fee with proper Decimal precision for legal compliance.
     
@@ -55,7 +57,7 @@ def calculate_epr_fee(
     
     if generate_audit:
         audit_log = {
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(timezone.utc).isoformat(),
             'weight': str(weight),
             'rate': str(rate),
             'material_type': material_type,
@@ -99,6 +101,7 @@ class FeeCalculationResult(BaseModel):
 
 
 @router.post("/calculate", response_model=FeeCalculationResult)
+@cache_result()
 async def calculate_fees(
     request: FeeCalculationRequest,
     db: Session = Depends(get_db),
@@ -122,13 +125,18 @@ async def calculate_fees(
         recyclability_multiplier = Decimal('0.75') if material.recyclable else Decimal('1.0')
         adjusted_rate = base_rate * recyclability_multiplier
         
-        fee_decimal, audit_log = calculate_epr_fee(
+        result = calculate_epr_fee(
             weight=weight_in_kg,
             rate=adjusted_rate,
             material_type=material.type,
             apply_volume_discount=True,
             generate_audit=True
         )
+        if isinstance(result, tuple):
+            fee_decimal, audit_log = result
+        else:
+            fee_decimal = result
+            audit_log = {}
 
         material_fees.append(MaterialFeeResult(
             type=material.type,

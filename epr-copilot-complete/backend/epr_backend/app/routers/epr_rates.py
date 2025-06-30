@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Dict, List
 from decimal import Decimal
+from datetime import datetime, timezone
 from ..database import get_db, Material
 from ..auth import get_current_user
 from pydantic import BaseModel
@@ -118,13 +119,12 @@ async def calculate_epr_fees(
         discounts = total_fee * Decimal("0.02")
         total_fee -= discounts
 
-    from datetime import datetime
     return FeeCalculationResponse(
         total_fee=total_fee,
         breakdown=breakdown,
         base_fee=base_fee,
         discounts=discounts,
-        calculation_date=datetime.utcnow().isoformat()
+        calculation_date=datetime.now(timezone.utc).isoformat()
     )
 
 

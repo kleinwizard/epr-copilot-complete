@@ -5,7 +5,7 @@ import os
 import uuid
 import csv
 import io
-from datetime import datetime
+from datetime import datetime, timezone
 import boto3
 from botocore.exceptions import ClientError
 from ..database import get_db
@@ -136,7 +136,7 @@ async def upload_file(
         "name": file.filename,
         "size": len(file_content),
         "url": file_url,
-        "uploadedAt": datetime.utcnow().isoformat(),
+        "uploadedAt": datetime.now(timezone.utc).isoformat(),
         "content_type": file.content_type
     }
 
