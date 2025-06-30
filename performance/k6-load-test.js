@@ -17,7 +17,7 @@ export const options = {
   },
 };
 
-const BASE_URL = 'http://localhost:8001';
+const BASE_URL = 'http://localhost:8000';
 
 const testUser = {
   email: 'loadtest@example.com',
@@ -27,8 +27,8 @@ const testUser = {
 let authToken = '';
 
 export function setup() {
-  const loginResponse = http.post(`${BASE_URL}/auth/login`, {
-    username: testUser.email,
+  const loginResponse = http.post(`${BASE_URL}/api/auth/login`, {
+    email: testUser.email,
     password: testUser.password
   });
   
@@ -81,7 +81,7 @@ function testHealthCheck(headers) {
 }
 
 function testProducts(headers) {
-  const listResponse = http.get(`${BASE_URL}/products/`, { headers });
+  const listResponse = http.get(`${BASE_URL}/api/products/`, { headers });
   
   check(listResponse, {
     'products list status is 200': (r) => r.status === 200,
@@ -100,7 +100,7 @@ function testProducts(headers) {
       }
     };
 
-    const createResponse = http.post(`${BASE_URL}/products/`, JSON.stringify(newProduct), { headers });
+    const createResponse = http.post(`${BASE_URL}/api/products/`, JSON.stringify(newProduct), { headers });
     
     check(createResponse, {
       'product creation status is 201': (r) => r.status === 201,
@@ -110,7 +110,7 @@ function testProducts(headers) {
 }
 
 function testMaterials(headers) {
-  const response = http.get(`${BASE_URL}/materials/`, { headers });
+  const response = http.get(`${BASE_URL}/api/materials/`, { headers });
   
   check(response, {
     'materials list status is 200': (r) => r.status === 200,
@@ -124,7 +124,11 @@ function testFees(headers) {
     period: 'Q1-2024'
   };
 
-  const response = http.get(`${BASE_URL}/fees/calculate?${new URLSearchParams(feeParams)}`, { headers });
+  const queryString = Object.keys(feeParams).map(key => 
+    `${encodeURIComponent(key)}=${encodeURIComponent(feeParams[key])}`
+  ).join('&');
+
+  const response = http.get(`${BASE_URL}/api/fees/calculate?${queryString}`, { headers });
   
   check(response, {
     'fee calculation status is 200': (r) => r.status === 200,
@@ -133,7 +137,7 @@ function testFees(headers) {
 }
 
 function testReports(headers) {
-  const listResponse = http.get(`${BASE_URL}/reports/`, { headers });
+  const listResponse = http.get(`${BASE_URL}/api/reports/`, { headers });
   
   check(listResponse, {
     'reports list status is 200': (r) => r.status === 200,
@@ -148,7 +152,7 @@ function testReports(headers) {
       end_date: '2024-01-31'
     };
 
-    const generateResponse = http.post(`${BASE_URL}/reports/generate`, JSON.stringify(reportData), { headers });
+    const generateResponse = http.post(`${BASE_URL}/api/reports/generate`, JSON.stringify(reportData), { headers });
     
     check(generateResponse, {
       'report generation status is 201': (r) => r.status === 201,
