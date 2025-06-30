@@ -104,46 +104,59 @@ async def calculate_fees(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    """Calculate EPR fees for given materials."""
+    """Calculate EPR fees for given materials using Decimal precision for legal compliance."""
 
     db_materials = db.query(Material).all()
-    material_rates = {m.name: float(m.epr_rate)
+    material_rates = {m.name: Decimal(str(m.epr_rate))
                       for m in db_materials if m.epr_rate}
 
     material_fees = []
+    total_fee_decimal = Decimal('0')
+    total_weight_decimal = Decimal('0')
+    
     for material in request.materials:
-        base_rate = material_rates.get(material.type, 0.50)
-
-        recyclability_multiplier = 0.75 if material.recyclable else 1.0
+        base_rate = material_rates.get(material.type, Decimal('0.50'))
+        weight_decimal = Decimal(str(material.weight))
+        weight_in_kg = weight_decimal / Decimal('1000')
+        
+        recyclability_multiplier = Decimal('0.75') if material.recyclable else Decimal('1.0')
         adjusted_rate = base_rate * recyclability_multiplier
-
-        weight_in_kg = material.weight / 1000
-        fee = weight_in_kg * adjusted_rate
+        
+        fee_decimal, audit_log = calculate_epr_fee(
+            weight=weight_in_kg,
+            rate=adjusted_rate,
+            material_type=material.type,
+            apply_volume_discount=True,
+            generate_audit=True
+        )
 
         material_fees.append(MaterialFeeResult(
             type=material.type,
-            weight=material.weight,
+            weight=float(material.weight),
             recyclable=material.recyclable,
-            base_rate=base_rate,
-            adjusted_rate=adjusted_rate,
-            fee=fee
+            base_rate=float(base_rate),
+            adjusted_rate=float(adjusted_rate),
+            fee=float(fee_decimal)
         ))
+        
+        total_fee_decimal += fee_decimal
+        total_weight_decimal += weight_decimal
 
-    total_weight = sum(m.weight for m in request.materials)
-    base_fee = sum((m.weight / 1000) * material_rates.get(m.type, 0.50)
-                   for m in request.materials)
-    total_fee = sum(mf.fee for mf in material_fees)
-    recyclability_discount = base_fee - total_fee
+    base_fee_decimal = sum(
+        (Decimal(str(m.weight)) / Decimal('1000')) * material_rates.get(m.type, Decimal('0.50'))
+        for m in request.materials
+    )
+    recyclability_discount_decimal = base_fee_decimal - total_fee_decimal
 
     return FeeCalculationResult(
         materials=material_fees,
-        total_weight=total_weight,
-        total_fee=total_fee,
-        recyclability_discount=recyclability_discount,
+        total_weight=float(total_weight_decimal),
+        total_fee=float(total_fee_decimal),
+        recyclability_discount=float(recyclability_discount_decimal),
         breakdown={
-            "base_fee": base_fee,
-            "recyclability_adjustment": -recyclability_discount,
-            "final_fee": total_fee
+            "base_fee": float(base_fee_decimal),
+            "recyclability_adjustment": float(-recyclability_discount_decimal),
+            "final_fee": float(total_fee_decimal)
         }
     )
 
