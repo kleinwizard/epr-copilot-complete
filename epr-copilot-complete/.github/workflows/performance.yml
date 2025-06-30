@@ -36,7 +36,7 @@ jobs:
     - name: Start backend server
       working-directory: backend/epr_backend
       run: |
-        poetry run uvicorn epr_backend.main:app --host 0.0.0.0 --port 8001 &
+        poetry run uvicorn app.main:app --host 0.0.0.0 --port 8001 &
         sleep 10
       env:
         SECRET_KEY: test-secret-key
@@ -107,7 +107,7 @@ jobs:
     - name: Start backend server
       working-directory: backend/epr_backend
       run: |
-        poetry run uvicorn epr_backend.main:app --host 0.0.0.0 --port 8001 &
+        poetry run uvicorn app.main:app --host 0.0.0.0 --port 8001 &
         sleep 10
       env:
         SECRET_KEY: test-secret-key
