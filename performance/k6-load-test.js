@@ -17,7 +17,7 @@ export const options = {
   },
 };
 
-const BASE_URL = 'http://localhost:8001';
+const BASE_URL = 'http://localhost:8000';
 
 const testUser = {
   email: 'loadtest@example.com',

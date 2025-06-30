@@ -20,7 +20,10 @@ RUN pip install poetry
 WORKDIR /app/epr_backend
 
 # Copy the entire epr_backend directory
-COPY epr_backend/ ./
+COPY . ./
+
+# Upgrade pip first to fix security vulnerability
+RUN pip install --upgrade pip>=25.0
 
 # Install dependencies globally using pip instead of Poetry
 RUN pip install fastapi[standard]==0.115.14 \
@@ -50,7 +53,8 @@ RUN pip install fastapi[standard]==0.115.14 \
     jinja2==3.1.5 \
     firebase-admin==6.5.0 \
     apscheduler==3.10.4 \
-    slowapi==0.1.9
+    slowapi==0.1.9 \
+    ecdsa==0.19.0
 
 # Create non-root user
 RUN adduser --disabled-password --gecos '' appuser && chown -R appuser:appuser /app
