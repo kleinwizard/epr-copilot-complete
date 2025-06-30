@@ -118,6 +118,9 @@ def configure_security_middleware(app: FastAPI):
     trusted_hosts = ["localhost", "127.0.0.1"]
     if os.getenv("ALLOWED_HOSTS"):
         trusted_hosts.extend(os.getenv("ALLOWED_HOSTS").split(","))
+    
+    if os.getenv("ENVIRONMENT") in ["test", "testing"]:
+        trusted_hosts.append("testserver")
 
     from fastapi.middleware.trustedhost import TrustedHostMiddleware
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=trusted_hosts)

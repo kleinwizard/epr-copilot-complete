@@ -1,0 +1,9 @@
+# Trivy ignore file for false positives
+# Add CVE IDs here with justification comments
+
+# Example:
+# CVE-2023-12345
+# Justification: This vulnerability affects a development dependency only
+# and does not impact production builds
+
+# Add any false positives here with proper justification
