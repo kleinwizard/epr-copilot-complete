@@ -2,7 +2,7 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 from ..database import get_db, User, Organization
 from ..schemas import UserCreate, User as UserSchema
 from ..auth import (
@@ -22,14 +22,14 @@ class Token(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    email: str
-    password: str
+    email: EmailStr
+    password: str = Field(..., min_length=1, description="Password cannot be empty")
 
 
 class RegisterRequest(BaseModel):
-    email: str
-    password: str
-    organization_name: str
+    email: EmailStr
+    password: str = Field(..., min_length=8, description="Password must be at least 8 characters")
+    organization_name: str = Field(..., min_length=1, description="Organization name cannot be empty")
 
 
 @router.post("/login", response_model=Token)
