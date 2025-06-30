@@ -1,9 +1,9 @@
 from sqlalchemy import create_engine, Column, String, DateTime, Boolean, Numeric, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 import os
 SQLALCHEMY_DATABASE_URL = os.getenv(
@@ -27,7 +27,7 @@ class Organization(Base):
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String(255), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     users = relationship("User", back_populates="organization")
     products = relationship("Product", back_populates="organization")
@@ -42,7 +42,7 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     role = Column(String(50), default="manager")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     organization = relationship("Organization", back_populates="users")
 
@@ -54,7 +54,7 @@ class Product(Base):
     organization_id = Column(String, ForeignKey("organizations.id"))
     name = Column(String(255), nullable=False)
     sku = Column(String(100))
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     organization = relationship("Organization", back_populates="products")
 
@@ -77,7 +77,7 @@ class Report(Base):
     period = Column(String(50))
     status = Column(String(50), default="draft")
     total_fee = Column(Numeric(15, 2))
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     organization = relationship("Organization", back_populates="reports")
 

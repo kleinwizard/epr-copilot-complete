@@ -2,7 +2,7 @@ import os
 from celery import Celery
 from typing import Dict, Any, List
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..schemas import ReportCreate
@@ -52,7 +52,7 @@ def generate_report(self,
             "report_id": report_id,
             "company_id": company_id,
             "status": "completed",
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "file_url": f"/reports/{report_id}.pdf",
             "summary": {
                 "total_products": report_data.get("product_count", 0),
@@ -87,7 +87,7 @@ def process_bulk_import(self,
             "file_path": file_path,
             "company_id": company_id,
             "status": "completed",
-            "processed_at": datetime.utcnow().isoformat(),
+            "processed_at": datetime.now(timezone.utc).isoformat(),
             "summary": {
                 "total_rows": 150,
                 "successful_imports": 145,
@@ -148,7 +148,7 @@ def send_deadline_reminders() -> Dict[str, Any]:
 
         result = {
             "job_id": f"REMIND-{datetime.now().strftime('%Y%m%d%H%M%S')}",
-            "executed_at": datetime.utcnow().isoformat(),
+            "executed_at": datetime.now(timezone.utc).isoformat(),
             "deadlines_checked": len(upcoming_deadlines),
             "reminders_sent": sent_count,
             "status": "completed"
@@ -173,7 +173,7 @@ def sync_regulatory_data() -> Dict[str, Any]:
 
         result = {
             "sync_id": f"SYNC-{datetime.now().strftime('%Y%m%d%H%M%S')}",
-            "executed_at": datetime.utcnow().isoformat(),
+            "executed_at": datetime.now(timezone.utc).isoformat(),
             "updates": {
                 "epr_rates_updated": 12,
                 "new_materials_added": 3,
@@ -207,7 +207,7 @@ def generate_invoice_pdf(self, payment_id: str,
             "invoice_id": invoice_number,
             "payment_id": payment_id,
             "pdf_url": pdf_url,
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "status": "completed"
         }
 
@@ -224,6 +224,6 @@ def health_check() -> Dict[str, Any]:
     """Health check task for monitoring."""
     return {
         "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "worker_id": os.getenv("HOSTNAME", "unknown")
     }

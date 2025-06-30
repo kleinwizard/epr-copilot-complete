@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timezone
 from ..database import get_db, Report
 from ..schemas import ReportCreate, Report as ReportSchema
 from ..auth import get_current_user
@@ -124,5 +124,5 @@ async def download_report(
     return {
         "download_url": f"/files/reports/{report_id}.{format}",
         "format": format,
-        "generated_at": datetime.utcnow().isoformat()
+        "generated_at": datetime.now(timezone.utc).isoformat()
     }

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Dict, Any
 import stripe
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from ..database import get_db
 from ..auth import get_current_user
 from pydantic import BaseModel
@@ -54,7 +54,7 @@ async def create_payment_intent(
             "currency": intent.currency,
             "status": intent.status
         }
-    except stripe.error.StripeError as e:
+    except Exception as e:
         raise HTTPException(status_code=400, detail=f"Stripe error: {str(e)}")
 
 
@@ -73,9 +73,9 @@ async def confirm_payment(
         return {
             "status": "succeeded",
             "payment_method_id": request.payment_method_id,
-            "confirmed_at": datetime.utcnow().isoformat()
+            "confirmed_at": datetime.now(timezone.utc).isoformat()
         }
-    except stripe.error.StripeError as e:
+    except Exception as e:
         raise HTTPException(
             status_code=400,
             detail=f"Payment confirmation failed: {str(e)}")
@@ -98,7 +98,7 @@ async def stripe_webhook(request: Request):
         )
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid payload")
-    except stripe.error.SignatureVerificationError:
+    except Exception:
         raise HTTPException(status_code=400, detail="Invalid signature")
 
     if event["type"] == "payment_intent.succeeded":
@@ -141,9 +141,9 @@ async def save_payment_method(
         return {
             "payment_method_id": request.payment_method_id,
             "saved": True,
-            "saved_at": datetime.utcnow().isoformat()
+            "saved_at": datetime.now(timezone.utc).isoformat()
         }
-    except stripe.error.StripeError as e:
+    except Exception as e:
         raise HTTPException(
             status_code=400,
             detail=f"Failed to save payment method: {str(e)}")
