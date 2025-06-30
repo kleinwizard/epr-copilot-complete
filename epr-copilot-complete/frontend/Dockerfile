@@ -7,13 +7,13 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm ci && chmod -R +x node_modules/.bin
 
 # Copy source code
 COPY . .
 
 # Build the application
-RUN npm run build
+RUN node node_modules/vite/bin/vite.js build
 
 # Production stage
 FROM nginx:alpine
