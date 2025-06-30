@@ -1,12 +1,74 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_EVEN
+from datetime import datetime
 from ..database import get_db, Material
 from ..auth import get_current_user
 
 router = APIRouter(prefix="/api/fees", tags=["fees"])
+
+
+def calculate_epr_fee(
+    weight: Decimal, 
+    rate: Decimal, 
+    material_type: Optional[str] = None,
+    apply_volume_discount: bool = False,
+    generate_audit: bool = False
+) -> Decimal | tuple[Decimal, Dict[str, Any]]:
+    """
+    Calculate EPR fee with proper Decimal precision for legal compliance.
+    
+    Args:
+        weight: Weight in kg (must be Decimal for financial accuracy)
+        rate: Rate per kg (must be Decimal for financial accuracy)
+        material_type: Optional material type for specific calculations
+        apply_volume_discount: Whether to apply volume discounts for large quantities
+        generate_audit: Whether to generate audit trail for compliance
+    
+    Returns:
+        Decimal fee amount, or tuple of (fee, audit_log) if generate_audit=True
+    
+    Raises:
+        ValueError: If weight is negative or invalid
+        TypeError: If inputs are not Decimal type
+    """
+    if not isinstance(weight, Decimal):
+        raise TypeError("Weight must be Decimal type for financial accuracy")
+    if not isinstance(rate, Decimal):
+        raise TypeError("Rate must be Decimal type for financial accuracy")
+    if weight < Decimal('0'):
+        raise ValueError("Weight cannot be negative")
+    
+    base_fee = weight * rate
+    
+    final_fee = base_fee
+    discount_applied = Decimal('0')
+    
+    if apply_volume_discount and weight >= Decimal('1000.0000'):  # 1 ton threshold
+        discount_rate = Decimal('0.05')
+        discount_applied = base_fee * discount_rate
+        final_fee = base_fee - discount_applied
+    
+    final_fee = final_fee.quantize(Decimal('0.0001'), rounding=ROUND_HALF_EVEN)
+    
+    if generate_audit:
+        audit_log = {
+            'timestamp': datetime.utcnow().isoformat(),
+            'weight': str(weight),
+            'rate': str(rate),
+            'material_type': material_type,
+            'base_fee': str(base_fee),
+            'volume_discount_applied': apply_volume_discount,
+            'discount_amount': str(discount_applied),
+            'calculated_fee': str(final_fee),
+            'rounding_method': 'ROUND_HALF_EVEN',
+            'precision': '4_decimal_places'
+        }
+        return final_fee, audit_log
+    
+    return final_fee
 
 
 class MaterialInput(BaseModel):
