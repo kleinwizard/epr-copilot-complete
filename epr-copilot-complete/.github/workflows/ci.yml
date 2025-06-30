@@ -53,25 +53,25 @@ jobs:
       id: cached-poetry-dependencies
       uses: actions/cache@v3
       with:
-        path: backend/.venv
+        path: backend/epr_backend/.venv
         key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
     
     - name: Install dependencies
       if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       run: |
-        cd backend
+        cd backend/epr_backend
         poetry install --no-interaction --no-root
     
     - name: Install project
       run: |
-        cd backend
+        cd backend/epr_backend
         poetry install --no-interaction
     
     - name: Run linting
       run: |
-        cd backend
-        poetry run ruff check epr_backend/
-        poetry run mypy epr_backend/
+        cd backend/epr_backend
+        poetry run ruff check .
+        poetry run mypy .
     
     - name: Run tests with coverage
       env:
@@ -80,13 +80,13 @@ jobs:
         SECRET_KEY: test-secret-key
         ENVIRONMENT: test
       run: |
-        cd backend
+        cd backend/epr_backend
         poetry run pytest -v --cov=epr_backend --cov-report=term-missing --cov-report=xml --cov-fail-under=95
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
-        file: backend/coverage.xml
+        file: backend/epr_backend/coverage.xml
         flags: backend
         name: backend-coverage
 
@@ -176,7 +176,7 @@ jobs:
     
     - name: Install backend dependencies
       run: |
-        cd backend
+        cd backend/epr_backend
         pip install poetry
         poetry install
     
@@ -193,7 +193,7 @@ jobs:
         SECRET_KEY: test-secret-key
         ENVIRONMENT: test
       run: |
-        cd backend
+        cd backend/epr_backend
         poetry run alembic upgrade head
         poetry run uvicorn epr_backend.main:app --host 0.0.0.0 --port 8001 &
         sleep 10
@@ -295,7 +295,7 @@ jobs:
     
     - name: Install backend dependencies
       run: |
-        cd backend
+        cd backend/epr_backend
         pip install poetry
         poetry install
     
@@ -311,7 +311,7 @@ jobs:
         SECRET_KEY: test-secret-key
         ENVIRONMENT: test
       run: |
-        cd backend
+        cd backend/epr_backend
         poetry run alembic upgrade head
         poetry run uvicorn epr_backend.main:app --host 0.0.0.0 --port 8001 &
         sleep 10

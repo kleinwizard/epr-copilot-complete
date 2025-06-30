@@ -29,7 +29,7 @@ jobs:
     
     - name: Install Python dependencies
       run: |
-        cd backend
+        cd backend/epr_backend
         pip install poetry
         poetry install
     
@@ -40,10 +40,10 @@ jobs:
     
     - name: Run Bandit security scan (Python)
       run: |
-        cd backend
+        cd backend/epr_backend
         poetry run pip install bandit[toml]
-        poetry run bandit -r epr_backend/ -f json -o bandit-report.json || true
-        poetry run bandit -r epr_backend/ || true
+        poetry run bandit -r . -f json -o bandit-report.json || true
+        poetry run bandit -r . || true
     
     - name: Run npm audit (Node.js)
       run: |
@@ -71,6 +71,6 @@ jobs:
       with:
         name: security-reports
         path: |
-          backend/bandit-report.json
+          backend/epr_backend/bandit-report.json
           frontend/npm-audit.json
           trivy-results.sarif
