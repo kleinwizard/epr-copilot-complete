@@ -25,13 +25,17 @@ async def lifespan(app: FastAPI):
     create_tables()
     try:
         task_scheduler.start()
-        logger.info("Background task scheduler started")
+        if task_scheduler.enabled:
+            logger.info("Background task scheduler started")
+        else:
+            logger.info("Background task scheduler disabled via ENABLE_SCHEDULER environment variable")
     except Exception as e:
         logger.error(f"Failed to start task scheduler: {str(e)}")
     yield
     try:
         task_scheduler.stop()
-        logger.info("Background task scheduler stopped")
+        if task_scheduler.enabled:
+            logger.info("Background task scheduler stopped")
     except Exception as e:
         logger.error(f"Error stopping task scheduler: {str(e)}")
 
