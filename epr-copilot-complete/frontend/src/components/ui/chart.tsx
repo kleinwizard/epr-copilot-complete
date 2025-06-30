@@ -74,28 +74,47 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null
   }
 
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-${colorConfig
-  .map(([key, itemConfig]) => {
-    const color =
-      itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
-      itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
-  })
-  .join("\n")}
-}
-`
-          )
-          .join("\n"),
-      }}
-    />
-  )
+  const cssVariables = React.useMemo(() => {
+    const variables: Record<string, string> = {}
+    
+    colorConfig.forEach(([key, itemConfig]) => {
+      const lightColor = itemConfig.theme?.light || itemConfig.color
+      if (lightColor && typeof lightColor === 'string') {
+        const sanitizedColor = lightColor.replace(/[^#a-zA-Z0-9(),.\s%-]/g, '')
+        variables[`--color-${key}`] = sanitizedColor
+      }
+      
+      if (itemConfig.theme?.dark && typeof itemConfig.theme.dark === 'string') {
+        const sanitizedDarkColor = itemConfig.theme.dark.replace(/[^#a-zA-Z0-9(),.\s%-]/g, '')
+        variables[`--color-${key}-dark`] = sanitizedDarkColor
+      }
+    })
+    
+    return variables
+  }, [colorConfig])
+
+  React.useEffect(() => {
+    const chartElement = document.querySelector(`[data-chart="${id}"]`)
+    if (chartElement && chartElement instanceof HTMLElement) {
+      Object.entries(cssVariables).forEach(([property, value]) => {
+        if (!property.endsWith('-dark')) {
+          chartElement.style.setProperty(property, value)
+        }
+      })
+      
+      const isDarkMode = document.documentElement.classList.contains('dark')
+      if (isDarkMode) {
+        Object.entries(cssVariables).forEach(([property, value]) => {
+          if (property.endsWith('-dark')) {
+            const lightProperty = property.replace('-dark', '')
+            chartElement.style.setProperty(lightProperty, value)
+          }
+        })
+      }
+    }
+  }, [id, cssVariables])
+
+  return null
 }
 
 const ChartTooltip = RechartsPrimitive.Tooltip
