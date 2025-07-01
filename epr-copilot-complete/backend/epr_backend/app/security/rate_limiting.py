@@ -3,24 +3,28 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from fastapi import Request, HTTPException
 from typing import Dict, Any
-import redis
 import os
 import logging
 from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
-redis_client = redis.Redis(
-    host=os.getenv("REDIS_HOST", "localhost"),
-    port=int(os.getenv("REDIS_PORT", "6379")),
-    db=2,  # Use different DB for rate limiting
-    decode_responses=True
-)
-
-limiter = Limiter(
-    key_func=get_remote_address,
-    storage_uri=f"redis://{os.getenv('REDIS_HOST', 'localhost')}:{os.getenv('REDIS_PORT', '6379')}/2"
-)
+if os.getenv("ENABLE_SCHEDULER", "false").lower() == "true":
+    import redis
+    redis_client = redis.Redis(
+        host=os.getenv("REDIS_HOST", "localhost"),
+        port=int(os.getenv("REDIS_PORT", "6379")),
+        db=2,  # Use different DB for rate limiting
+        decode_responses=True
+    )
+    
+    limiter = Limiter(
+        key_func=get_remote_address,
+        storage_uri=f"redis://{os.getenv('REDIS_HOST', 'localhost')}:{os.getenv('REDIS_PORT', '6379')}/2"
+    )
+else:
+    redis_client = None
+    limiter = Limiter(key_func=get_remote_address)
 
 
 class CustomRateLimiter:
@@ -33,36 +37,43 @@ class CustomRateLimiter:
 
     def is_ip_blocked(self, ip_address: str) -> bool:
         """Check if an IP address is blocked."""
+        if self.redis_client is None:
+            return ip_address in self.blocked_ips
         return ip_address in self.blocked_ips or self.redis_client.get(
             f"blocked_ip:{ip_address}")
 
     def block_ip(self, ip_address: str, duration_minutes: int = 60):
         """Block an IP address for a specified duration."""
         self.blocked_ips.add(ip_address)
-        self.redis_client.setex(
-            f"blocked_ip:{ip_address}",
-            duration_minutes * 60,
-            "1")
+        if self.redis_client is not None:
+            self.redis_client.setex(
+                f"blocked_ip:{ip_address}",
+                duration_minutes * 60,
+                "1")
         logger.warning(
             f"IP address {ip_address} blocked for {duration_minutes} minutes")
 
     def unblock_ip(self, ip_address: str):
         """Unblock an IP address."""
         self.blocked_ips.discard(ip_address)
-        self.redis_client.delete(f"blocked_ip:{ip_address}")
+        if self.redis_client is not None:
+            self.redis_client.delete(f"blocked_ip:{ip_address}")
         logger.info(f"IP address {ip_address} unblocked")
 
     def track_failed_attempt(self, ip_address: str, endpoint: str):
         """Track failed attempts and implement progressive blocking."""
-        key = f"failed_attempts:{ip_address}:{endpoint}"
-        current_attempts = self.redis_client.get(key)
-
-        if current_attempts is None:
-            attempts = 1
-            self.redis_client.setex(key, 300, attempts)  # 5 minute window
+        if self.redis_client is None:
+            attempts = 1  # Simple fallback
         else:
-            attempts = int(current_attempts) + 1
-            self.redis_client.setex(key, 300, attempts)
+            key = f"failed_attempts:{ip_address}:{endpoint}"
+            current_attempts = self.redis_client.get(key)
+
+            if current_attempts is None:
+                attempts = 1
+                self.redis_client.setex(key, 300, attempts)  # 5 minute window
+            else:
+                attempts = int(current_attempts) + 1
+                self.redis_client.setex(key, 300, attempts)
 
         if attempts >= 10:
             self.block_ip(ip_address, 120)  # 2 hours
@@ -80,8 +91,11 @@ class CustomRateLimiter:
     def get_rate_limit_info(self, ip_address: str,
                             endpoint: str) -> Dict[str, Any]:
         """Get rate limit information for an IP and endpoint."""
-        key = f"rate_limit:{ip_address}:{endpoint}"
-        current_requests = self.redis_client.get(key)
+        if self.redis_client is None:
+            current_requests = 0
+        else:
+            key = f"rate_limit:{ip_address}:{endpoint}"
+            current_requests = self.redis_client.get(key)
 
         return {
             "ip_address": ip_address,
