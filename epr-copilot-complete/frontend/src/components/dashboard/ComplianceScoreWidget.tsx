@@ -7,6 +7,8 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { dataService } from '@/services/dataService';
+import { useEffect, useState } from 'react';
 
 const chartConfig = {
   score: { label: "Compliance Score", color: "#3b82f6" }
@@ -20,30 +22,58 @@ interface ComplianceData {
   factors: Array<{ name: string; impact: number; status: 'good' | 'warning' | 'critical' }>;
 }
 
-const mockComplianceData: ComplianceData = {
-  score: 94,
-  trend: 'up',
+const getZeroStateComplianceData = (): ComplianceData => ({
+  score: 0,
+  trend: 'stable',
   riskLevel: 'low',
-  trendData: [
-    { date: '30 days ago', score: 87 },
-    { date: '25 days ago', score: 89 },
-    { date: '20 days ago', score: 91 },
-    { date: '15 days ago', score: 88 },
-    { date: '10 days ago', score: 92 },
-    { date: '5 days ago', score: 93 },
-    { date: 'Today', score: 94 }
-  ],
+  trendData: [],
   factors: [
-    { name: 'Data Completeness', impact: 25, status: 'good' },
-    { name: 'Deadline Adherence', impact: 30, status: 'good' },
-    { name: 'Material Classification', impact: 20, status: 'warning' },
-    { name: 'Documentation Quality', impact: 15, status: 'good' },
-    { name: 'Fee Payment Status', impact: 10, status: 'good' }
+    { name: 'Data Completeness', impact: 0, status: 'good' },
+    { name: 'Deadline Adherence', impact: 0, status: 'good' },
+    { name: 'Material Classification', impact: 0, status: 'good' },
+    { name: 'Documentation Quality', impact: 0, status: 'good' },
+    { name: 'Fee Payment Status', impact: 0, status: 'good' }
   ]
-};
+});
 
 export function ComplianceScoreWidget() {
-  const data = mockComplianceData;
+  const [data, setData] = useState<ComplianceData>(getZeroStateComplianceData());
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadComplianceData();
+  }, []);
+
+  const loadComplianceData = async () => {
+    try {
+      const analyticsData = await dataService.getAnalytics();
+      const products = await dataService.getProducts();
+      const materials = await dataService.getMaterials();
+      
+      if (products.length === 0 && materials.length === 0) {
+        setData(getZeroStateComplianceData());
+      } else {
+        setData({
+          score: analyticsData.complianceScore || 0,
+          trend: analyticsData.complianceScore > 0 ? 'up' : 'stable',
+          riskLevel: analyticsData.complianceScore >= 90 ? 'low' : analyticsData.complianceScore >= 70 ? 'medium' : 'high',
+          trendData: [],
+          factors: [
+            { name: 'Data Completeness', impact: products.length > 0 ? 25 : 0, status: 'good' },
+            { name: 'Deadline Adherence', impact: products.length > 0 ? 30 : 0, status: 'good' },
+            { name: 'Material Classification', impact: materials.length > 0 ? 20 : 0, status: materials.length > 0 ? 'good' : 'warning' },
+            { name: 'Documentation Quality', impact: products.length > 0 ? 15 : 0, status: 'good' },
+            { name: 'Fee Payment Status', impact: analyticsData.totalFees > 0 ? 10 : 0, status: 'good' }
+          ]
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load compliance data:', error);
+      setData(getZeroStateComplianceData());
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   const getScoreColor = (score: number) => {
     if (score >= 90) return 'text-green-600';
@@ -101,7 +131,7 @@ export function ComplianceScoreWidget() {
             <div className="flex items-center space-x-1">
               {getTrendIcon(data.trend)}
               <span className="text-sm text-muted-foreground">
-                {data.trend === 'up' ? '+2.3%' : data.trend === 'down' ? '-1.8%' : '0%'} vs last month
+                {data.score === 0 ? 'No data yet' : data.trend === 'up' ? '+2.3%' : data.trend === 'down' ? '-1.8%' : '0%'} vs last month
               </span>
             </div>
           </div>
@@ -121,22 +151,32 @@ export function ComplianceScoreWidget() {
         {/* Trend Chart */}
         <div className="space-y-2">
           <h4 className="text-sm font-medium">30-Day Trend</h4>
-          <ChartContainer config={chartConfig} className="h-[100px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data.trendData}>
-                <XAxis dataKey="date" hide />
-                <YAxis domain={[80, 100]} hide />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Line 
-                  type="monotone" 
-                  dataKey="score" 
-                  stroke="var(--color-score)" 
-                  strokeWidth={2}
-                  dot={{ r: 2 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </ChartContainer>
+          <div className="relative">
+            <ChartContainer config={chartConfig} className="h-[100px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data.trendData}>
+                  <XAxis dataKey="date" hide />
+                  <YAxis domain={[80, 100]} hide />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="score" 
+                    stroke="var(--color-score)" 
+                    strokeWidth={2}
+                    dot={{ r: 2 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+            {data.trendData.length === 0 && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white/80">
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">No trend data yet</p>
+                  <p className="text-xs text-muted-foreground">Add products to track compliance</p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Contributing Factors */}

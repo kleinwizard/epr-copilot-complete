@@ -27,8 +27,8 @@ export function DashboardOverview() {
     } catch (error) {
       console.error('Failed to load analytics:', error);
       setAnalyticsData({
-        complianceScore: 94,
-        daysToDeadline: 45,
+        complianceScore: 0,
+        daysToDeadline: 0,
         totalProducts: 0,
         totalFees: 0
       });
@@ -37,8 +37,8 @@ export function DashboardOverview() {
     }
   };
 
-  const complianceScore = analyticsData?.complianceScore || 94;
-  const daysToDeadline = analyticsData?.daysToDeadline || 45;
+  const complianceScore = analyticsData?.complianceScore || 0;
+  const daysToDeadline = analyticsData?.daysToDeadline || 0;
   
   return (
     <div className="space-y-6">
