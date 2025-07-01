@@ -209,7 +209,7 @@ def generate_invoice_pdf_task(payment_id: str, invoice_data: Dict[str, Any]) -> 
         raise exc
 
 
-def health_check() -> Dict[str, Any]:
+def health_check_task() -> Dict[str, Any]:
     """Health check task for monitoring."""
     return {
         "status": "healthy",
@@ -223,11 +223,11 @@ if celery_app is not None:
     send_deadline_reminders = celery_app.task(send_deadline_reminders)
     sync_regulatory_data = celery_app.task(sync_regulatory_data)
     generate_invoice_pdf = celery_app.task(bind=True, max_retries=3)(generate_invoice_pdf_task)
-    health_check = celery_app.task(health_check)
+    health_check = celery_app.task(health_check_task)
 else:
     generate_report = generate_report_task
     process_bulk_import = process_bulk_import_task
     send_deadline_reminders = send_deadline_reminders
     sync_regulatory_data = sync_regulatory_data
     generate_invoice_pdf = generate_invoice_pdf_task
-    health_check = health_check
+    health_check = health_check_task
