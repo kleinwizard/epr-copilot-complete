@@ -11,32 +11,49 @@ logger = logging.getLogger(__name__)
 
 class TaskScheduler:
     def __init__(self):
-        jobstores = {
-            'default': RedisJobStore(
-                host=os.getenv("REDIS_HOST", "localhost"),
-                port=int(os.getenv("REDIS_PORT", "6379")),
-                db=1
+        self.scheduler = None
+        self.enabled = os.getenv("ENABLE_SCHEDULER", "false").lower() == "true"
+        
+        if not self.enabled:
+            logger.info("Scheduler disabled via ENABLE_SCHEDULER environment variable")
+            return
+            
+        try:
+            jobstores = {
+                'default': RedisJobStore(
+                    host=os.getenv("REDIS_HOST", "localhost"),
+                    port=int(os.getenv("REDIS_PORT", "6379")),
+                    db=1
+                )
+            }
+
+            executors = {
+                'default': ThreadPoolExecutor(20),
+            }
+
+            job_defaults = {
+                'coalesce': False,
+                'max_instances': 3
+            }
+
+            self.scheduler = AsyncIOScheduler(
+                jobstores=jobstores,
+                executors=executors,
+                job_defaults=job_defaults,
+                timezone='UTC'
             )
-        }
-
-        executors = {
-            'default': ThreadPoolExecutor(20),
-        }
-
-        job_defaults = {
-            'coalesce': False,
-            'max_instances': 3
-        }
-
-        self.scheduler = AsyncIOScheduler(
-            jobstores=jobstores,
-            executors=executors,
-            job_defaults=job_defaults,
-            timezone='UTC'
-        )
+            logger.info("Scheduler initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize scheduler: {str(e)}")
+            self.scheduler = None
+            self.enabled = False
 
     def start(self):
         """Start the scheduler and add all scheduled jobs."""
+        if not self.enabled or self.scheduler is None:
+            logger.info("Scheduler start skipped - scheduler disabled or not initialized")
+            return
+            
         try:
             self.scheduler.start()
             self._add_scheduled_jobs()
@@ -47,6 +64,10 @@ class TaskScheduler:
 
     def stop(self):
         """Stop the scheduler."""
+        if not self.enabled or self.scheduler is None:
+            logger.info("Scheduler stop skipped - scheduler disabled or not initialized")
+            return
+            
         try:
             self.scheduler.shutdown()
             logger.info("Task scheduler stopped")
@@ -55,6 +76,8 @@ class TaskScheduler:
 
     def _add_scheduled_jobs(self):
         """Add all scheduled jobs to the scheduler."""
+        if not self.enabled or self.scheduler is None:
+            return
 
         self.scheduler.add_job(
             send_deadline_reminders,
@@ -133,6 +156,10 @@ class TaskScheduler:
             job_id: str,
             **kwargs):
         """Add a one-time job to be executed at a specific time."""
+        if not self.enabled or self.scheduler is None:
+            logger.warning(f"Cannot add job '{job_id}' - scheduler disabled")
+            return
+            
         try:
             self.scheduler.add_job(
                 func,
@@ -150,6 +177,10 @@ class TaskScheduler:
 
     def remove_job(self, job_id: str):
         """Remove a scheduled job."""
+        if not self.enabled or self.scheduler is None:
+            logger.warning(f"Cannot remove job '{job_id}' - scheduler disabled")
+            return
+            
         try:
             self.scheduler.remove_job(job_id)
             logger.info(f"Job '{job_id}' removed from scheduler")
@@ -158,10 +189,16 @@ class TaskScheduler:
 
     def get_jobs(self):
         """Get all scheduled jobs."""
+        if not self.enabled or self.scheduler is None:
+            return []
         return self.scheduler.get_jobs()
 
     def pause_job(self, job_id: str):
         """Pause a scheduled job."""
+        if not self.enabled or self.scheduler is None:
+            logger.warning(f"Cannot pause job '{job_id}' - scheduler disabled")
+            return
+            
         try:
             self.scheduler.pause_job(job_id)
             logger.info(f"Job '{job_id}' paused")
@@ -170,6 +207,10 @@ class TaskScheduler:
 
     def resume_job(self, job_id: str):
         """Resume a paused job."""
+        if not self.enabled or self.scheduler is None:
+            logger.warning(f"Cannot resume job '{job_id}' - scheduler disabled")
+            return
+            
         try:
             self.scheduler.resume_job(job_id)
             logger.info(f"Job '{job_id}' resumed")
