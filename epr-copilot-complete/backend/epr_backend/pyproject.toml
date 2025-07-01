@@ -15,17 +15,8 @@ alembic = "^1.16.2"
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 python-multipart = "^0.0.20"
-boto3 = "^1.38.46"
-stripe = "^12.2.0"
-sendgrid = "^6.12.4"
 python-dotenv = "^1.1.1"
-twilio = "^9.6.3"
-firebase-admin = "^6.9.0"
 jinja2 = "^3.1.6"
-celery = "^5.5.3"
-redis = "^6.2.0"
-python-crontab = "^3.2.0"
-apscheduler = "^3.11.0"
 slowapi = "^0.1.9"
 ecdsa = "^0.19.0"
 
@@ -34,6 +25,45 @@ autopep8 = "^2.3.2"
 pytest = "^8.4.1"
 pytest-cov = "^6.2.1"
 pytest-asyncio = "^1.0.0"
+
+[tool.poetry.group.cloud-services]
+optional = true
+
+[tool.poetry.group.cloud-services.dependencies]
+boto3 = "^1.38.46"
+
+[tool.poetry.group.payment-services]
+optional = true
+
+[tool.poetry.group.payment-services.dependencies]
+stripe = "^12.2.0"
+
+[tool.poetry.group.email-services]
+optional = true
+
+[tool.poetry.group.email-services.dependencies]
+sendgrid = "^6.12.4"
+
+[tool.poetry.group.sms-services]
+optional = true
+
+[tool.poetry.group.sms-services.dependencies]
+twilio = "^9.6.3"
+
+[tool.poetry.group.push-services]
+optional = true
+
+[tool.poetry.group.push-services.dependencies]
+firebase-admin = "^6.9.0"
+
+[tool.poetry.group.scheduler-services]
+optional = true
+
+[tool.poetry.group.scheduler-services.dependencies]
+celery = "^5.5.3"
+redis = "^6.2.0"
+python-crontab = "^3.2.0"
+apscheduler = "^3.11.0"
 
 [build-system]
 requires = ["poetry-core"]
