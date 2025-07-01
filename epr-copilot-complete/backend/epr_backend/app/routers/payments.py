@@ -1,16 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from typing import Dict, Any
-import stripe
 import os
 from datetime import datetime, timezone
 from ..database import get_db
 from ..auth import get_current_user
 from pydantic import BaseModel
 
+if os.getenv("ENABLE_PAYMENT_SERVICES", "false").lower() == "true":
+    import stripe
+else:
+    stripe = None
+
 router = APIRouter(prefix="/api/payments", tags=["payments"])
 
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+if stripe is not None:
+    stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 
@@ -33,7 +38,7 @@ async def create_payment_intent(
 ):
     """Create a Stripe payment intent for processing payments."""
 
-    if not stripe.api_key:
+    if stripe is None or not stripe.api_key:
         raise HTTPException(status_code=500, detail="Stripe not configured")
 
     try:
@@ -66,7 +71,7 @@ async def confirm_payment(
 ):
     """Confirm a payment with a payment method."""
 
-    if not stripe.api_key:
+    if stripe is None or not stripe.api_key:
         raise HTTPException(status_code=500, detail="Stripe not configured")
 
     try:
@@ -134,7 +139,7 @@ async def save_payment_method(
 ):
     """Save a payment method for future use."""
 
-    if not stripe.api_key:
+    if stripe is None or not stripe.api_key:
         raise HTTPException(status_code=500, detail="Stripe not configured")
 
     try:

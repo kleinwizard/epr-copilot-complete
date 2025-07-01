@@ -6,10 +6,15 @@ import uuid
 import csv
 import io
 from datetime import datetime, timezone
-import boto3
-from botocore.exceptions import ClientError
 from ..database import get_db
 from ..auth import get_current_user
+
+if os.getenv("ENABLE_CLOUD_SERVICES", "false").lower() == "true":
+    import boto3
+    from botocore.exceptions import ClientError
+else:
+    boto3 = None
+    ClientError = Exception
 
 router = APIRouter(prefix="/api/files", tags=["files"])
 
@@ -21,7 +26,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 s3_client = None
 try:
-    if AWS_S3_BUCKET:
+    if AWS_S3_BUCKET and boto3 is not None:
         s3_client = boto3.client('s3')
 except Exception:
     pass  # Fall back to local storage

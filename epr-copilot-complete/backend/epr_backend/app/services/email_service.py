@@ -1,9 +1,14 @@
 import os
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Email, To, Content
 from typing import List, Optional
 import logging
 from jinja2 import Template
+
+if os.getenv("ENABLE_EMAIL_SERVICES", "false").lower() == "true":
+    from sendgrid import SendGridAPIClient
+    from sendgrid.helpers.mail import Mail, Email, To, Content
+else:
+    SendGridAPIClient = None
+    Mail = Email = To = Content = None
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +19,7 @@ class EmailService:
         self.from_email = os.getenv("FROM_EMAIL", "noreply@epr-copilot.com")
         self.client = None
 
-        if self.api_key:
+        if self.api_key and SendGridAPIClient is not None:
             self.client = SendGridAPIClient(api_key=self.api_key)
         else:
             logger.warning(
