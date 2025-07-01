@@ -49,7 +49,7 @@ export async function calculateEprFee(materials: Array<{
   recyclable: boolean;
 }>): Promise<FeeCalculation> {
   const token = localStorage.getItem('access_token');
-  const response = await fetch('https://app-gqghzcxc.fly.dev/api/fees/calculate', {
+  const response = await fetch('https://app-mbypfbcs.fly.dev/api/fees/calculate', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,

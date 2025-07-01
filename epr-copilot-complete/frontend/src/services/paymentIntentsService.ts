@@ -12,7 +12,7 @@ export class PaymentIntentsService {
   ): Promise<PaymentIntent> {
     const token = localStorage.getItem('access_token');
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://app-gqghzcxc.fly.dev'}/api/payments/create-intent`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://app-mbypfbcs.fly.dev'}/api/payments/create-intent`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -83,7 +83,7 @@ export class PaymentIntentsService {
 
     const token = localStorage.getItem('access_token');
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://app-gqghzcxc.fly.dev'}/api/payments/confirm-payment`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://app-mbypfbcs.fly.dev'}/api/payments/confirm-payment`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
