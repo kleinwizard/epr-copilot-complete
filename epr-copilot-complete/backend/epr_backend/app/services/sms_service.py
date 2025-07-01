@@ -1,7 +1,11 @@
 import os
-from twilio.rest import Client
 from typing import Optional
 import logging
+
+if os.getenv("ENABLE_SMS_SERVICES", "false").lower() == "true":
+    from twilio.rest import Client
+else:
+    Client = None
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +17,7 @@ class SMSService:
         self.from_number = os.getenv("TWILIO_FROM_NUMBER")
         self.client = None
 
-        if self.account_sid and self.auth_token:
+        if self.account_sid and self.auth_token and Client is not None:
             self.client = Client(self.account_sid, self.auth_token)
         else:
             logger.warning(

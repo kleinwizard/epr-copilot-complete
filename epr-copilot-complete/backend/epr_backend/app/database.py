@@ -6,12 +6,15 @@ import uuid
 from datetime import datetime, timezone
 
 import os
+import pathlib
 SQLALCHEMY_DATABASE_URL = os.getenv(
     "DATABASE_URL", "sqlite:///./epr_copilot.db")
 
 connect_args = {}
 if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
+    db_path = SQLALCHEMY_DATABASE_URL.replace("sqlite:///", "")
+    pathlib.Path(db_path).parent.mkdir(parents=True, exist_ok=True)
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,

@@ -13,7 +13,7 @@ npm run dev
 
 Create a `.env` file:
 ```
-VITE_API_BASE_URL=http://localhost:8001
+VITE_API_BASE_URL=https://app-mbypfbcs.fly.dev
 VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
 ```
 
