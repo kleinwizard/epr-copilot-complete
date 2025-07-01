@@ -119,6 +119,12 @@ def configure_security_middleware(app: FastAPI):
     if os.getenv("ALLOWED_HOSTS"):
         trusted_hosts.extend(os.getenv("ALLOWED_HOSTS").split(","))
     
+    if os.getenv("FLY_APP_NAME"):
+        trusted_hosts.append(f"{os.getenv('FLY_APP_NAME')}.fly.dev")
+    
+    if not any("fly.dev" in host for host in trusted_hosts):
+        trusted_hosts.append("*.fly.dev")
+    
     if os.getenv("ENVIRONMENT") in ["test", "testing"]:
         trusted_hosts.append("testserver")
 
