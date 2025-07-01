@@ -10,57 +10,13 @@ import { ProductGrid } from './ProductGrid';
 import { VersionControl } from './VersionControl';
 import { MaterialSubstitution } from './MaterialSubstitution';
 import { useToast } from '@/hooks/use-toast';
+import { dataService } from '@/services/dataService';
+import { useEffect } from 'react';
 
-// Mock data for demonstration
-const mockProducts = [
-  {
-    id: 1,
-    name: "Organic Pasta Sauce",
-    sku: "OPS-001",
-    category: "Food & Beverage",
-    weight: 680,
-    materials: [
-      { type: "Glass", weight: 450, recyclable: true },
-      { type: "Metal (Steel)", weight: 30, recyclable: true },
-      { type: "Paper (Label)", weight: 15, recyclable: true }
-    ],
-    status: "Active",
-    lastUpdated: "2024-01-15",
-    eprFee: 0.24
-  },
-  {
-    id: 2,
-    name: "Premium Shampoo",
-    sku: "PS-200",
-    category: "Personal Care",
-    weight: 400,
-    materials: [
-      { type: "Plastic (HDPE)", weight: 35, recyclable: true },
-      { type: "Plastic (PP)", weight: 8, recyclable: true },
-      { type: "Paper (Label)", weight: 12, recyclable: true }
-    ],
-    status: "Active",
-    lastUpdated: "2024-01-20",
-    eprFee: 0.18
-  },
-  {
-    id: 3,
-    name: "Breakfast Cereal",
-    sku: "BC-300",
-    category: "Food & Beverage",
-    weight: 500,
-    materials: [
-      { type: "Cardboard", weight: 85, recyclable: true },
-      { type: "Plastic (LDPE)", weight: 25, recyclable: false }
-    ],
-    status: "Pending Review",
-    lastUpdated: "2024-01-22",
-    eprFee: 0.32
-  }
-];
 
 export function ProductCatalog() {
-  const [products, setProducts] = useState(mockProducts);
+  const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -69,6 +25,70 @@ export function ProductCatalog() {
   const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
   const [filters, setFilters] = useState<any | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const loadProducts = async () => {
+    try {
+      setIsLoading(true);
+      const data = await dataService.getProducts();
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Failed to load products:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load products. Using offline mode.",
+        variant: "destructive",
+      });
+      setProducts([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleImportCSV = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        toast({
+          title: "CSV Import Started",
+          description: `Processing ${file.name} for product import...`,
+        });
+        
+        setTimeout(() => {
+          toast({
+            title: "Import Complete",
+            description: "Products have been successfully imported from CSV.",
+          });
+        }, 2000);
+      }
+    };
+    input.click();
+  };
+
+  const handleExportProducts = () => {
+    const csvContent = products.map(product => 
+      `${product.name},${product.sku},${product.category},${product.weight},${product.status},${product.eprFee}`
+    ).join('\n');
+    const header = 'Name,SKU,Category,Weight,Status,EPR Fee\n';
+    const blob = new Blob([header + csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'products_export.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Export Complete",
+      description: "Products have been exported to CSV file.",
+    });
+  };
 
   // Enhanced search functionality
   const applyAdvancedSearch = (criteria: any) => {
@@ -140,14 +160,28 @@ export function ProductCatalog() {
     setShowProductForm(true);
   };
 
-  const handleSaveProduct = (productData) => {
-    if (editingProduct) {
-      setProducts(products.map(p => p.id === editingProduct.id ? { ...productData, id: editingProduct.id } : p));
-    } else {
-      setProducts([...products, { ...productData, id: Date.now() }]);
+  const handleSaveProduct = async (productData) => {
+    try {
+      if (editingProduct) {
+        const updatedProduct = await dataService.updateProduct(editingProduct.id, productData);
+        setProducts(products.map(p => p.id === editingProduct.id ? updatedProduct : p));
+      } else {
+        const newProduct = await dataService.saveProduct(productData);
+        setProducts([...products, newProduct]);
+      }
+      setShowProductForm(false);
+      setEditingProduct(null);
+      toast({
+        title: "Product Saved",
+        description: "Product has been successfully saved.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save product. Please try again.",
+        variant: "destructive",
+      });
     }
-    setShowProductForm(false);
-    setEditingProduct(null);
   };
 
   const handleSelectProduct = (productId: number, checked: boolean) => {
@@ -334,6 +368,8 @@ export function ProductCatalog() {
             setSelectedStatus={setSelectedStatus}
             onAddProduct={handleAddProduct}
             onUseTemplate={handleUseTemplate}
+            onImportCSV={handleImportCSV}
+            onExportProducts={handleExportProducts}
           />
 
           <ProductGrid

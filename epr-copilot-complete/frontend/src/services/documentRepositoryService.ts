@@ -46,70 +46,31 @@ export interface DocumentSearchFilter {
 
 export class DocumentRepositoryService {
   private documents: Map<string, Document> = new Map();
+  private storageKey = 'epr_documents';
 
   constructor() {
-    this.initializeMockData();
+    this.loadRealData();
   }
 
-  private initializeMockData() {
-    const mockDocs: Document[] = [
-      {
-        id: 'doc-1',
-        name: 'Q4 2024 EPR Compliance Report',
-        type: 'report',
-        category: 'Quarterly Reports',
-        description: 'Comprehensive quarterly EPR compliance report including material data and fee calculations',
-        fileUrl: '/documents/q4-2024-report.pdf',
-        fileName: 'q4-2024-report.pdf',
-        fileSize: 2048576,
-        mimeType: 'application/pdf',
-        version: '1.0',
-        status: 'approved',
-        uploadedBy: 'john.doe@company.com',
-        uploadedAt: '2024-06-20T10:00:00Z',
-        lastModified: '2024-06-20T10:00:00Z',
-        expiryDate: '2025-06-20T10:00:00Z',
-        tags: ['epr', 'quarterly', 'compliance', '2024'],
-        metadata: {
-          quarter: 'Q4',
-          year: 2024,
-          jurisdiction: 'California',
-          totalProducts: 150,
-          totalFees: 25000
-        },
-        permissions: [],
-        approvalRequired: true,
-        approvalStatus: 'approved'
-      },
-      {
-        id: 'doc-2',
-        name: 'EPR Compliance Certificate',
-        type: 'certificate',
-        category: 'Certificates',
-        description: 'Official EPR compliance certificate issued by regulatory authority',
-        fileUrl: '/documents/epr-certificate.pdf',
-        fileName: 'epr-certificate.pdf',
-        fileSize: 512000,
-        mimeType: 'application/pdf',
-        version: '1.0',
-        status: 'approved',
-        uploadedBy: 'admin@company.com',
-        uploadedAt: '2024-06-15T09:00:00Z',
-        lastModified: '2024-06-15T09:00:00Z',
-        expiryDate: '2025-12-31T23:59:59Z',
-        tags: ['certificate', 'compliance', 'epr'],
-        metadata: {
-          issuedBy: 'California Environmental Agency',
-          certificateNumber: 'EPR-2024-001',
-          validFrom: '2024-01-01',
-          validTo: '2025-12-31'
-        },
-        permissions: [],
-        approvalRequired: false
+  private loadRealData() {
+    try {
+      const stored = localStorage.getItem(this.storageKey);
+      if (stored) {
+        const docs: Document[] = JSON.parse(stored);
+        docs.forEach(doc => this.documents.set(doc.id, doc));
       }
-    ];
+    } catch (error) {
+      console.error('Failed to load documents from storage:', error);
+    }
+  }
 
-    mockDocs.forEach(doc => this.documents.set(doc.id, doc));
+  private saveToStorage() {
+    try {
+      const docs = Array.from(this.documents.values());
+      localStorage.setItem(this.storageKey, JSON.stringify(docs));
+    } catch (error) {
+      console.error('Failed to save documents to storage:', error);
+    }
   }
 
   createDocument(doc: Omit<Document, 'id' | 'uploadedAt' | 'lastModified'>): Document {
@@ -122,6 +83,7 @@ export class DocumentRepositoryService {
     };
 
     this.documents.set(id, newDoc);
+    this.saveToStorage();
     return newDoc;
   }
 

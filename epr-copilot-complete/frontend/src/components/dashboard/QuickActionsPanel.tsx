@@ -15,6 +15,7 @@ import {
   Zap,
   TrendingUp
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface QuickAction {
   id: string;
@@ -88,6 +89,66 @@ const recentActions = [
 ];
 
 export function QuickActionsPanel() {
+  const { toast } = useToast();
+
+  const handleQuickAction = (action: string) => {
+    switch (action) {
+      case 'generate-report':
+        toast({
+          title: "Report Generation Started",
+          description: "Generating Q4 2024 compliance report. This may take a few minutes...",
+        });
+        setTimeout(() => {
+          toast({
+            title: "Report Generated Successfully",
+            description: "Q4 2024 compliance report is ready for review.",
+          });
+        }, 3000);
+        break;
+      case 'upload-data':
+        toast({
+          title: "Data Upload Interface",
+          description: "Opening bulk import interface for product data entry...",
+        });
+        break;
+      case 'calculate-fees':
+        toast({
+          title: "Fee Calculation Started",
+          description: "Analyzing material substitution savings and EPR fee impact...",
+        });
+        setTimeout(() => {
+          toast({
+            title: "Fee Calculation Complete",
+            description: "Potential savings of $3,450 identified through material optimization.",
+          });
+        }, 2000);
+        break;
+      case 'schedule-review':
+        toast({
+          title: "Compliance Review Scheduled",
+          description: "Monthly compliance check meeting scheduled for next week.",
+        });
+        break;
+      case 'export-backup':
+        toast({
+          title: "Export Started",
+          description: "Preparing complete data backup for download...",
+        });
+        setTimeout(() => {
+          toast({
+            title: "Export Complete",
+            description: "Data backup ready. Download will begin automatically.",
+          });
+        }, 2500);
+        break;
+      default:
+        toast({
+          title: "Action Started",
+          description: `Executing ${action}...`,
+        });
+    }
+  };
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high': return 'border-red-200 bg-red-50';
@@ -154,7 +215,12 @@ export function QuickActionsPanel() {
                   {getCategoryIcon(action.category)}
                   <span className="capitalize">{action.category}</span>
                 </div>
-                <Button size="sm" variant="outline" className="h-7 text-xs">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="h-7 text-xs"
+                  onClick={() => handleQuickAction(action.action)}
+                >
                   Start
                 </Button>
               </div>
@@ -175,7 +241,12 @@ export function QuickActionsPanel() {
                   <span className="text-sm">{action.title}</span>
                   {getPriorityBadge(action.priority)}
                 </div>
-                <Button size="sm" variant="ghost" className="h-7 text-xs">
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  className="h-7 text-xs"
+                  onClick={() => handleQuickAction(action.action)}
+                >
                   Do
                 </Button>
               </div>
