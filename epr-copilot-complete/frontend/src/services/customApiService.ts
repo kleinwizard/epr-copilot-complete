@@ -1,6 +1,6 @@
 
 import { CustomAPI, APIParameter } from '../types/integrations';
-import { APP_CONFIG } from '../../config/constants';
+import { APP_CONFIG } from '../config/constants';
 
 export class CustomApiService {
   private apis: Map<string, CustomAPI> = new Map();
