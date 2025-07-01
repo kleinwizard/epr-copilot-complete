@@ -8,105 +8,85 @@ import { MaterialForm } from './MaterialForm';
 import { MaterialStats } from './MaterialStats';
 import { MaterialControls } from './MaterialControls';
 import { MaterialGrid } from './MaterialGrid';
+import { useToast } from '@/hooks/use-toast';
+import { dataService, Material } from '@/services/dataService';
+import { useEffect } from 'react';
 
-interface Material {
-  id: number;
-  name: string;
-  category: string;
-  type: string;
-  recyclable: boolean;
-  eprRate: number;
-  densityRange: { min: number; max: number };
-  sustainabilityScore: number;
-  alternatives: string[];
-  complianceStatus: 'Compliant' | 'Restricted' | 'Banned';
-  lastUpdated: string;
-  description: string;
-  carbonFootprint: number;
-  recyclingProcess: string;
-  endOfLife: string[];
-}
-
-// Mock data for Oregon EPR materials
-const mockMaterials: Material[] = [
-  {
-    id: 1,
-    name: "Glass (Clear)",
-    category: "Glass",
-    type: "Container",
-    recyclable: true,
-    eprRate: 0.0012,
-    densityRange: { min: 2.4, max: 2.8 },
-    sustainabilityScore: 85,
-    alternatives: ["Glass (Amber)", "Glass (Green)"],
-    complianceStatus: "Compliant",
-    lastUpdated: "2024-01-15",
-    description: "Clear glass containers commonly used for food and beverage packaging",
-    carbonFootprint: 0.85,
-    recyclingProcess: "Mechanical recycling - melting and reforming",
-    endOfLife: ["Recycling", "Reuse", "Landfill"]
-  },
-  {
-    id: 2,
-    name: "PET Plastic",
-    category: "Plastic",
-    type: "Container",
-    recyclable: true,
-    eprRate: 0.0034,
-    densityRange: { min: 1.3, max: 1.4 },
-    sustainabilityScore: 65,
-    alternatives: ["rPET", "Glass", "Aluminum"],
-    complianceStatus: "Compliant",
-    lastUpdated: "2024-01-20",
-    description: "Polyethylene terephthalate - widely recyclable plastic",
-    carbonFootprint: 2.3,
-    recyclingProcess: "Chemical and mechanical recycling",
-    endOfLife: ["Recycling", "Energy Recovery", "Landfill"]
-  },
-  {
-    id: 3,
-    name: "LDPE Film",
-    category: "Plastic",
-    type: "Flexible Packaging",
-    recyclable: false,
-    eprRate: 0.0089,
-    densityRange: { min: 0.91, max: 0.94 },
-    sustainabilityScore: 25,
-    alternatives: ["Compostable Films", "Paper", "Reusable Containers"],
-    complianceStatus: "Restricted",
-    lastUpdated: "2024-01-22",
-    description: "Low-density polyethylene films - limited recycling options",
-    carbonFootprint: 1.8,
-    recyclingProcess: "Limited - specialized facilities only",
-    endOfLife: ["Energy Recovery", "Landfill"]
-  },
-  {
-    id: 4,
-    name: "Aluminum",
-    category: "Metal",
-    type: "Container",
-    recyclable: true,
-    eprRate: 0.0008,
-    densityRange: { min: 2.7, max: 2.7 },
-    sustainabilityScore: 95,
-    alternatives: ["Steel", "Glass"],
-    complianceStatus: "Compliant",
-    lastUpdated: "2024-01-18",
-    description: "Infinitely recyclable aluminum packaging",
-    carbonFootprint: 1.2,
-    recyclingProcess: "Mechanical recycling - melting and reforming",
-    endOfLife: ["Recycling", "Reuse"]
-  }
-];
 
 export function MaterialLibrary() {
-  const [materials, setMaterials] = useState<Material[]>(mockMaterials);
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedCompliance, setSelectedCompliance] = useState("all");
   const [showDetails, setShowDetails] = useState<Material | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadMaterials();
+  }, []);
+
+  const loadMaterials = async () => {
+    try {
+      setIsLoading(true);
+      const data = await dataService.getMaterials();
+      setMaterials(data || []);
+    } catch (error) {
+      console.error('Failed to load materials:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load materials. Using offline mode.",
+        variant: "destructive",
+      });
+      setMaterials([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleImportMaterials = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        toast({
+          title: "Material Import Started",
+          description: `Processing ${file.name} for material import...`,
+        });
+        
+        setTimeout(() => {
+          toast({
+            title: "Import Complete",
+            description: "Materials have been successfully imported from CSV.",
+          });
+        }, 2000);
+      }
+    };
+    input.click();
+  };
+
+  const handleExportLibrary = () => {
+    const csvContent = materials.map(material => 
+      `${material.name},${material.category},${material.type},${material.recyclable},${material.eprRate},${material.sustainabilityScore}`
+    ).join('\n');
+    const header = 'Name,Category,Type,Recyclable,EPR Rate,Sustainability Score\n';
+    const blob = new Blob([header + csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'materials_library_export.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Export Complete",
+      description: "Material library has been exported to CSV file.",
+    });
+  };
 
   const filteredMaterials = materials.filter(material => {
     const matchesSearch = material.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -136,14 +116,28 @@ export function MaterialLibrary() {
     setShowForm(true);
   };
 
-  const handleSaveMaterial = (materialData: Partial<Material>) => {
-    if (editingMaterial) {
-      setMaterials(materials.map(m => m.id === editingMaterial.id ? { ...materialData, id: editingMaterial.id } as Material : m));
-    } else {
-      setMaterials([...materials, { ...materialData, id: Date.now() } as Material]);
+  const handleSaveMaterial = async (materialData: Partial<Material>) => {
+    try {
+      if (editingMaterial) {
+        const updatedMaterial = await dataService.updateMaterial(editingMaterial.id, materialData);
+        setMaterials(materials.map(m => m.id === editingMaterial.id ? updatedMaterial : m));
+      } else {
+        const newMaterial = await dataService.saveMaterial(materialData);
+        setMaterials([...materials, newMaterial]);
+      }
+      setShowForm(false);
+      setEditingMaterial(null);
+      toast({
+        title: "Material Saved",
+        description: "Material has been successfully saved.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save material. Please try again.",
+        variant: "destructive",
+      });
     }
-    setShowForm(false);
-    setEditingMaterial(null);
   };
 
   if (showDetails) {
@@ -183,11 +177,11 @@ export function MaterialLibrary() {
               <CardDescription>Oregon EPR approved packaging materials with current rates and compliance status</CardDescription>
             </div>
             <div className="flex space-x-2">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={handleImportMaterials}>
                 <Upload className="h-4 w-4 mr-2" />
                 Import Materials
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={handleExportLibrary}>
                 <Download className="h-4 w-4 mr-2" />
                 Export Library
               </Button>

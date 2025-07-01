@@ -5,87 +5,26 @@ export class WorkflowDesignerService {
   private workflows: Map<string, CustomWorkflow> = new Map();
 
   constructor() {
-    this.initializeMockData();
+    this.loadRealData();
   }
 
-  private initializeMockData() {
-    const mockWorkflow: CustomWorkflow = {
-      id: 'workflow-1',
-      name: 'Document Approval Process',
-      description: 'Standard workflow for document review and approval',
-      triggerType: 'manual',
-      triggerConditions: [
-        { field: 'documentStatus', operator: 'equals', value: 'submitted' }
-      ],
-      nodes: [
-        {
-          id: 'start-1',
-          type: 'start',
-          name: 'Document Submitted',
-          position: { x: 100, y: 100 },
-          config: {},
-          connections: [{ targetNodeId: 'task-1' }]
-        },
-        {
-          id: 'task-1',
-          type: 'task',
-          name: 'Technical Review',
-          position: { x: 300, y: 100 },
-          config: {
-            assignee: 'technical.reviewer@company.com',
-            timeoutDays: 3,
-            actions: [
-              { type: 'notification', config: { template: 'review_required' } }
-            ]
-          },
-          connections: [{ targetNodeId: 'decision-1' }]
-        },
-        {
-          id: 'decision-1',
-          type: 'decision',
-          name: 'Review Decision',
-          position: { x: 500, y: 100 },
-          config: {},
-          connections: [
-            { targetNodeId: 'task-2', condition: { field: 'reviewResult', operator: 'equals', value: 'approved' }, label: 'Approved' },
-            { targetNodeId: 'end-1', condition: { field: 'reviewResult', operator: 'equals', value: 'rejected' }, label: 'Rejected' }
-          ]
-        },
-        {
-          id: 'task-2',
-          type: 'task',
-          name: 'Management Approval',
-          position: { x: 700, y: 50 },
-          config: {
-            role: 'manager',
-            timeoutDays: 5
-          },
-          connections: [{ targetNodeId: 'end-2' }]
-        },
-        {
-          id: 'end-1',
-          type: 'end',
-          name: 'Document Rejected',
-          position: { x: 700, y: 150 },
-          config: {},
-          connections: []
-        },
-        {
-          id: 'end-2',
-          type: 'end',
-          name: 'Document Approved',
-          position: { x: 900, y: 50 },
-          config: {},
-          connections: []
-        }
-      ],
-      isActive: true,
-      createdBy: 'admin@company.com',
-      createdAt: '2024-06-01T00:00:00Z',
-      updatedAt: '2024-06-01T00:00:00Z'
-    };
+  private loadRealData() {
+    const storedWorkflows = localStorage.getItem('epr_workflows');
+    if (storedWorkflows) {
+      try {
+        const workflows = JSON.parse(storedWorkflows);
+        workflows.forEach((workflow: CustomWorkflow) => {
+          this.workflows.set(workflow.id, workflow);
+        });
+      } catch (error) {
+        console.error('Failed to load workflows from storage:', error);
+      }
+    }
+  }
 
-    this.workflows.set(mockWorkflow.id, mockWorkflow);
+  private saveToStorage() {
+    const workflows = Array.from(this.workflows.values());
+    localStorage.setItem('epr_workflows', JSON.stringify(workflows));
   }
 
   getWorkflows(): CustomWorkflow[] {
@@ -110,6 +49,7 @@ export class WorkflowDesignerService {
     };
 
     this.workflows.set(id, newWorkflow);
+    this.saveToStorage();
     return newWorkflow;
   }
 

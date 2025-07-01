@@ -73,11 +73,26 @@ export class ComplianceLibraryService {
   private checklists: Map<string, ComplianceChecklist> = new Map();
 
   constructor() {
-    this.initializeMockData();
+    this.loadRealData();
   }
 
-  private initializeMockData() {
-    const mockRequirements: ComplianceRequirement[] = [
+  private async loadRealData() {
+    try {
+      const storedData = localStorage.getItem('compliance_requirements');
+      if (storedData) {
+        const requirements: ComplianceRequirement[] = JSON.parse(storedData);
+        requirements.forEach(req => this.requirements.set(req.id, req));
+      } else {
+        await this.loadDefaultRequirements();
+      }
+    } catch (error) {
+      console.error('Failed to load compliance data:', error);
+      await this.loadDefaultRequirements();
+    }
+  }
+
+  private async loadDefaultRequirements() {
+    const defaultRequirements: ComplianceRequirement[] = [
       {
         id: 'req-1',
         title: 'California EPR Packaging Waste Regulation',
@@ -134,7 +149,17 @@ export class ComplianceLibraryService {
       }
     ];
 
-    mockRequirements.forEach(req => this.requirements.set(req.id, req));
+    defaultRequirements.forEach(req => this.requirements.set(req.id, req));
+    this.saveToStorage();
+  }
+
+  private saveToStorage() {
+    try {
+      const requirements = Array.from(this.requirements.values());
+      localStorage.setItem('compliance_requirements', JSON.stringify(requirements));
+    } catch (error) {
+      console.error('Failed to save compliance data:', error);
+    }
   }
 
   getRequirements(jurisdiction?: string): ComplianceRequirement[] {

@@ -14,6 +14,8 @@ interface ProductControlsProps {
   setSelectedStatus: (status: string) => void;
   onAddProduct: () => void;
   onUseTemplate: (template: any) => void;
+  onImportCSV?: () => void;
+  onExportProducts?: () => void;
 }
 
 export function ProductControls({
@@ -24,7 +26,9 @@ export function ProductControls({
   selectedStatus,
   setSelectedStatus,
   onAddProduct,
-  onUseTemplate
+  onUseTemplate,
+  onImportCSV,
+  onExportProducts
 }: ProductControlsProps) {
   return (
     <div className="flex items-center justify-between mb-6">
@@ -45,7 +49,7 @@ export function ProductControls({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem value="Food & Beverage">Food & Beverage</SelectItem>
+            <SelectItem value="Food &amp; Beverage">Food &amp; Beverage</SelectItem>
             <SelectItem value="Personal Care">Personal Care</SelectItem>
             <SelectItem value="Electronics">Electronics</SelectItem>
             <SelectItem value="Household">Household</SelectItem>
@@ -69,11 +73,11 @@ export function ProductControls({
       
       <div className="flex space-x-2 ml-4">
         <ProductTemplates onUseTemplate={onUseTemplate} />
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" onClick={onImportCSV}>
           <Upload className="h-4 w-4 mr-2" />
           Import CSV
         </Button>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" onClick={onExportProducts}>
           <Download className="h-4 w-4 mr-2" />
           Export
         </Button>

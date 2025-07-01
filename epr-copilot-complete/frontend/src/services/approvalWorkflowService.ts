@@ -96,66 +96,50 @@ export class ApprovalWorkflowService {
   private tasks: Map<string, ApprovalTask> = new Map();
 
   constructor() {
-    this.initializeMockData();
+    this.loadRealData();
   }
 
-  private initializeMockData() {
-    const mockWorkflows: ApprovalWorkflow[] = [
-      {
-        id: 'workflow-1',
-        name: 'Document Approval Workflow',
-        description: 'Standard approval process for compliance documents',
-        entityType: 'document',
-        triggers: [
-          {
-            type: 'status_change',
-            conditions: [
-              { field: 'status', operator: 'equals', value: 'review' }
-            ]
-          }
-        ],
-        steps: [
-          {
-            id: 'step-1',
-            name: 'Technical Review',
-            type: 'review',
-            order: 1,
-            assignedTo: ['technical.reviewer@company.com'],
-            assignedRoles: ['technical_reviewer'],
-            requiresAllApprovers: false,
-            timeoutDays: 3,
-            actions: [
-              {
-                type: 'notification',
-                parameters: { template: 'review_required' }
-              }
-            ]
-          },
-          {
-            id: 'step-2',
-            name: 'Management Approval',
-            type: 'approval',
-            order: 2,
-            assignedTo: ['manager@company.com'],
-            assignedRoles: ['manager'],
-            requiresAllApprovers: true,
-            timeoutDays: 5,
-            actions: [
-              {
-                type: 'status_change',
-                parameters: { status: 'approved' }
-              }
-            ]
-          }
-        ],
-        isActive: true,
-        createdBy: 'admin@company.com',
-        createdAt: '2024-06-01T00:00:00Z',
-        updatedAt: '2024-06-01T00:00:00Z'
-      }
-    ];
+  private loadRealData() {
+    const storedWorkflows = localStorage.getItem('approval_workflows');
+    const storedInstances = localStorage.getItem('workflow_instances');
+    const storedTasks = localStorage.getItem('approval_tasks');
 
-    mockWorkflows.forEach(workflow => this.workflows.set(workflow.id, workflow));
+    if (storedWorkflows) {
+      try {
+        const workflows = JSON.parse(storedWorkflows);
+        workflows.forEach((workflow: ApprovalWorkflow) => this.workflows.set(workflow.id, workflow));
+      } catch (error) {
+        console.error('Failed to load workflows from storage:', error);
+      }
+    }
+
+    if (storedInstances) {
+      try {
+        const instances = JSON.parse(storedInstances);
+        instances.forEach((instance: WorkflowInstance) => this.instances.set(instance.id, instance));
+      } catch (error) {
+        console.error('Failed to load workflow instances from storage:', error);
+      }
+    }
+
+    if (storedTasks) {
+      try {
+        const tasks = JSON.parse(storedTasks);
+        tasks.forEach((task: ApprovalTask) => this.tasks.set(task.id, task));
+      } catch (error) {
+        console.error('Failed to load approval tasks from storage:', error);
+      }
+    }
+  }
+
+  private saveToStorage() {
+    try {
+      localStorage.setItem('approval_workflows', JSON.stringify(Array.from(this.workflows.values())));
+      localStorage.setItem('workflow_instances', JSON.stringify(Array.from(this.instances.values())));
+      localStorage.setItem('approval_tasks', JSON.stringify(Array.from(this.tasks.values())));
+    } catch (error) {
+      console.error('Failed to save workflow data to storage:', error);
+    }
   }
 
   createWorkflow(workflow: Omit<ApprovalWorkflow, 'id' | 'createdAt' | 'updatedAt'>): ApprovalWorkflow {
@@ -168,6 +152,7 @@ export class ApprovalWorkflowService {
     };
 
     this.workflows.set(id, newWorkflow);
+    this.saveToStorage();
     return newWorkflow;
   }
 

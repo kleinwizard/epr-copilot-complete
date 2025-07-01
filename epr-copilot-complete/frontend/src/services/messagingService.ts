@@ -6,69 +6,51 @@ export class MessagingService {
   private channels: Map<string, Channel> = new Map();
 
   constructor() {
-    this.initializeMockData();
+    this.loadRealData();
   }
 
-  private initializeMockData() {
-    // Mock channels
-    const generalChannel: Channel = {
-      id: 'general',
-      name: 'General',
-      description: 'General company discussions',
-      type: 'public',
-      members: [
-        {
-          userId: 'user-1',
-          userName: 'Sarah Johnson',
-          role: 'admin',
-          joinedAt: '2024-01-15T09:00:00Z',
-          isOnline: true,
-          lastSeen: new Date().toISOString()
-        },
-        {
-          userId: 'user-2',
-          userName: 'Mike Chen',
-          role: 'member',
-          joinedAt: '2024-01-16T10:30:00Z',
-          isOnline: false,
-          lastSeen: new Date(Date.now() - 3600000).toISOString()
-        }
-      ],
-      createdBy: 'user-1',
-      createdAt: '2024-01-15T09:00:00Z',
-      lastActivity: new Date().toISOString(),
-      isArchived: false
-    };
+  private loadRealData() {
+    const storedChannels = localStorage.getItem('epr_messaging_channels');
+    const storedMessages = localStorage.getItem('epr_messaging_messages');
+    
+    if (storedChannels) {
+      const channels = JSON.parse(storedChannels);
+      channels.forEach((channel: Channel) => {
+        this.channels.set(channel.id, channel);
+      });
+    }
+    
+    if (storedMessages) {
+      const messages = JSON.parse(storedMessages);
+      Object.entries(messages).forEach(([channelId, channelMessages]) => {
+        this.messages.set(channelId, channelMessages as Message[]);
+      });
+    }
+    
+    if (this.channels.size === 0) {
+      const generalChannel: Channel = {
+        id: 'general',
+        name: 'General',
+        description: 'General company discussions',
+        type: 'public',
+        members: [],
+        createdBy: 'system',
+        createdAt: new Date().toISOString(),
+        lastActivity: new Date().toISOString(),
+        isArchived: false
+      };
+      this.channels.set(generalChannel.id, generalChannel);
+      this.messages.set('general', []);
+      this.saveToStorage();
+    }
+  }
 
-    this.channels.set(generalChannel.id, generalChannel);
-
-    // Mock messages
-    const mockMessages: Message[] = [
-      {
-        id: 'msg-1',
-        senderId: 'user-1',
-        senderName: 'Sarah Johnson',
-        channelId: 'general',
-        content: 'Welcome to the Oregon EPR compliance platform!',
-        timestamp: new Date(Date.now() - 7200000).toISOString(),
-        type: 'text',
-        isRead: true,
-        reactions: []
-      },
-      {
-        id: 'msg-2',
-        senderId: 'user-2',
-        senderName: 'Mike Chen',
-        channelId: 'general',
-        content: 'Thanks! Looking forward to working together on compliance.',
-        timestamp: new Date(Date.now() - 3600000).toISOString(),
-        type: 'text',
-        isRead: false,
-        reactions: []
-      }
-    ];
-
-    this.messages.set('general', mockMessages);
+  private saveToStorage() {
+    const channelsArray = Array.from(this.channels.values());
+    const messagesObject = Object.fromEntries(this.messages.entries());
+    
+    localStorage.setItem('epr_messaging_channels', JSON.stringify(channelsArray));
+    localStorage.setItem('epr_messaging_messages', JSON.stringify(messagesObject));
   }
 
   getChannels(): Channel[] {
