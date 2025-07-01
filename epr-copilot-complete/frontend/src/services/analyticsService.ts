@@ -92,12 +92,16 @@ export function getAnalyticsData(): AnalyticsData {
   return mockAnalyticsData;
 }
 
+import { CalculationEngine } from './calculationEngine';
+
 export function calculateFeeProjections(months: number): Array<{ month: string; projected: number }> {
-  const currentTrend = 1.08; // 8% growth
-  const baseAmount = 23850;
+  const currentMonthFees = 23850;
+  const historicalData = [18500, 19200, 21000, 19800, 22100, 23850];
+  
+  const projections = CalculationEngine.calculateFinancialProjections(currentMonthFees, historicalData);
   
   return Array.from({ length: months }, (_, i) => ({
     month: new Date(2024, 6 + i, 1).toLocaleDateString('en-US', { month: 'short' }),
-    projected: Math.round(baseAmount * Math.pow(currentTrend, i + 1))
+    projected: Math.round(currentMonthFees * Math.pow(1.08, i + 1))
   }));
 }

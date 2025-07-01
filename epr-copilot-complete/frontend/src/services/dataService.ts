@@ -1,3 +1,5 @@
+import { CalculationUtils } from './calculationEngine';
+
 export interface CompanyData {
   legalName: string;
   dbaName: string;
@@ -90,7 +92,9 @@ class DataService {
     } as Product;
     data.products.push(newProduct);
     data.analytics.totalProducts = data.products.length;
-    data.analytics.totalFees = data.products.reduce((sum: number, p: Product) => sum + p.eprFee, 0);
+    data.analytics.totalFees = CalculationUtils.roundToPrecision(
+      data.products.reduce((sum: number, p: Product) => sum + p.eprFee, 0), 2
+    );
     this.saveData(data);
     return newProduct;
   }
@@ -106,7 +110,9 @@ class DataService {
       ...productData, 
       lastUpdated: new Date().toISOString().split('T')[0] 
     };
-    data.analytics.totalFees = data.products.reduce((sum: number, p: Product) => sum + p.eprFee, 0);
+    data.analytics.totalFees = CalculationUtils.roundToPrecision(
+      data.products.reduce((sum: number, p: Product) => sum + p.eprFee, 0), 2
+    );
     this.saveData(data);
     return data.products[index];
   }
@@ -151,7 +157,9 @@ class DataService {
     return {
       ...data.analytics,
       totalProducts: data.products.length,
-      totalFees: data.products.reduce((sum: number, p: Product) => sum + p.eprFee, 0)
+      totalFees: CalculationUtils.roundToPrecision(
+        data.products.reduce((sum: number, p: Product) => sum + p.eprFee, 0), 2
+      )
     };
   }
 

@@ -62,17 +62,23 @@ export function AnalyticsDashboard() {
             Q4 2024
           </Badge>
           
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => {
+            console.log('Advanced Filters clicked');
+            alert('Advanced Filters panel will be implemented');
+          }}>
             <Filter className="h-4 w-4 mr-2" />
             Advanced Filters
           </Button>
           
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => {
+            console.log('Refresh Data clicked');
+            window.location.reload();
+          }}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh Data
           </Button>
           
-          <Button size="sm">
+          <Button size="sm" onClick={() => window.location.href = '/reports/export'}>
             <Download className="h-4 w-4 mr-2" />
             Export Report
           </Button>

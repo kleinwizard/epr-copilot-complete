@@ -166,10 +166,18 @@ const rolePermissions: RolePermissions[] = [
 ];
 
 export const getTeamMembers = (): TeamMember[] => {
+  const hasOrganizationData = localStorage.getItem('epr_organization_initialized') === 'true';
+  if (!hasOrganizationData) {
+    return [];
+  }
   return mockTeamMembers;
 };
 
 export const getTeamInvitations = (): TeamInvitation[] => {
+  const hasOrganizationData = localStorage.getItem('epr_organization_initialized') === 'true';
+  if (!hasOrganizationData) {
+    return [];
+  }
   return mockInvitations;
 };
 
@@ -184,6 +192,17 @@ export const getAllRolePermissions = (): RolePermissions[] => {
 export const getTeamStats = () => {
   const members = getTeamMembers();
   const invitations = getTeamInvitations();
+  
+  const isNewOrganization = members.length === 0 && invitations.length === 0;
+  
+  if (isNewOrganization) {
+    return {
+      totalMembers: 0,
+      activeMembers: 0,
+      pendingInvitations: 0,
+      roles: { admin: 0, manager: 0, user: 0, viewer: 0 }
+    };
+  }
   
   return {
     totalMembers: members.length,

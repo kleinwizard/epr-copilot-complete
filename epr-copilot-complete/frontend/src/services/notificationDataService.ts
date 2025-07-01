@@ -77,16 +77,28 @@ export class NotificationDataService {
   ];
 
   getNotifications(): Notification[] {
+    const hasOrganizationData = localStorage.getItem('epr_organization_initialized') === 'true';
+    if (!hasOrganizationData) {
+      return [];
+    }
     return this.notifications.sort((a, b) => 
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
   }
 
   getUnreadNotifications(): Notification[] {
+    const hasOrganizationData = localStorage.getItem('epr_organization_initialized') === 'true';
+    if (!hasOrganizationData) {
+      return [];
+    }
     return this.notifications.filter(n => n.status === 'unread');
   }
 
   getNotificationsByType(type: Notification['type']): Notification[] {
+    const hasOrganizationData = localStorage.getItem('epr_organization_initialized') === 'true';
+    if (!hasOrganizationData) {
+      return [];
+    }
     return this.notifications.filter(n => n.type === type);
   }
 

@@ -52,11 +52,14 @@ export function ComplianceCalendar() {
         </div>
         
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => window.location.href = '/notifications'}>
             <Bell className="h-4 w-4 mr-2" />
-            Notifications
+            Add Notification
           </Button>
-          <Button size="sm">
+          <Button size="sm" onClick={() => {
+            console.log('Add Event clicked');
+            alert('Add Event functionality will be implemented');
+          }}>
             <Plus className="h-4 w-4 mr-2" />
             Add Event
           </Button>

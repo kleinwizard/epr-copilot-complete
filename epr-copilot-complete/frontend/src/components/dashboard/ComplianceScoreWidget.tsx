@@ -8,6 +8,7 @@ import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { dataService } from '@/services/dataService';
+import { CalculationEngine, ComplianceScoreFactors } from '@/services/calculationEngine';
 import { useEffect, useState } from 'react';
 
 const chartConfig = {
@@ -53,17 +54,27 @@ export function ComplianceScoreWidget() {
       if (products.length === 0 && materials.length === 0) {
         setData(getZeroStateComplianceData());
       } else {
+        const complianceFactors: ComplianceScoreFactors = {
+          dataCompleteness: products.length > 0 ? 85 : 0,
+          deadlineAdherence: products.length > 0 ? 90 : 0,
+          materialClassification: materials.length > 0 ? 80 : 0,
+          documentationQuality: products.length > 0 ? 75 : 0,
+          feePaymentStatus: analyticsData.totalFees > 0 ? 95 : 0
+        };
+
+        const complianceResult = CalculationEngine.calculateComplianceScore(complianceFactors);
+        
         setData({
-          score: analyticsData.complianceScore || 0,
-          trend: analyticsData.complianceScore > 0 ? 'up' : 'stable',
-          riskLevel: analyticsData.complianceScore >= 90 ? 'low' : analyticsData.complianceScore >= 70 ? 'medium' : 'high',
+          score: complianceResult.score,
+          trend: complianceResult.score > 85 ? 'up' : complianceResult.score < 70 ? 'down' : 'stable',
+          riskLevel: complianceResult.score >= 90 ? 'low' : complianceResult.score >= 70 ? 'medium' : 'high',
           trendData: [],
           factors: [
-            { name: 'Data Completeness', impact: products.length > 0 ? 25 : 0, status: 'good' },
-            { name: 'Deadline Adherence', impact: products.length > 0 ? 30 : 0, status: 'good' },
-            { name: 'Material Classification', impact: materials.length > 0 ? 20 : 0, status: materials.length > 0 ? 'good' : 'warning' },
-            { name: 'Documentation Quality', impact: products.length > 0 ? 15 : 0, status: 'good' },
-            { name: 'Fee Payment Status', impact: analyticsData.totalFees > 0 ? 10 : 0, status: 'good' }
+            { name: 'Data Completeness', impact: complianceResult.breakdown.dataCompleteness, status: complianceFactors.dataCompleteness > 70 ? 'good' : 'warning' },
+            { name: 'Deadline Adherence', impact: complianceResult.breakdown.deadlineAdherence, status: complianceFactors.deadlineAdherence > 70 ? 'good' : 'warning' },
+            { name: 'Material Classification', impact: complianceResult.breakdown.materialClassification, status: complianceFactors.materialClassification > 70 ? 'good' : 'warning' },
+            { name: 'Documentation Quality', impact: complianceResult.breakdown.documentationQuality, status: complianceFactors.documentationQuality > 70 ? 'good' : 'warning' },
+            { name: 'Fee Payment Status', impact: complianceResult.breakdown.feePaymentStatus, status: complianceFactors.feePaymentStatus > 70 ? 'good' : 'warning' }
           ]
         });
       }

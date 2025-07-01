@@ -84,6 +84,11 @@ const mockEvents: ComplianceEvent[] = [
 ];
 
 export function getCalendarEvents(month?: number, year?: number): ComplianceEvent[] {
+  const hasOrganizationData = localStorage.getItem('epr_organization_initialized') === 'true';
+  if (!hasOrganizationData) {
+    return [];
+  }
+  
   if (month !== undefined && year !== undefined) {
     return mockEvents.filter(event => 
       event.date.getMonth() === month && event.date.getFullYear() === year
@@ -129,6 +134,11 @@ export function addCalendarEvent(event: Omit<ComplianceEvent, 'id'>): Compliance
 }
 
 export function getCalendarStats() {
+  const hasOrganizationData = localStorage.getItem('epr_organization_initialized') === 'true';
+  if (!hasOrganizationData) {
+    return { upcoming: 0, overdue: 0, completed: 0, critical: 0 };
+  }
+  
   const now = new Date();
   const upcoming = mockEvents.filter(e => e.date >= now && e.status === 'upcoming').length;
   const overdue = mockEvents.filter(e => e.date < now && e.status !== 'completed').length;
