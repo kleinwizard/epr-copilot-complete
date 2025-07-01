@@ -16,6 +16,8 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { dataService } from '@/services/dataService';
+import { useEffect, useState } from 'react';
 
 interface QuickAction {
   id: string;
@@ -28,11 +30,44 @@ interface QuickAction {
   estimatedTime?: string;
 }
 
-const mockQuickActions: QuickAction[] = [
+const getZeroStateActions = (): QuickAction[] => [
   {
     id: '1',
-    title: 'Generate Q4 Report',
-    description: 'Draft quarterly compliance report ready for review',
+    title: 'Add Your First Product',
+    description: 'Start by adding product information',
+    icon: <Upload className="h-4 w-4" />,
+    action: 'add-product',
+    priority: 'high',
+    category: 'data',
+    estimatedTime: '5 min'
+  },
+  {
+    id: '2',
+    title: 'Set Up Company Profile',
+    description: 'Complete your company information',
+    icon: <FileText className="h-4 w-4" />,
+    action: 'setup-company',
+    priority: 'high',
+    category: 'data',
+    estimatedTime: '10 min'
+  },
+  {
+    id: '3',
+    title: 'Learn About EPR Compliance',
+    description: 'Understand EPR requirements and deadlines',
+    icon: <Calendar className="h-4 w-4" />,
+    action: 'learn-epr',
+    priority: 'medium',
+    category: 'compliance',
+    estimatedTime: '15 min'
+  }
+];
+
+const getActionsWithData = (userData: any): QuickAction[] => [
+  {
+    id: '1',
+    title: 'Generate Quarterly Report',
+    description: 'Create compliance report for current quarter',
     icon: <FileText className="h-4 w-4" />,
     action: 'generate-report',
     priority: 'high',
@@ -41,18 +76,8 @@ const mockQuickActions: QuickAction[] = [
   },
   {
     id: '2',
-    title: 'Upload Product Data',
-    description: '47 products pending data entry',
-    icon: <Upload className="h-4 w-4" />,
-    action: 'upload-data',
-    priority: 'high',
-    category: 'data',
-    estimatedTime: '15 min'
-  },
-  {
-    id: '3',
     title: 'Calculate Fee Impact',
-    description: 'Analyze material substitution savings',
+    description: 'Analyze current EPR fee calculations',
     icon: <Calculator className="h-4 w-4" />,
     action: 'calculate-fees',
     priority: 'medium',
@@ -60,7 +85,7 @@ const mockQuickActions: QuickAction[] = [
     estimatedTime: '5 min'
   },
   {
-    id: '4',
+    id: '3',
     title: 'Schedule Compliance Review',
     description: 'Book monthly compliance check meeting',
     icon: <Calendar className="h-4 w-4" />,
@@ -68,78 +93,77 @@ const mockQuickActions: QuickAction[] = [
     priority: 'medium',
     category: 'compliance',
     estimatedTime: '3 min'
-  },
-  {
-    id: '5',
-    title: 'Export Data Backup',
-    description: 'Download complete data archive',
-    icon: <Download className="h-4 w-4" />,
-    action: 'export-backup',
-    priority: 'low',
-    category: 'data',
-    estimatedTime: '1 min'
   }
-];
-
-const recentActions = [
-  { action: 'Q3 Report Generated', time: '2 hours ago', status: 'completed' },
-  { action: 'Material Data Updated', time: '1 day ago', status: 'completed' },
-  { action: 'Fee Calculation Run', time: '3 days ago', status: 'completed' },
-  { action: 'Compliance Review', time: '1 week ago', status: 'completed' }
 ];
 
 export function QuickActionsPanel() {
   const { toast } = useToast();
+  const [quickActions, setQuickActions] = useState<QuickAction[]>(getZeroStateActions());
+  const [recentActions, setRecentActions] = useState<Array<{ action: string; time: string; status: string }>>([]);
+
+  useEffect(() => {
+    loadActions();
+  }, []);
+
+  const loadActions = async () => {
+    try {
+      const products = await dataService.getProducts();
+      const materials = await dataService.getMaterials();
+      
+      if (products.length === 0 && materials.length === 0) {
+        setQuickActions(getZeroStateActions());
+        setRecentActions([]);
+      } else {
+        setQuickActions(getActionsWithData({ products, materials }));
+        setRecentActions([
+          { action: 'Product Data Updated', time: '1 day ago', status: 'completed' },
+          { action: 'Fee Calculation Run', time: '3 days ago', status: 'completed' }
+        ]);
+      }
+    } catch (error) {
+      console.error('Failed to load actions:', error);
+      setQuickActions(getZeroStateActions());
+      setRecentActions([]);
+    }
+  };
 
   const handleQuickAction = (action: string) => {
     switch (action) {
+      case 'add-product':
+        toast({
+          title: "Product Setup",
+          description: "Navigate to Product Catalog to add your first product...",
+        });
+        break;
+      case 'setup-company':
+        toast({
+          title: "Company Setup",
+          description: "Navigate to Company Setup to complete your profile...",
+        });
+        break;
+      case 'learn-epr':
+        toast({
+          title: "EPR Learning Resources",
+          description: "Opening EPR compliance guide and resources...",
+        });
+        break;
       case 'generate-report':
         toast({
           title: "Report Generation Started",
-          description: "Generating Q4 2024 compliance report. This may take a few minutes...",
-        });
-        setTimeout(() => {
-          toast({
-            title: "Report Generated Successfully",
-            description: "Q4 2024 compliance report is ready for review.",
-          });
-        }, 3000);
-        break;
-      case 'upload-data':
-        toast({
-          title: "Data Upload Interface",
-          description: "Opening bulk import interface for product data entry...",
+          description: "Generating quarterly compliance report. This may take a few minutes...",
         });
         break;
       case 'calculate-fees':
         toast({
           title: "Fee Calculation Started",
-          description: "Analyzing material substitution savings and EPR fee impact...",
+          description: "Analyzing current EPR fee calculations...",
         });
-        setTimeout(() => {
-          toast({
-            title: "Fee Calculation Complete",
-            description: "Potential savings of $3,450 identified through material optimization.",
-          });
-        }, 2000);
         break;
       case 'schedule-review':
         toast({
           title: "Compliance Review Scheduled",
           description: "Monthly compliance check meeting scheduled for next week.",
         });
-        break;
-      case 'export-backup':
-        toast({
-          title: "Export Started",
-          description: "Preparing complete data backup for download...",
-        });
-        setTimeout(() => {
-          toast({
-            title: "Export Complete",
-            description: "Data backup ready. Download will begin automatically.",
-          });
-        }, 2500);
         break;
       default:
         toast({
@@ -193,7 +217,7 @@ export function QuickActionsPanel() {
             <AlertTriangle className="h-4 w-4 text-orange-600" />
             <span>Recommended Actions</span>
           </h4>
-          {mockQuickActions.slice(0, 3).map((action) => (
+          {quickActions.slice(0, 3).map((action) => (
             <div
               key={action.id}
               className={`p-3 rounded-lg border transition-colors hover:shadow-sm ${getPriorityColor(action.priority)}`}
@@ -234,7 +258,7 @@ export function QuickActionsPanel() {
         <div className="space-y-3">
           <h4 className="text-sm font-medium">All Actions</h4>
           <div className="grid grid-cols-1 gap-2">
-            {mockQuickActions.slice(3).map((action) => (
+            {quickActions.slice(3).map((action) => (
               <div key={action.id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
                 <div className="flex items-center space-x-2">
                   {action.icon}
@@ -259,17 +283,24 @@ export function QuickActionsPanel() {
         {/* Recent Actions */}
         <div className="space-y-3">
           <h4 className="text-sm font-medium">Recent Activity</h4>
-          <div className="space-y-2">
-            {recentActions.map((item, index) => (
-              <div key={index} className="flex items-center justify-between text-sm">
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="h-3 w-3 text-green-600" />
-                  <span>{item.action}</span>
+          {recentActions.length === 0 ? (
+            <div className="text-center py-4">
+              <p className="text-sm text-muted-foreground">No recent activity</p>
+              <p className="text-xs text-muted-foreground">Actions will appear here as you use the system</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {recentActions.map((item, index) => (
+                <div key={index} className="flex items-center justify-between text-sm">
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="h-3 w-3 text-green-600" />
+                    <span>{item.action}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{item.time}</span>
                 </div>
-                <span className="text-xs text-muted-foreground">{item.time}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <Button className="w-full" variant="outline">

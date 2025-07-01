@@ -6,6 +6,8 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { DollarSign, TrendingUp, Calculator, Calendar, Download } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { dataService } from '@/services/dataService';
+import { useEffect, useState } from 'react';
 
 const chartConfig = {
   actual: { label: "Actual", color: "#3b82f6" },
@@ -37,36 +39,60 @@ interface FinancialData {
   }>;
 }
 
-const mockFinancialData: FinancialData = {
+const getZeroStateFinancialData = (): FinancialData => ({
   currentQuarter: {
-    fees: 78450,
-    budget: 75000,
-    variance: 4.6
+    fees: 0,
+    budget: 0,
+    variance: 0
   },
   ytd: {
-    total: 289650,
-    lastYear: 267800,
-    growth: 8.2
+    total: 0,
+    lastYear: 0,
+    growth: 0
   },
-  projections: [
-    { quarter: 'Q1 2024', projected: 65000, actual: 68200, budget: 70000 },
-    { quarter: 'Q2 2024', projected: 72000, actual: 75400, budget: 73000 },
-    { quarter: 'Q3 2024', projected: 78000, actual: 67600, budget: 75000 },
-    { quarter: 'Q4 2024', projected: 82000, actual: 78450, budget: 80000 },
-    { quarter: 'Q1 2025', projected: 85000, budget: 82000 },
-    { quarter: 'Q2 2025', projected: 88000, budget: 85000 }
-  ],
-  breakdown: [
-    { category: 'Plastic Materials', amount: 34225, percentage: 43.6 },
-    { category: 'Glass Materials', amount: 18950, percentage: 24.2 },
-    { category: 'Paper Materials', amount: 12675, percentage: 16.2 },
-    { category: 'Metal Materials', amount: 8850, percentage: 11.3 },
-    { category: 'Other Materials', amount: 3750, percentage: 4.8 }
-  ]
-};
+  projections: [],
+  breakdown: []
+});
 
 export function FinancialOverview() {
-  const data = mockFinancialData;
+  const [data, setData] = useState<FinancialData>(getZeroStateFinancialData());
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadFinancialData();
+  }, []);
+
+  const loadFinancialData = async () => {
+    try {
+      const analyticsData = await dataService.getAnalytics();
+      const products = await dataService.getProducts();
+      const materials = await dataService.getMaterials();
+      
+      if (products.length === 0 && materials.length === 0) {
+        setData(getZeroStateFinancialData());
+      } else {
+        setData({
+          currentQuarter: {
+            fees: analyticsData.totalFees || 0,
+            budget: 0,
+            variance: 0
+          },
+          ytd: {
+            total: analyticsData.totalFees || 0,
+            lastYear: 0,
+            growth: 0
+          },
+          projections: [],
+          breakdown: []
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load financial data:', error);
+      setData(getZeroStateFinancialData());
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -155,18 +181,28 @@ export function FinancialOverview() {
           </TabsContent>
 
           <TabsContent value="projections" className="space-y-4">
-            <ChartContainer config={chartConfig} className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.projections}>
-                  <XAxis dataKey="quarter" />
-                  <YAxis tickFormatter={(value) => `$${value/1000}k`} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="budget" fill="var(--color-budget)" name="Budget" />
-                  <Bar dataKey="actual" fill="var(--color-actual)" name="Actual" />
-                  <Bar dataKey="projected" fill="var(--color-projected)" name="Projected" />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
+            <div className="relative">
+              <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data.projections}>
+                    <XAxis dataKey="quarter" />
+                    <YAxis tickFormatter={(value) => `$${value/1000}k`} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="budget" fill="var(--color-budget)" name="Budget" />
+                    <Bar dataKey="actual" fill="var(--color-actual)" name="Actual" />
+                    <Bar dataKey="projected" fill="var(--color-projected)" name="Projected" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+              {data.projections.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/80">
+                  <div className="text-center">
+                    <p className="text-muted-foreground">No projection data available</p>
+                    <p className="text-sm text-muted-foreground">Add products to see financial projections</p>
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <div className="p-4 bg-blue-50 rounded-lg">
@@ -189,19 +225,27 @@ export function FinancialOverview() {
           </TabsContent>
 
           <TabsContent value="breakdown" className="space-y-4">
-            <div className="space-y-3">
-              {data.breakdown.map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <p className="font-medium">{item.category}</p>
-                    <p className="text-sm text-muted-foreground">{item.percentage}% of total fees</p>
+            {data.breakdown.length === 0 ? (
+              <div className="text-center py-8">
+                <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No fee breakdown available</p>
+                <p className="text-sm text-muted-foreground">Add materials to see fee breakdown by category</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {data.breakdown.map((item, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <p className="font-medium">{item.category}</p>
+                      <p className="text-sm text-muted-foreground">{item.percentage}% of total fees</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">{formatCurrency(item.amount)}</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-medium">{formatCurrency(item.amount)}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </CardContent>
