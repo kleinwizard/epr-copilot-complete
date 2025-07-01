@@ -1,5 +1,6 @@
 
 import { CustomAPI, APIParameter } from '../types/integrations';
+import { APP_CONFIG } from '../../config/constants';
 
 export class CustomApiService {
   private apis: Map<string, CustomAPI> = new Map();
@@ -88,7 +89,7 @@ export class CustomApiService {
     console.log(`Testing API: ${api.name}`);
     
     const token = localStorage.getItem('access_token');
-    const response = await fetch(`http://localhost:8001/api/integrations/test/${api.id}`, {
+    const response = await fetch(`${APP_CONFIG.api.baseUrl}/api/integrations/test/${api.id}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -114,7 +115,7 @@ export class CustomApiService {
     console.log(`Calling API: ${api.name} with parameters:`, parameters);
 
     const token = localStorage.getItem('access_token');
-    const response = await fetch(`http://localhost:8001/api/integrations/call/${api.id}`, {
+    const response = await fetch(`${APP_CONFIG.api.baseUrl}/api/integrations/call/${api.id}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

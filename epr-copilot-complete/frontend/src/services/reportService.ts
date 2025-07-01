@@ -1,4 +1,6 @@
 
+import { APP_CONFIG } from '../../config/constants';
+
 export interface QuarterlyReport {
   id: string;
   quarter: string;
@@ -115,7 +117,7 @@ export const mockReports: QuarterlyReport[] = [
 
 export async function getQuarterlyReports(): Promise<QuarterlyReport[]> {
   const token = localStorage.getItem('access_token');
-  const response = await fetch('http://localhost:8001/api/reports', {
+  const response = await fetch(`${APP_CONFIG.api.baseUrl}/api/reports`, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -154,7 +156,7 @@ export async function getQuarterlyReports(): Promise<QuarterlyReport[]> {
 
 export async function getReportById(id: string): Promise<QuarterlyReport | undefined> {
   const token = localStorage.getItem('access_token');
-  const response = await fetch(`http://localhost:8001/api/reports/${id}`, {
+  const response = await fetch(`${APP_CONFIG.api.baseUrl}/api/reports/${id}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -196,7 +198,7 @@ export async function getReportById(id: string): Promise<QuarterlyReport | undef
 
 export async function createNewReport(quarter: string, year: number): Promise<QuarterlyReport> {
   const token = localStorage.getItem('access_token');
-  const response = await fetch('http://localhost:8001/api/reports/generate', {
+  const response = await fetch(`${APP_CONFIG.api.baseUrl}/api/reports/generate`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,

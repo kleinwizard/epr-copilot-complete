@@ -1,5 +1,6 @@
 
 import { createContext, useContext, useState, ReactNode } from 'react';
+import { APP_CONFIG } from '../../config/constants';
 
 interface User {
   id: string;
@@ -27,7 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8001/api/auth/login', {
+      const response = await fetch(`${APP_CONFIG.api.baseUrl}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -42,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { access_token } = await response.json();
       localStorage.setItem('access_token', access_token);
 
-      const userResponse = await fetch('http://localhost:8001/api/auth/me', {
+      const userResponse = await fetch(`${APP_CONFIG.api.baseUrl}/api/auth/me`, {
         headers: {
           'Authorization': `Bearer ${access_token}`,
         },
@@ -74,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (email: string, password: string, name: string, company: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8001/api/auth/register', {
+      const response = await fetch(`${APP_CONFIG.api.baseUrl}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -93,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { access_token } = await response.json();
       localStorage.setItem('access_token', access_token);
 
-      const userResponse = await fetch('http://localhost:8001/api/auth/me', {
+      const userResponse = await fetch(`${APP_CONFIG.api.baseUrl}/api/auth/me`, {
         headers: {
           'Authorization': `Bearer ${access_token}`,
         },
@@ -126,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const token = localStorage.getItem('access_token');
       if (token) {
-        await fetch('http://localhost:8001/api/auth/logout', {
+        await fetch(`${APP_CONFIG.api.baseUrl}/api/auth/logout`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
