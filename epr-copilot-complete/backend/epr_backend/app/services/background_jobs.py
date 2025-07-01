@@ -227,3 +227,7 @@ if celery_app is not None:
 else:
     generate_report = generate_report_task
     process_bulk_import = process_bulk_import_task
+    send_deadline_reminders = send_deadline_reminders
+    sync_regulatory_data = sync_regulatory_data
+    generate_invoice_pdf = generate_invoice_pdf_task
+    health_check = health_check
