@@ -8,7 +8,7 @@ export const APP_CONFIG = {
   
   // API Configuration
   api: {
-    baseUrl: import.meta.env.VITE_API_BASE_URL || 'https://app-mbypfbcs.fly.dev',
+    baseUrl: import.meta.env.VITE_API_BASE_URL || 'https://app-gndvmqnb.fly.dev',
     timeout: 30000,
     retryAttempts: 3,
   },
