@@ -24,6 +24,7 @@ import {
   Calendar,
   Check,
   ChevronDown,
+  ChevronRight,
   Cog,
   Compass,
   CreditCard,
@@ -53,6 +54,13 @@ import {
   LayoutTemplate,
   LayoutList,
   FileText,
+  Database,
+  Bell,
+  MessageSquare,
+  Zap,
+  BookOpen,
+  Star,
+  Shield,
 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Link } from "react-router-dom";
@@ -65,6 +73,7 @@ interface SidebarProps {
 export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
   const { user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [hoveredSection, setHoveredSection] = useState<string | null>(null);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -79,47 +88,106 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
     closeMobileMenu();
   };
 
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
-    { id: 'company', label: 'Company Setup', icon: 'settings' },
-    { id: 'product-catalog', label: 'Product Catalog', icon: 'layout-grid' },
-    { id: 'materials', label: 'Material Library', icon: 'layout-template' },
-    { id: 'bulk-import', label: 'Bulk Import', icon: 'layout-list' },
-    { id: 'fees', label: 'Fee Management', icon: 'file-text' },
-    { id: 'quarterly-reports', label: 'Reports', icon: 'file-text' },
-    { id: 'analytics', label: 'Analytics', icon: 'layout-dashboard' },
-    { id: 'calendar', label: 'Compliance Calendar', icon: 'layout-dashboard' },
-    { id: 'notifications', label: 'Notifications & Alerts', icon: 'layout-dashboard' },
-    { id: 'communication', label: 'Communication', icon: 'layout-dashboard' },
-    { id: 'team', label: 'Team Management', icon: 'settings' },
-    { id: 'support-help', label: 'Support & Help', icon: 'help-circle' }
+  const hierarchicalMenu = [
+    {
+      id: 'home',
+      label: 'Home',
+      icon: 'home',
+      items: [
+        { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' }
+      ]
+    },
+    {
+      id: 'catalog-data',
+      label: 'Catalog & Data',
+      icon: 'database',
+      items: [
+        { id: 'company', label: 'Company Setup', icon: 'settings' },
+        { id: 'product-catalog', label: 'Product Catalog', icon: 'layout-grid' },
+        { id: 'materials', label: 'Material Library', icon: 'layout-template' },
+        { id: 'bulk-import', label: 'Bulk Import', icon: 'layout-list' }
+      ]
+    },
+    {
+      id: 'compliance-fees',
+      label: 'Compliance & Fees',
+      icon: 'shield',
+      items: [
+        { id: 'fees', label: 'Fee Management', icon: 'file-text' },
+        { id: 'calendar', label: 'Compliance Calendar', icon: 'calendar' },
+        { id: 'notifications', label: 'Notifications & Alerts', icon: 'bell' }
+      ]
+    },
+    {
+      id: 'insights',
+      label: 'Insights',
+      icon: 'bar-chart',
+      items: [
+        { id: 'quarterly-reports', label: 'Reports', icon: 'file-text' },
+        { id: 'analytics', label: 'Analytics', icon: 'line-chart' }
+      ]
+    },
+    {
+      id: 'collaboration',
+      label: 'Collaboration',
+      icon: 'users',
+      items: [
+        { id: 'communication', label: 'Communication', icon: 'message-square' },
+        { id: 'team', label: 'Team Management', icon: 'users' }
+      ]
+    },
+    {
+      id: 'integrations',
+      label: 'Integrations',
+      icon: 'zap',
+      items: [
+        { id: 'integration-hub', label: 'Integration Hub', icon: 'zap' }
+      ]
+    },
+    {
+      id: 'support',
+      label: 'Support',
+      icon: 'help-circle',
+      items: [
+        { id: 'help', label: 'Help', icon: 'help-circle' },
+        { id: 'support-page', label: 'Support', icon: 'help-circle' },
+        { id: 'testimonials', label: 'Testimonials', icon: 'star' },
+        { id: 'guides', label: 'Guides', icon: 'book-open' }
+      ]
+    },
+    {
+      id: 'admin-settings',
+      label: 'Admin & Settings',
+      icon: 'settings',
+      items: [
+        { id: 'settings', label: 'Settings', icon: 'settings' }
+      ]
+    }
   ];
 
-  const integrationItems = [
-    { id: 'integration-hub', label: 'Integration Hub', icon: 'settings' },
-    { id: 'erp-integration', label: 'ERP Integration', icon: 'settings', isSubItem: true },
-  ];
-
-  const settingsItems = [
-    { id: 'settings', label: 'Settings', icon: 'settings' },
-    { id: 'auth', label: 'Authentication', icon: 'settings', isSubItem: true },
-  ];
-
-  const adminItems = user?.role === 'admin' ? [
-    { id: 'admin-tools', label: 'Admin Tools', icon: 'settings-2' },
-  ] : [];
-
-  const getIcon = (iconName: string) => {
+  const getIcon = (iconName: string, className: string = "mr-2 h-4 w-4") => {
     switch (iconName) {
-      case 'layout-dashboard': return <LayoutDashboard className="mr-2 h-4 w-4" />;
-      case 'settings': return <Settings className="mr-2 h-4 w-4" />;
-      case 'settings-2': return <Settings2 className="mr-2 h-4 w-4" />;
-      case 'layout-grid': return <LayoutGrid className="mr-2 h-4 w-4" />;
-      case 'layout-template': return <LayoutTemplate className="mr-2 h-4 w-4" />;
-      case 'layout-list': return <LayoutList className="mr-2 h-4 w-4" />;
-      case 'file-text': return <FileText className="mr-2 h-4 w-4" />;
-      case 'help-circle': return <HelpCircle className="mr-2 h-4 w-4" />;
-      default: return <LayoutDashboard className="mr-2 h-4 w-4" />;
+      case 'home': return <Home className={className} />;
+      case 'layout-dashboard': return <LayoutDashboard className={className} />;
+      case 'database': return <Database className={className} />;
+      case 'settings': return <Settings className={className} />;
+      case 'settings-2': return <Settings2 className={className} />;
+      case 'layout-grid': return <LayoutGrid className={className} />;
+      case 'layout-template': return <LayoutTemplate className={className} />;
+      case 'layout-list': return <LayoutList className={className} />;
+      case 'file-text': return <FileText className={className} />;
+      case 'shield': return <Shield className={className} />;
+      case 'calendar': return <Calendar className={className} />;
+      case 'bell': return <Bell className={className} />;
+      case 'bar-chart': return <BarChart className={className} />;
+      case 'line-chart': return <LineChart className={className} />;
+      case 'users': return <Users className={className} />;
+      case 'message-square': return <MessageSquare className={className} />;
+      case 'zap': return <Zap className={className} />;
+      case 'help-circle': return <HelpCircle className={className} />;
+      case 'star': return <Star className={className} />;
+      case 'book-open': return <BookOpen className={className} />;
+      default: return <LayoutDashboard className={className} />;
     }
   };
 
@@ -130,70 +198,42 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
           <span className="font-bold text-lg">EPR Compliance</span>
         </div>
         <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto" aria-label="Sidebar">
-          {menuItems.map((item) => (
-            <Button
-              key={item.id}
-              variant={currentPage === item.id ? "default" : "ghost"}
-              className="w-full justify-start"
-              onClick={() => handlePageChange(item.id)}
-            >
-              {getIcon(item.icon)}
-              {item.label}
-            </Button>
-          ))}
-          
-          <div className="pt-2">
-            <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Integration
-            </div>
-            {integrationItems.map((item) => (
-              <Button
-                key={item.id}
-                variant={currentPage === item.id ? "default" : "ghost"}
-                className={`w-full justify-start ${item.isSubItem ? 'ml-4' : ''}`}
-                onClick={() => handlePageChange(item.id)}
+          {hierarchicalMenu.map((section) => (
+            <div key={section.id} className="relative">
+              <div
+                className="relative"
+                onMouseEnter={() => setHoveredSection(section.id)}
+                onMouseLeave={() => setHoveredSection(null)}
               >
-                {getIcon(item.icon)}
-                {item.label}
-              </Button>
-            ))}
-          </div>
-
-          <div className="pt-2">
-            <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Settings
-            </div>
-            {settingsItems.map((item) => (
-              <Button
-                key={item.id}
-                variant={currentPage === item.id ? "default" : "ghost"}
-                className={`w-full justify-start ${item.isSubItem ? 'ml-4' : ''}`}
-                onClick={() => handlePageChange(item.id)}
-              >
-                {getIcon(item.icon)}
-                {item.label}
-              </Button>
-            ))}
-          </div>
-
-          {adminItems.length > 0 && (
-            <div className="pt-2">
-              <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Administration
-              </div>
-              {adminItems.map((item) => (
                 <Button
-                  key={item.id}
-                  variant={currentPage === item.id ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => handlePageChange(item.id)}
+                  variant="ghost"
+                  className="w-full justify-between group hover:bg-gray-100"
                 >
-                  {getIcon(item.icon)}
-                  {item.label}
+                  <div className="flex items-center">
+                    {getIcon(section.icon)}
+                    {section.label}
+                  </div>
+                  <ChevronRight className="h-4 w-4 opacity-50 group-hover:opacity-100" />
                 </Button>
-              ))}
+                
+                {hoveredSection === section.id && (
+                  <div className="absolute left-full top-0 ml-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-2">
+                    {section.items.map((item) => (
+                      <Button
+                        key={item.id}
+                        variant={currentPage === item.id ? "default" : "ghost"}
+                        className="w-full justify-start mx-2 mb-1"
+                        onClick={() => handlePageChange(item.id)}
+                      >
+                        {getIcon(item.icon)}
+                        {item.label}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          )}
+          ))}
         </nav>
         <div className="flex items-center px-6 py-4 mt-auto bg-white border-t">
           <Avatar className="h-8 w-8">

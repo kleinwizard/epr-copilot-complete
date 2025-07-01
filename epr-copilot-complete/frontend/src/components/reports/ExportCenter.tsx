@@ -102,9 +102,14 @@ export function ExportCenter() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Export Center</h2>
-        <p className="text-muted-foreground">Export reports in various formats and manage scheduled exports</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Export Center</h2>
+          <p className="text-muted-foreground">Export reports in various formats and manage scheduled exports</p>
+        </div>
+        <Button variant="outline" onClick={() => window.location.href = '/reports'}>
+          ← Back to Reports
+        </Button>
       </div>
 
       <Tabs defaultValue="export" className="space-y-4">

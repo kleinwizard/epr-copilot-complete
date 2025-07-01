@@ -7,6 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { DollarSign, TrendingUp, Calculator, Calendar, Download } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { dataService } from '@/services/dataService';
+import { CalculationEngine, CalculationUtils } from '@/services/calculationEngine';
 import { useEffect, useState } from 'react';
 
 const chartConfig = {
@@ -95,12 +96,7 @@ export function FinancialOverview() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
+    return CalculationUtils.formatCurrency(amount, 'USD');
   };
 
   const getVarianceColor = (variance: number) => {
