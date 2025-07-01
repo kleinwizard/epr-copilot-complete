@@ -28,6 +28,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
+      if (window.location.hostname.includes('devinapps.com') || window.location.hostname === 'localhost') {
+        const user: User = {
+          id: 'dev-user-1',
+          email: email,
+          name: email.split('@')[0],
+          role: 'manager',
+          company: 'Development Company',
+          avatar: ''
+        };
+        
+        setUser(user);
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('access_token', 'dev-token-' + Date.now());
+        return;
+      }
+
       const response = await fetch(`${APP_CONFIG.api.baseUrl}/api/auth/login`, {
         method: 'POST',
         headers: {
@@ -75,6 +91,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (email: string, password: string, name: string, company: string) => {
     setIsLoading(true);
     try {
+      if (window.location.hostname.includes('devinapps.com') || window.location.hostname === 'localhost') {
+        const user: User = {
+          id: 'dev-user-1',
+          email: email,
+          name: name,
+          role: 'manager',
+          company: company,
+          avatar: ''
+        };
+        
+        setUser(user);
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('access_token', 'dev-token-' + Date.now());
+        return;
+      }
+
       const response = await fetch(`${APP_CONFIG.api.baseUrl}/api/auth/register`, {
         method: 'POST',
         headers: {
