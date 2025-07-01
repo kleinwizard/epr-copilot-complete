@@ -59,9 +59,12 @@ const Index = () => {
       case 'calendar':
         return <ComplianceCalendar />;
       case 'notifications':
-        return <NotificationCenter />;
-      case 'alert-dashboard':
-        return <AlertDashboard />;
+        return (
+          <div className="space-y-6">
+            <NotificationCenter />
+            <AlertDashboard />
+          </div>
+        );
       case 'erp-integration':
         return <ERPIntegration />;
       case 'integration-hub':

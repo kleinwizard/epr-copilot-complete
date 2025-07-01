@@ -5,49 +5,26 @@ export class ReportDesignerService {
   private reports: Map<string, CustomReport> = new Map();
 
   constructor() {
-    this.initializeMockData();
+    this.loadRealData();
   }
 
-  private initializeMockData() {
-    const mockReport: CustomReport = {
-      id: 'report-1',
-      name: 'Compliance Dashboard',
-      description: 'Overview of compliance metrics and performance',
-      category: 'compliance',
-      components: [
-        {
-          id: 'comp-1',
-          name: 'Total Products',
-          type: 'metric',
-          position: { x: 0, y: 0, width: 3, height: 2 },
-          config: {
-            value: 1247,
-            label: 'Total Products',
-            trend: '+5.2%',
-            color: 'blue'
-          }
-        },
-        {
-          id: 'comp-2',
-          name: 'Fee Distribution',
-          type: 'chart',
-          position: { x: 3, y: 0, width: 6, height: 4 },
-          config: {
-            chartType: 'pie',
-            dataSource: 'fees',
-            title: 'Fee Distribution by Category'
-          }
-        }
-      ],
-      layout: 'grid',
-      isPublic: false,
-      createdBy: 'admin@company.com',
-      createdAt: '2024-06-01T00:00:00Z',
-      updatedAt: '2024-06-01T00:00:00Z',
-      tags: ['compliance', 'dashboard', 'overview']
-    };
+  private loadRealData() {
+    const storedReports = localStorage.getItem('epr_custom_reports');
+    if (storedReports) {
+      try {
+        const reportsData = JSON.parse(storedReports);
+        reportsData.forEach((report: CustomReport) => {
+          this.reports.set(report.id, report);
+        });
+      } catch (error) {
+        console.error('Failed to load stored reports:', error);
+      }
+    }
+  }
 
-    this.reports.set(mockReport.id, mockReport);
+  private saveToStorage() {
+    const reportsArray = Array.from(this.reports.values());
+    localStorage.setItem('epr_custom_reports', JSON.stringify(reportsArray));
   }
 
   getReports(): CustomReport[] {
@@ -72,6 +49,7 @@ export class ReportDesignerService {
     };
 
     this.reports.set(id, newReport);
+    this.saveToStorage();
     return newReport;
   }
 
@@ -80,11 +58,16 @@ export class ReportDesignerService {
     if (!report) return false;
 
     Object.assign(report, updates, { updatedAt: new Date().toISOString() });
+    this.saveToStorage();
     return true;
   }
 
   async deleteReport(id: string): Promise<boolean> {
-    return this.reports.delete(id);
+    const result = this.reports.delete(id);
+    if (result) {
+      this.saveToStorage();
+    }
+    return result;
   }
 
   async addComponent(reportId: string, component: Omit<ReportComponent, 'id'>): Promise<boolean> {

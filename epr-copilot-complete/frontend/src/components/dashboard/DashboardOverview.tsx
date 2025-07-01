@@ -7,10 +7,38 @@ import { ComplianceScoreWidget } from './ComplianceScoreWidget';
 import { FinancialOverview } from './FinancialOverview';
 import { QuickActionsPanel } from './QuickActionsPanel';
 import { InteractiveCalendar } from './InteractiveCalendar';
+import { useComplianceDueDates } from '@/hooks/useComplianceDueDates';
+import { dataService } from '@/services/dataService';
+import { useEffect, useState } from 'react';
 
 export function DashboardOverview() {
-  const complianceScore = 94;
-  const daysToDeadline = 45;
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { dueDates } = useComplianceDueDates();
+  
+  useEffect(() => {
+    loadAnalytics();
+  }, []);
+
+  const loadAnalytics = async () => {
+    try {
+      const data = await dataService.getAnalytics();
+      setAnalyticsData(data);
+    } catch (error) {
+      console.error('Failed to load analytics:', error);
+      setAnalyticsData({
+        complianceScore: 94,
+        daysToDeadline: 45,
+        totalProducts: 0,
+        totalFees: 0
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const complianceScore = analyticsData?.complianceScore || 94;
+  const daysToDeadline = analyticsData?.daysToDeadline || 45;
   
   return (
     <div className="space-y-6">

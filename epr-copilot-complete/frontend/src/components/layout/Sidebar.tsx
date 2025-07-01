@@ -89,19 +89,25 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
     { id: 'quarterly-reports', label: 'Reports', icon: 'file-text' },
     { id: 'analytics', label: 'Analytics', icon: 'layout-dashboard' },
     { id: 'calendar', label: 'Compliance Calendar', icon: 'layout-dashboard' },
-    { id: 'notifications', label: 'Notifications', icon: 'layout-dashboard' },
-    { id: 'alert-dashboard', label: 'Alert Dashboard', icon: 'layout-dashboard' },
-    { id: 'erp-integration', label: 'ERP Integration', icon: 'settings' },
-    { id: 'integration-hub', label: 'Integration Hub', icon: 'settings' },
+    { id: 'notifications', label: 'Notifications & Alerts', icon: 'layout-dashboard' },
     { id: 'communication', label: 'Communication', icon: 'layout-dashboard' },
-    { id: 'mobile-pwa', label: 'Mobile & PWA', icon: 'layout-dashboard' },
-    { id: 'ai-automation', label: 'AI & Automation', icon: 'layout-dashboard' },
     { id: 'team', label: 'Team Management', icon: 'settings' },
-    { id: 'admin-tools', label: 'Admin Tools', icon: 'settings-2' },
-    { id: 'auth', label: 'Authentication', icon: 'settings' },
-    { id: 'settings', label: 'Settings', icon: 'settings' },
     { id: 'support-help', label: 'Support & Help', icon: 'help-circle' }
   ];
+
+  const integrationItems = [
+    { id: 'integration-hub', label: 'Integration Hub', icon: 'settings' },
+    { id: 'erp-integration', label: 'ERP Integration', icon: 'settings', isSubItem: true },
+  ];
+
+  const settingsItems = [
+    { id: 'settings', label: 'Settings', icon: 'settings' },
+    { id: 'auth', label: 'Authentication', icon: 'settings', isSubItem: true },
+  ];
+
+  const adminItems = user?.role === 'admin' ? [
+    { id: 'admin-tools', label: 'Admin Tools', icon: 'settings-2' },
+  ] : [];
 
   const getIcon = (iconName: string) => {
     switch (iconName) {
@@ -135,6 +141,59 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
               {item.label}
             </Button>
           ))}
+          
+          <div className="pt-2">
+            <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Integration
+            </div>
+            {integrationItems.map((item) => (
+              <Button
+                key={item.id}
+                variant={currentPage === item.id ? "default" : "ghost"}
+                className={`w-full justify-start ${item.isSubItem ? 'ml-4' : ''}`}
+                onClick={() => handlePageChange(item.id)}
+              >
+                {getIcon(item.icon)}
+                {item.label}
+              </Button>
+            ))}
+          </div>
+
+          <div className="pt-2">
+            <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Settings
+            </div>
+            {settingsItems.map((item) => (
+              <Button
+                key={item.id}
+                variant={currentPage === item.id ? "default" : "ghost"}
+                className={`w-full justify-start ${item.isSubItem ? 'ml-4' : ''}`}
+                onClick={() => handlePageChange(item.id)}
+              >
+                {getIcon(item.icon)}
+                {item.label}
+              </Button>
+            ))}
+          </div>
+
+          {adminItems.length > 0 && (
+            <div className="pt-2">
+              <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Administration
+              </div>
+              {adminItems.map((item) => (
+                <Button
+                  key={item.id}
+                  variant={currentPage === item.id ? "default" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => handlePageChange(item.id)}
+                >
+                  {getIcon(item.icon)}
+                  {item.label}
+                </Button>
+              ))}
+            </div>
+          )}
         </nav>
         <div className="flex items-center px-6 py-4 mt-auto bg-white border-t">
           <Avatar className="h-8 w-8">

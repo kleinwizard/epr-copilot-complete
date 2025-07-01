@@ -91,123 +91,31 @@ export interface TaskStats {
 
 export class TaskManagementService {
   private tasks: Map<string, Task> = new Map();
+  private storageKey = 'epr_tasks_data';
 
   constructor() {
-    this.initializeMockData();
+    this.loadRealData();
   }
 
-  private initializeMockData() {
-    const mockTasks: Task[] = [
-      {
-        id: 'task-1',
-        title: 'Submit Q4 2024 EPR Report',
-        description: 'Complete and submit the quarterly EPR compliance report with all required material data',
-        type: 'submission',
-        status: 'in_progress',
-        priority: 'high',
-        assignedTo: ['john.doe@company.com', 'compliance.manager@company.com'],
-        createdBy: 'admin@company.com',
-        createdAt: '2024-06-20T09:00:00Z',
-        updatedAt: '2024-06-23T14:30:00Z',
-        dueDate: '2024-06-30T23:59:59Z',
-        estimatedHours: 8,
-        actualHours: 4,
-        tags: ['epr', 'quarterly', 'compliance', 'priority'],
-        relatedEntities: [
-          {
-            type: 'report',
-            id: 'report-q4-2024',
-            name: 'Q4 2024 EPR Report'
-          },
-          {
-            type: 'requirement',
-            id: 'req-1',
-            name: 'California EPR Packaging Waste Regulation'
-          }
-        ],
-        subtasks: [
-          {
-            id: 'subtask-1',
-            title: 'Collect material data',
-            completed: true,
-            completedBy: 'john.doe@company.com',
-            completedAt: '2024-06-21T10:00:00Z'
-          },
-          {
-            id: 'subtask-2',
-            title: 'Calculate fees',
-            completed: true,
-            completedBy: 'john.doe@company.com',
-            completedAt: '2024-06-22T15:30:00Z'
-          },
-          {
-            id: 'subtask-3',
-            title: 'Review and validate data',
-            completed: false
-          },
-          {
-            id: 'subtask-4',
-            title: 'Submit to authority',
-            completed: false
-          }
-        ],
-        comments: [
-          {
-            id: 'comment-1',
-            text: 'Data collection is complete. Moving to validation phase.',
-            author: 'John Doe',
-            authorEmail: 'john.doe@company.com',
-            createdAt: '2024-06-22T16:00:00Z'
-          }
-        ],
-        attachments: [],
-        dependencies: []
-      },
-      {
-        id: 'task-2',
-        title: 'Annual Fee Payment',
-        description: 'Process payment for annual EPR compliance fees',
-        type: 'payment',
-        status: 'not_started',
-        priority: 'medium',
-        assignedTo: ['finance@company.com'],
-        createdBy: 'system@company.com',
-        createdAt: '2024-06-24T08:00:00Z',
-        updatedAt: '2024-06-24T08:00:00Z',
-        dueDate: '2024-07-15T23:59:59Z',
-        estimatedHours: 2,
-        tags: ['payment', 'annual', 'fees'],
-        relatedEntities: [
-          {
-            type: 'document',
-            id: 'invoice-2024-001',
-            name: 'Annual EPR Fee Invoice'
-          }
-        ],
-        subtasks: [
-          {
-            id: 'subtask-5',
-            title: 'Review invoice details',
-            completed: false
-          },
-          {
-            id: 'subtask-6',
-            title: 'Approve payment',
-            completed: false
-          },
-          {
-            id: 'subtask-7',
-            title: 'Process payment',
-            completed: false
-          }
-        ],
-        comments: [],
-        attachments: [],
-        dependencies: ['task-1']
+  private loadRealData() {
+    try {
+      const storedData = localStorage.getItem(this.storageKey);
+      if (storedData) {
+        const tasksArray = JSON.parse(storedData);
+        tasksArray.forEach((task: Task) => this.tasks.set(task.id, task));
       }
-    ];
+    } catch (error) {
+      console.error('Failed to load tasks from storage:', error);
+    }
+  }
 
-    mockTasks.forEach(task => this.tasks.set(task.id, task));
+  private saveToStorage() {
+    try {
+      const tasksArray = Array.from(this.tasks.values());
+      localStorage.setItem(this.storageKey, JSON.stringify(tasksArray));
+    } catch (error) {
+      console.error('Failed to save tasks to storage:', error);
+    }
   }
 
   createTask(task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Task {

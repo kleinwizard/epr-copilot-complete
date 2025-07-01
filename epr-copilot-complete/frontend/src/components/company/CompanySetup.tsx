@@ -1,5 +1,7 @@
 
 import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { dataService } from '@/services/dataService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +23,66 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 export function CompanySetup() {
   const [verificationStatus, setVerificationStatus] = useState('pending');
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleSaveCompanyInfo = async () => {
+    setIsLoading(true);
+    try {
+      const companyData = {
+        legalName: (document.getElementById('company-name') as HTMLInputElement)?.value || '',
+        dbaName: (document.getElementById('dba') as HTMLInputElement)?.value || '',
+        businessId: (document.getElementById('business-id') as HTMLInputElement)?.value || '',
+        deqNumber: (document.getElementById('deq-number') as HTMLInputElement)?.value || '',
+        address: (document.getElementById('address') as HTMLInputElement)?.value || '',
+        city: (document.getElementById('city') as HTMLInputElement)?.value || '',
+        zipCode: (document.getElementById('zip') as HTMLInputElement)?.value || '',
+        description: (document.getElementById('description') as HTMLTextAreaElement)?.value || '',
+      };
+
+      await dataService.saveCompanyInfo(companyData);
+      
+      toast({
+        title: "Company Information Saved",
+        description: "Your company information has been successfully updated.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save company information. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDocumentUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsLoading(true);
+    try {
+      const result = await dataService.uploadDocument(file);
+      
+      if (result.success) {
+        toast({
+          title: "Document Uploaded",
+          description: `${file.name} has been successfully uploaded.`,
+        });
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (error) {
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload document. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   return (
     <div className="space-y-6">
@@ -319,7 +381,23 @@ export function CompanySetup() {
                       <AlertCircle className="w-5 h-5 text-orange-600" />
                     </div>
                     <p className="text-sm text-muted-foreground">Required for verification</p>
-                    <Button size="sm" variant="outline" className="mt-2">Upload</Button>
+                    <div className="mt-2">
+                      <input
+                        type="file"
+                        id="deq-upload"
+                        accept=".pdf,.doc,.docx,.jpg,.png"
+                        onChange={handleDocumentUpload}
+                        className="hidden"
+                      />
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => document.getElementById('deq-upload')?.click()}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? 'Uploading...' : 'Upload'}
+                      </Button>
+                    </div>
                   </div>
                   
                   <div className="p-4 border rounded-lg">
@@ -336,7 +414,23 @@ export function CompanySetup() {
                       <AlertCircle className="w-5 h-5 text-orange-600" />
                     </div>
                     <p className="text-sm text-muted-foreground">Optional but recommended</p>
-                    <Button size="sm" variant="outline" className="mt-2">Upload</Button>
+                    <div className="mt-2">
+                      <input
+                        type="file"
+                        id="insurance-upload"
+                        accept=".pdf,.doc,.docx,.jpg,.png"
+                        onChange={handleDocumentUpload}
+                        className="hidden"
+                      />
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => document.getElementById('insurance-upload')?.click()}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? 'Uploading...' : 'Upload'}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -346,8 +440,13 @@ export function CompanySetup() {
       </Tabs>
 
       <div className="flex justify-end">
-        <Button size="lg" className="px-8">
-          Save Company Information
+        <Button 
+          size="lg" 
+          className="px-8" 
+          onClick={handleSaveCompanyInfo}
+          disabled={isLoading}
+        >
+          {isLoading ? 'Saving...' : 'Save Company Information'}
         </Button>
       </div>
     </div>

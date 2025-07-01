@@ -5,59 +5,26 @@ export class FormBuilderService {
   private forms: Map<string, CustomForm> = new Map();
 
   constructor() {
-    this.initializeMockData();
+    this.loadRealData();
   }
 
-  private initializeMockData() {
-    const mockForm: CustomForm = {
-      id: 'form-1',
-      name: 'Product Registration Form',
-      description: 'Form for registering new products in the system',
-      fields: [
-        {
-          id: 'field-1',
-          name: 'productName',
-          label: 'Product Name',
-          type: 'text',
-          placeholder: 'Enter product name',
-          isRequired: true,
-          validation: [
-            { type: 'required', message: 'Product name is required' },
-            { type: 'min', value: 3, message: 'Minimum 3 characters' }
-          ],
-          order: 1,
-          width: 'full'
-        },
-        {
-          id: 'field-2',
-          name: 'category',
-          label: 'Product Category',
-          type: 'select',
-          isRequired: true,
-          validation: [{ type: 'required', message: 'Category is required' }],
-          options: [
-            { label: 'Electronics', value: 'electronics' },
-            { label: 'Clothing', value: 'clothing' },
-            { label: 'Food & Beverage', value: 'food-beverage' }
-          ],
-          order: 2,
-          width: 'half'
-        }
-      ],
-      settings: {
-        allowMultipleSubmissions: false,
-        requireAuthentication: true,
-        showProgressBar: true,
-        emailNotifications: ['admin@company.com'],
-        saveAsDraft: true
-      },
-      isActive: true,
-      createdBy: 'admin@company.com',
-      createdAt: '2024-06-01T00:00:00Z',
-      updatedAt: '2024-06-01T00:00:00Z'
-    };
+  private loadRealData() {
+    const storedForms = localStorage.getItem('epr_forms');
+    if (storedForms) {
+      try {
+        const formsData = JSON.parse(storedForms);
+        Object.entries(formsData).forEach(([id, form]) => {
+          this.forms.set(id, form as CustomForm);
+        });
+      } catch (error) {
+        console.error('Failed to load forms from storage:', error);
+      }
+    }
+  }
 
-    this.forms.set(mockForm.id, mockForm);
+  private saveToStorage() {
+    const formsData = Object.fromEntries(this.forms.entries());
+    localStorage.setItem('epr_forms', JSON.stringify(formsData));
   }
 
   getForms(): CustomForm[] {
@@ -78,6 +45,7 @@ export class FormBuilderService {
     };
 
     this.forms.set(id, newForm);
+    this.saveToStorage();
     return newForm;
   }
 
@@ -86,6 +54,7 @@ export class FormBuilderService {
     if (!form) return false;
 
     Object.assign(form, updates, { updatedAt: new Date().toISOString() });
+    this.saveToStorage();
     return true;
   }
 

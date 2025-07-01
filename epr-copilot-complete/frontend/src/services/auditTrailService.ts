@@ -58,72 +58,28 @@ export class AuditTrailService {
   private events: Map<string, AuditEvent> = new Map();
 
   constructor() {
-    this.initializeMockData();
+    this.loadRealData();
   }
 
-  private initializeMockData() {
-    const mockEvents: AuditEvent[] = [
-      {
-        id: 'audit-1',
-        timestamp: '2024-06-24T10:00:00Z',
-        userId: 'user-1',
-        userEmail: 'john.doe@company.com',
-        action: 'create',
-        entityType: 'document',
-        entityId: 'doc-1',
-        entityName: 'Q4 2024 EPR Report',
-        description: 'Created new EPR compliance report',
-        changes: [
-          {
-            field: 'status',
-            oldValue: null,
-            newValue: 'draft',
-            type: 'create'
-          }
-        ],
-        metadata: {
-          fileSize: 2048576,
-          documentType: 'report'
-        },
-        ipAddress: '192.168.1.100',
-        severity: 'medium',
-        category: 'creation'
-      },
-      {
-        id: 'audit-2',
-        timestamp: '2024-06-24T11:30:00Z',
-        userId: 'user-2',
-        userEmail: 'admin@company.com',
-        action: 'approve',
-        entityType: 'document',
-        entityId: 'doc-1',
-        entityName: 'Q4 2024 EPR Report',
-        description: 'Approved EPR compliance report for submission',
-        changes: [
-          {
-            field: 'status',
-            oldValue: 'review',
-            newValue: 'approved',
-            type: 'update'
-          },
-          {
-            field: 'approvedBy',
-            oldValue: null,
-            newValue: 'admin@company.com',
-            type: 'update'
-          }
-        ],
-        metadata: {
-          approvalWorkflow: 'standard',
-          reviewDuration: 1800
-        },
-        ipAddress: '192.168.1.101',
-        severity: 'high',
-        category: 'compliance'
+  private loadRealData() {
+    const storedEvents = localStorage.getItem('audit_events');
+    if (storedEvents) {
+      try {
+        const events: AuditEvent[] = JSON.parse(storedEvents);
+        events.forEach(event => this.events.set(event.id, event));
+      } catch (error) {
+        console.error('Failed to load audit events from storage:', error);
       }
-    ];
+    }
+  }
 
-    mockEvents.forEach(event => this.events.set(event.id, event));
+  private saveToStorage() {
+    try {
+      const events = Array.from(this.events.values());
+      localStorage.setItem('audit_events', JSON.stringify(events));
+    } catch (error) {
+      console.error('Failed to save audit events to storage:', error);
+    }
   }
 
   logEvent(event: Omit<AuditEvent, 'id' | 'timestamp'>): AuditEvent {
@@ -135,6 +91,7 @@ export class AuditTrailService {
     };
 
     this.events.set(id, auditEvent);
+    this.saveToStorage();
     console.log('Audit Event Logged:', auditEvent);
     return auditEvent;
   }
