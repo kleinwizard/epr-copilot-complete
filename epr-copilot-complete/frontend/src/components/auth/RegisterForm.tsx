@@ -9,8 +9,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { UserPlus, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
+import { useAuth } from './AuthProvider';
 
 export const RegisterForm = () => {
+  const { register, isLoading } = useAuth();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -23,8 +25,8 @@ export const RegisterForm = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
 
   const passwordStrength = (password: string) => {
     let strength = 0;
@@ -40,15 +42,18 @@ export const RegisterForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
       return;
     }
-    setIsLoading(true);
     
-    // Simulate registration
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+      await register(formData.email, formData.password, fullName, formData.company);
       setSuccess(true);
-    }, 2000);
+      setError('');
+    } catch (err) {
+      setError('Registration failed. Please try again.');
+    }
   };
 
   const handleInputChange = (field: string, value: string | boolean) => {
@@ -86,6 +91,13 @@ export const RegisterForm = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name</Label>
