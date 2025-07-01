@@ -1,8 +1,12 @@
 import os
 import json
-from firebase_admin import credentials, messaging, initialize_app
 from typing import List, Dict, Optional
 import logging
+
+if os.getenv("ENABLE_PUSH_SERVICES", "false").lower() == "true":
+    from firebase_admin import credentials, messaging, initialize_app
+else:
+    credentials = messaging = initialize_app = None
 
 logger = logging.getLogger(__name__)
 
@@ -12,8 +16,8 @@ class PushNotificationService:
         self.firebase_credentials_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
         self.app = None
 
-        if self.firebase_credentials_path and os.path.exists(
-                self.firebase_credentials_path):
+        if (self.firebase_credentials_path and os.path.exists(self.firebase_credentials_path) 
+            and credentials is not None and initialize_app is not None):
             try:
                 cred = credentials.Certificate(self.firebase_credentials_path)
                 self.app = initialize_app(cred)

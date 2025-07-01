@@ -1,5 +1,4 @@
 import os
-from celery import Celery
 from typing import Dict, Any, List
 import logging
 from datetime import datetime, timedelta, timezone
@@ -11,34 +10,34 @@ import json
 
 logger = logging.getLogger(__name__)
 
-celery_app = Celery(
-    "epr_background_jobs",
-    broker=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
-    backend=os.getenv("REDIS_URL", "redis://localhost:6379/0")
-)
+if os.getenv("ENABLE_SCHEDULER", "false").lower() == "true":
+    from celery import Celery
+    
+    celery_app = Celery(
+        "epr_background_jobs",
+        broker=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
+        backend=os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    )
 
-celery_app.conf.update(
-    task_serializer='json',
-    accept_content=['json'],
-    result_serializer='json',
-    timezone='UTC',
-    enable_utc=True,
-    task_routes={
-        'app.services.background_jobs.generate_report': {
-            'queue': 'reports'},
-        'app.services.background_jobs.process_bulk_import': {
-            'queue': 'imports'},
-        'app.services.background_jobs.send_deadline_reminders': {
-            'queue': 'notifications'},
-    })
+    celery_app.conf.update(
+        task_serializer='json',
+        accept_content=['json'],
+        result_serializer='json',
+        timezone='UTC',
+        enable_utc=True,
+        task_routes={
+            'app.services.background_jobs.generate_report': {
+                'queue': 'reports'},
+            'app.services.background_jobs.process_bulk_import': {
+                'queue': 'imports'},
+            'app.services.background_jobs.send_deadline_reminders': {
+                'queue': 'notifications'},
+        })
+else:
+    celery_app = None
 
 
-@celery_app.task(bind=True, max_retries=3)
-def generate_report(self,
-                    company_id: int,
-                    report_data: Dict[str,
-                                      Any]) -> Dict[str,
-                                                    Any]:
+def generate_report_task(company_id: int, report_data: Dict[str, Any]) -> Dict[str, Any]:
     """Background task to generate compliance reports."""
     try:
         logger.info(f"Starting report generation for company {company_id}")
@@ -66,15 +65,10 @@ def generate_report(self,
 
     except Exception as exc:
         logger.error(f"Report generation failed: {str(exc)}")
-        raise self.retry(exc=exc, countdown=60)
+        raise exc
 
 
-@celery_app.task(bind=True, max_retries=3)
-def process_bulk_import(self,
-                        file_path: str,
-                        company_id: int,
-                        user_id: int) -> Dict[str,
-                                              Any]:
+def process_bulk_import_task(file_path: str, company_id: int, user_id: int) -> Dict[str, Any]:
     """Background task to process bulk product imports."""
     try:
         logger.info(f"Starting bulk import processing for file: {file_path}")
@@ -107,10 +101,9 @@ def process_bulk_import(self,
 
     except Exception as exc:
         logger.error(f"Bulk import failed: {str(exc)}")
-        raise self.retry(exc=exc, countdown=60)
+        raise exc
 
 
-@celery_app.task
 def send_deadline_reminders() -> Dict[str, Any]:
     """Scheduled task to send deadline reminders."""
     try:
@@ -162,7 +155,6 @@ def send_deadline_reminders() -> Dict[str, Any]:
         raise
 
 
-@celery_app.task
 def sync_regulatory_data() -> Dict[str, Any]:
     """Scheduled task to sync EPR rates and regulatory updates."""
     try:
@@ -190,9 +182,7 @@ def sync_regulatory_data() -> Dict[str, Any]:
         raise
 
 
-@celery_app.task(bind=True, max_retries=3)
-def generate_invoice_pdf(self, payment_id: str,
-                         invoice_data: Dict[str, Any]) -> Dict[str, Any]:
+def generate_invoice_pdf_task(payment_id: str, invoice_data: Dict[str, Any]) -> Dict[str, Any]:
     """Background task to generate invoice PDFs."""
     try:
         logger.info(f"Generating invoice PDF for payment: {payment_id}")
@@ -216,14 +206,28 @@ def generate_invoice_pdf(self, payment_id: str,
 
     except Exception as exc:
         logger.error(f"Invoice PDF generation failed: {str(exc)}")
-        raise self.retry(exc=exc, countdown=30)
+        raise exc
 
 
-@celery_app.task
-def health_check() -> Dict[str, Any]:
+def health_check_task() -> Dict[str, Any]:
     """Health check task for monitoring."""
     return {
         "status": "healthy",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "worker_id": os.getenv("HOSTNAME", "unknown")
     }
+
+if celery_app is not None:
+    generate_report = celery_app.task(bind=True, max_retries=3)(generate_report_task)
+    process_bulk_import = celery_app.task(bind=True, max_retries=3)(process_bulk_import_task)
+    send_deadline_reminders = celery_app.task(send_deadline_reminders)
+    sync_regulatory_data = celery_app.task(sync_regulatory_data)
+    generate_invoice_pdf = celery_app.task(bind=True, max_retries=3)(generate_invoice_pdf_task)
+    health_check = celery_app.task(health_check_task)
+else:
+    generate_report = generate_report_task
+    process_bulk_import = process_bulk_import_task
+    send_deadline_reminders = send_deadline_reminders
+    sync_regulatory_data = sync_regulatory_data
+    generate_invoice_pdf = generate_invoice_pdf_task
+    health_check = health_check_task

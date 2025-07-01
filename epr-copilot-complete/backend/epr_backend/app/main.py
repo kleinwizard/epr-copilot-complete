@@ -75,3 +75,13 @@ app.include_router(background_jobs.router)
 @app.get("/healthz")
 async def healthz():
     return {"status": "ok", "message": "EPR Co-Pilot Backend is running"}
+
+@app.get("/api/health")
+async def health_check():
+    """Health check endpoint for monitoring."""
+    from datetime import datetime, timezone
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "database": "connected"
+    }

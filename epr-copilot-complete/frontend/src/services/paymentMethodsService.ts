@@ -7,7 +7,7 @@ export class PaymentMethodsService {
   async addPaymentMethod(method: Omit<PaymentMethod, 'id'>): Promise<PaymentMethod> {
     const token = localStorage.getItem('access_token');
     try {
-      const response = await fetch('http://localhost:8001/api/payments/save-payment-method', {
+      const response = await fetch('https://app-mbypfbcs.fly.dev/api/payments/save-payment-method', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -48,7 +48,7 @@ export class PaymentMethodsService {
   async getPaymentMethods(): Promise<PaymentMethod[]> {
     const token = localStorage.getItem('access_token');
     try {
-      const response = await fetch('http://localhost:8001/api/payments/payment-methods', {
+      const response = await fetch('https://app-mbypfbcs.fly.dev/api/payments/payment-methods', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',

@@ -1,10 +1,6 @@
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.jobstores.redis import RedisJobStore
-from apscheduler.executors.pool import ThreadPoolExecutor
 from datetime import datetime, time
 import os
 import logging
-from .background_jobs import send_deadline_reminders, sync_regulatory_data, health_check
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +15,10 @@ class TaskScheduler:
             return
             
         try:
+            from apscheduler.schedulers.asyncio import AsyncIOScheduler
+            from apscheduler.jobstores.redis import RedisJobStore
+            from apscheduler.executors.pool import ThreadPoolExecutor
+            
             jobstores = {
                 'default': RedisJobStore(
                     host=os.getenv("REDIS_HOST", "localhost"),
@@ -78,6 +78,8 @@ class TaskScheduler:
         """Add all scheduled jobs to the scheduler."""
         if not self.enabled or self.scheduler is None:
             return
+
+        from .background_jobs import send_deadline_reminders, sync_regulatory_data, health_check
 
         self.scheduler.add_job(
             send_deadline_reminders,

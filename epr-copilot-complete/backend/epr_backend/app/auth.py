@@ -84,9 +84,15 @@ def authenticate_user(
         email: str,
         password: str) -> Optional[User]:
     """Authenticate user with email and password."""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     user = db.query(User).filter(User.email == email).first()
     if not user:
+        logger.warning(f"User not found for email: {email}")
         return None
     if not verify_password(password, user.password_hash):
+        logger.warning(f"Password verification failed for email: {email}")
         return None
+    logger.info(f"User authenticated successfully: {email}")
     return user
