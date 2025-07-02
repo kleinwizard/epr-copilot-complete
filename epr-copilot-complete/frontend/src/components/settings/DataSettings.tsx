@@ -1,5 +1,4 @@
 
-import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,116 +6,8 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import { Download, Upload, Database, FileText, Calendar, HardDrive, RefreshCw } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
 
 export function DataSettings() {
-  const [dataStats, setDataStats] = useState<{
-    products: number;
-    materials: number;
-    reports: number;
-    teamMembers: number;
-  } | null>(null);
-
-  useEffect(() => {
-    const fetchDataStats = async () => {
-      try {
-        setDataStats({
-          products: 0,
-          materials: 0,
-          reports: 0,
-          teamMembers: 0
-        });
-      } catch (error) {
-        console.error('Failed to fetch data stats:', error);
-        setDataStats({
-          products: 0,
-          materials: 0,
-          reports: 0,
-          teamMembers: 0
-        });
-      }
-    };
-
-    fetchDataStats();
-  }, []);
-
-  const handleDataExport = async (dataType: string, format: string) => {
-    try {
-      toast({
-        title: "Export Started",
-        description: `Preparing ${dataType} export in ${format.toUpperCase()} format...`,
-      });
-      
-      const data = await generateExportData(dataType);
-      downloadFile(data, `${dataType}-export.${format}`, format);
-      
-      toast({
-        title: "Export Complete",
-        description: `${dataType} data exported successfully`,
-      });
-    } catch (error) {
-      toast({
-        title: "Export Failed",
-        description: `Failed to export ${dataType} data`,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const generateExportData = async (dataType: string) => {
-    switch (dataType) {
-      case 'products':
-        return [];
-      case 'materials':
-        return [];
-      case 'reports':
-        return [];
-      default:
-        return [];
-    }
-  };
-
-  const downloadFile = (data: any[], filename: string, format: string) => {
-    let content = '';
-    let mimeType = '';
-
-    switch (format) {
-      case 'csv':
-        content = convertToCSV(data);
-        mimeType = 'text/csv';
-        break;
-      case 'json':
-        content = JSON.stringify(data, null, 2);
-        mimeType = 'application/json';
-        break;
-      case 'pdf':
-        toast({
-          title: "PDF Export",
-          description: "PDF export functionality coming soon",
-        });
-        return;
-      default:
-        return;
-    }
-
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  const convertToCSV = (data: any[]) => {
-    if (data.length === 0) return 'No data available';
-    
-    const headers = Object.keys(data[0]).join(',');
-    const rows = data.map(row => Object.values(row).join(','));
-    return [headers, ...rows].join('\n');
-  };
   return (
     <div className="space-y-6">
       <Card>
@@ -136,7 +27,7 @@ export function DataSettings() {
               <p className="text-sm text-muted-foreground">
                 Export all product and packaging information
               </p>
-              <Button variant="outline" size="sm" className="w-full" onClick={() => handleDataExport('products', 'csv')}>
+              <Button variant="outline" size="sm" className="w-full">
                 <Download className="h-4 w-4 mr-2" />
                 Export CSV
               </Button>
@@ -150,7 +41,7 @@ export function DataSettings() {
               <p className="text-sm text-muted-foreground">
                 Export material definitions and properties
               </p>
-              <Button variant="outline" size="sm" className="w-full" onClick={() => handleDataExport('materials', 'json')}>
+              <Button variant="outline" size="sm" className="w-full">
                 <Download className="h-4 w-4 mr-2" />
                 Export JSON
               </Button>
@@ -164,7 +55,7 @@ export function DataSettings() {
               <p className="text-sm text-muted-foreground">
                 Export submitted compliance reports
               </p>
-              <Button variant="outline" size="sm" className="w-full" onClick={() => handleDataExport('reports', 'pdf')}>
+              <Button variant="outline" size="sm" className="w-full">
                 <Download className="h-4 w-4 mr-2" />
                 Export PDF
               </Button>
@@ -246,19 +137,19 @@ export function DataSettings() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
             <div className="space-y-1">
-              <p className="text-2xl font-bold text-blue-600">{dataStats?.products || 0}</p>
+              <p className="text-2xl font-bold text-blue-600">1,247</p>
               <p className="text-sm text-muted-foreground">Products</p>
             </div>
             <div className="space-y-1">
-              <p className="text-2xl font-bold text-green-600">{dataStats?.materials || 0}</p>
+              <p className="text-2xl font-bold text-green-600">156</p>
               <p className="text-sm text-muted-foreground">Materials</p>
             </div>
             <div className="space-y-1">
-              <p className="text-2xl font-bold text-purple-600">{dataStats?.reports || 0}</p>
+              <p className="text-2xl font-bold text-purple-600">24</p>
               <p className="text-sm text-muted-foreground">Reports</p>
             </div>
             <div className="space-y-1">
-              <p className="text-2xl font-bold text-orange-600">{dataStats?.teamMembers || 0}</p>
+              <p className="text-2xl font-bold text-orange-600">8</p>
               <p className="text-sm text-muted-foreground">Team Members</p>
             </div>
           </div>

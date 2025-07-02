@@ -13,11 +13,7 @@ interface ActionItem {
   action: string;
 }
 
-interface ActionItemsProps {
-  onPageChange?: (page: string) => void;
-}
-
-export function ActionItems({ onPageChange }: ActionItemsProps) {
+export function ActionItems() {
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -94,34 +90,6 @@ export function ActionItems({ onPageChange }: ActionItemsProps) {
     return priority === 'high' ? 'destructive' : 'outline';
   };
 
-  const handleActionClick = (actionId: string, onPageChange?: (page: string) => void) => {
-    switch (actionId) {
-      case 'setup-company':
-        if (onPageChange) {
-          onPageChange('company');
-        } else {
-          window.location.hash = '#company';
-        }
-        break;
-      case 'add-product':
-        if (onPageChange) {
-          onPageChange('product-catalog');
-        } else {
-          window.location.hash = '#product-catalog';
-        }
-        break;
-      case 'add-materials':
-        if (onPageChange) {
-          onPageChange('materials');
-        } else {
-          window.location.hash = '#materials';
-        }
-        break;
-      default:
-        console.log(`Action clicked: ${actionId}`);
-    }
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -144,11 +112,7 @@ export function ActionItems({ onPageChange }: ActionItemsProps) {
                 <p className="font-medium">{item.title}</p>
                 <p className={`text-sm ${getPriorityTextColor(item.priority)}`}>{item.description}</p>
               </div>
-              <Button 
-                size="sm" 
-                variant={getButtonVariant(item.priority)}
-                onClick={() => handleActionClick(item.action, onPageChange)}
-              >
+              <Button size="sm" variant={getButtonVariant(item.priority)}>
                 {item.priority === 'high' ? 'Start' : 'Review'}
               </Button>
             </div>

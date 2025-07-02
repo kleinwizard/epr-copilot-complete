@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -18,32 +18,6 @@ export function AnalyticsDashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState('quarterly');
   const [activeTab, setActiveTab] = useState('overview');
   const analyticsData = getAnalyticsData();
-  const [dynamicAnalyticsData, setDynamicAnalyticsData] = useState<{
-    complianceScore: number;
-    sustainabilityScore: number;
-    optimizationPotential: number;
-  } | null>(null);
-
-  useEffect(() => {
-    const fetchDynamicAnalyticsData = async () => {
-      try {
-        setDynamicAnalyticsData({
-          complianceScore: 0,
-          sustainabilityScore: 0,
-          optimizationPotential: 0
-        });
-      } catch (error) {
-        console.error('Failed to fetch dynamic analytics data:', error);
-        setDynamicAnalyticsData({
-          complianceScore: 0,
-          sustainabilityScore: 0,
-          optimizationPotential: 0
-        });
-      }
-    };
-
-    fetchDynamicAnalyticsData();
-  }, []);
 
   return (
     <div className="space-y-6">
@@ -60,13 +34,13 @@ export function AnalyticsDashboard() {
           <div className="flex items-center space-x-4 mt-2">
             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
               <TrendingUp className="h-3 w-3 mr-1" />
-              {dynamicAnalyticsData?.complianceScore || 0}% Compliance Score
+              94% Compliance Score
             </Badge>
             <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-              {dynamicAnalyticsData?.sustainabilityScore || 0}/100 Sustainability Score
+              67/100 Sustainability Score
             </Badge>
             <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-              ${dynamicAnalyticsData?.optimizationPotential || 0}k Optimization Potential
+              $29k Optimization Potential
             </Badge>
           </div>
         </div>

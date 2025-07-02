@@ -16,7 +16,6 @@ import {
   CheckCircle
 } from 'lucide-react';
 import type { QuarterlyReport } from '@/services/reportService';
-import { toast } from '@/hooks/use-toast';
 
 interface ReportViewerProps {
   report: QuarterlyReport;
@@ -25,66 +24,6 @@ interface ReportViewerProps {
 
 export function ReportViewer({ report, onBack }: ReportViewerProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleExport = async (format: 'pdf' | 'csv') => {
-    try {
-      toast({
-        title: "Export Started",
-        description: `Preparing report export in ${format.toUpperCase()} format...`,
-      });
-
-      const exportData = generateReportExportData(report, format);
-      downloadReportFile(exportData, `${report.quarter}-${report.year}-report.${format}`, format);
-
-      toast({
-        title: "Export Complete",
-        description: `Report exported successfully as ${format.toUpperCase()}`,
-      });
-    } catch (error) {
-      toast({
-        title: "Export Failed",
-        description: `Failed to export report as ${format.toUpperCase()}`,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const generateReportExportData = (report: QuarterlyReport, format: 'pdf' | 'csv') => {
-    if (format === 'csv') {
-      const csvData = [
-        ['Report Period', `${report.quarter} ${report.year}`],
-        ['Status', report.status],
-        ['Due Date', new Date(report.dueDate).toLocaleDateString()],
-        ['Total Products', report.summary.totalProducts.toString()],
-        ['Total Units', report.summary.totalUnits.toString()],
-        ['Total Weight (kg)', (report.summary.totalWeight / 1000).toFixed(1)],
-        ['Recyclable Percentage', `${report.summary.recyclablePercentage}%`],
-        ['Total Fee', `$${report.fees.totalDue.toFixed(2)}`],
-        ['Base Fee', `$${report.fees.totalBaseFee.toFixed(2)}`],
-        ['Recyclability Discount', `$${report.fees.recyclabilityDiscount.toFixed(2)}`],
-        ['Payment Status', report.fees.paymentStatus],
-        ['', ''],
-        ['Product Details', ''],
-        ['Name', 'SKU', 'Category', 'Units Sold', 'Total Weight (g)', 'Total Fee'],
-        ...report.products.map(p => [p.name, p.sku, p.category, p.unitsSold.toString(), p.totalWeight.toString(), `$${p.totalFee.toFixed(2)}`])
-      ];
-      return csvData.map(row => row.join(',')).join('\n');
-    }
-    return JSON.stringify(report, null, 2);
-  };
-
-  const downloadReportFile = (content: string, filename: string, format: string) => {
-    const mimeType = format === 'csv' ? 'text/csv' : 'application/json';
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -131,11 +70,11 @@ export function ReportViewer({ report, onBack }: ReportViewerProps) {
         </div>
 
         <div className="flex space-x-2">
-          <Button variant="outline" onClick={() => handleExport('pdf')}>
+          <Button variant="outline">
             <Download className="h-4 w-4 mr-2" />
             Export PDF
           </Button>
-          <Button variant="outline" onClick={() => handleExport('csv')}>
+          <Button variant="outline">
             <Download className="h-4 w-4 mr-2" />
             Export CSV
           </Button>
