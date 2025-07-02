@@ -1,4 +1,6 @@
 
+import { getSupportedJurisdictions } from './feeCalculation';
+
 export interface ComplianceRequirement {
   id: string;
   title: string;
@@ -71,9 +73,11 @@ export interface ChecklistItem {
 export class ComplianceLibraryService {
   private requirements: Map<string, ComplianceRequirement> = new Map();
   private checklists: Map<string, ComplianceChecklist> = new Map();
+  private supportedJurisdictions: Array<{code: string, name: string, model_type: string}> = [];
 
   constructor() {
     this.loadRealData();
+    this.loadSupportedJurisdictions();
   }
 
   private async loadRealData() {
@@ -91,6 +95,24 @@ export class ComplianceLibraryService {
     }
   }
 
+  private async loadSupportedJurisdictions() {
+    try {
+      this.supportedJurisdictions = await getSupportedJurisdictions();
+    } catch (error) {
+      console.error('Failed to load supported jurisdictions:', error);
+      this.supportedJurisdictions = [
+        { code: 'OR', name: 'Oregon', model_type: 'PRO-led Fee System' },
+        { code: 'CA', name: 'California', model_type: 'PRO-led Fee System' },
+        { code: 'CO', name: 'Colorado', model_type: 'Municipal Reimbursement' },
+        { code: 'ME', name: 'Maine', model_type: 'Full Municipal Reimbursement' },
+        { code: 'MD', name: 'Maryland', model_type: 'Shared Responsibility' },
+        { code: 'MN', name: 'Minnesota', model_type: 'Shared Responsibility' },
+        { code: 'WA', name: 'Washington', model_type: 'Shared Responsibility' },
+        { code: 'EU', name: 'European Union', model_type: 'Extended Producer Responsibility' }
+      ];
+    }
+  }
+
   private async loadDefaultRequirements() {
     const defaultRequirements: ComplianceRequirement[] = [
       {
@@ -98,7 +120,7 @@ export class ComplianceLibraryService {
         title: 'California EPR Packaging Waste Regulation',
         description: 'Extended Producer Responsibility requirements for packaging materials in California',
         type: 'regulation',
-        jurisdiction: 'California',
+        jurisdiction: 'CA',
         authority: 'California Department of Resources Recycling and Recovery (CalRecycle)',
         effectiveDate: '2024-01-01T00:00:00Z',
         lastUpdated: '2024-06-01T00:00:00Z',
@@ -146,6 +168,60 @@ export class ComplianceLibraryService {
         ],
         relatedDocuments: ['doc-1'],
         tags: ['epr', 'packaging', 'california', 'annual']
+      },
+      {
+        id: 'req-2',
+        title: 'Oregon EPR Packaging Waste Regulation',
+        description: 'Extended Producer Responsibility requirements for packaging materials in Oregon',
+        type: 'regulation',
+        jurisdiction: 'OR',
+        authority: 'Oregon Department of Environmental Quality (DEQ)',
+        effectiveDate: '2025-01-01T00:00:00Z',
+        lastUpdated: '2024-06-01T00:00:00Z',
+        status: 'active',
+        priority: 'critical',
+        category: 'Packaging Waste',
+        applicableProducts: ['packaging', 'containers', 'wrapping'],
+        requirements: [
+          {
+            id: 'req-2-1',
+            section: 'ORS 459A.865',
+            requirement: 'Submit annual packaging data report',
+            compliance: 'mandatory',
+            evidence: ['data report', 'material declarations'],
+            frequency: 'annual'
+          },
+          {
+            id: 'req-2-2',
+            section: 'ORS 459A.870',
+            requirement: 'Pay annual EPR fees based on packaging volume',
+            compliance: 'mandatory',
+            evidence: ['payment receipt', 'fee calculation'],
+            frequency: 'annual'
+          }
+        ],
+        penalties: [
+          {
+            type: 'fine',
+            description: 'Failure to submit annual report',
+            amount: 5000,
+            currency: 'USD',
+            conditions: ['Late submission', 'Incomplete data']
+          }
+        ],
+        deadlines: [
+          {
+            id: 'deadline-2',
+            title: 'Annual Report Submission',
+            date: '2025-04-30T23:59:59Z',
+            description: 'Submit packaging data for previous year',
+            type: 'submission',
+            isRecurring: true,
+            recurringPattern: 'yearly'
+          }
+        ],
+        relatedDocuments: ['doc-2'],
+        tags: ['epr', 'packaging', 'oregon', 'annual']
       }
     ];
 
@@ -281,6 +357,15 @@ export class ComplianceLibraryService {
     });
 
     return totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 100;
+  }
+
+  getSupportedJurisdictions(): Array<{code: string, name: string, model_type: string}> {
+    return this.supportedJurisdictions;
+  }
+
+  getJurisdictionName(code: string): string {
+    const jurisdiction = this.supportedJurisdictions.find(j => j.code === code);
+    return jurisdiction ? jurisdiction.name : code;
   }
 }
 
