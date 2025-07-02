@@ -50,8 +50,8 @@ class DataService {
       products: [],
       materials: [],
       analytics: {
-        complianceScore: 94,
-        daysToDeadline: 45,
+        complianceScore: 0,
+        daysToDeadline: 0,
         totalProducts: 0,
         totalFees: 0
       }

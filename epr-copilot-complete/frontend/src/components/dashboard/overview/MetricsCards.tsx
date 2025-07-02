@@ -14,9 +14,11 @@ import {
 interface MetricsCardsProps {
   complianceScore: number;
   daysToDeadline: number;
+  totalFees: number;
+  totalProducts: number;
 }
 
-export function MetricsCards({ complianceScore, daysToDeadline }: MetricsCardsProps) {
+export function MetricsCards({ complianceScore, daysToDeadline, totalFees, totalProducts }: MetricsCardsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <Card>
@@ -58,7 +60,7 @@ export function MetricsCards({ complianceScore, daysToDeadline }: MetricsCardsPr
           <DollarSign className="h-4 w-4 text-blue-600" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">$19,500</div>
+          <div className="text-2xl font-bold">${totalFees.toLocaleString()}</div>
           <div className="flex items-center space-x-1 mt-1">
             <TrendingUp className="h-3 w-3 text-green-600" />
             <span className="text-xs text-green-600">+16% from Q3</span>
@@ -75,7 +77,7 @@ export function MetricsCards({ complianceScore, daysToDeadline }: MetricsCardsPr
           <Package className="h-4 w-4 text-purple-600" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">1,247</div>
+          <div className="text-2xl font-bold">{totalProducts.toLocaleString()}</div>
           <div className="flex items-center space-x-1 mt-1">
             <span className="text-xs text-blue-600">+23 this month</span>
           </div>
