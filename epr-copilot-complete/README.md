@@ -56,7 +56,7 @@ Frontend will run on http://localhost:8080
 
 ### Backend (.env in backend directory)
 ```
-SECRET_KEY=your-secret-key
+SECRET_KEY=your-secure-secret-key-here  # REQUIRED: Must be set to a secure value in production
 DATABASE_URL=postgresql://user:password@localhost/epr_copilot
 STRIPE_SECRET_KEY=sk_test_...
 SENDGRID_API_KEY=SG...
@@ -66,6 +66,8 @@ AWS_ACCESS_KEY_ID=...
 AWS_SECRET_ACCESS_KEY=...
 AWS_S3_BUCKET=your-bucket
 ```
+
+**SECURITY WARNING**: The `SECRET_KEY` environment variable must be set to a cryptographically secure value in production. The application will refuse to start if the default placeholder value is detected.
 
 ### Frontend (.env in frontend directory)
 ```

@@ -10,7 +10,15 @@ class Settings:
     def __init__(self, _env_file: Optional[str] = None):
         self.database_url = os.getenv("DATABASE_URL", "sqlite:///./epr_copilot.db")
         self.redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
-        self.secret_key = os.getenv("SECRET_KEY", "your-secret-key-here")
+        
+        secret_key = os.getenv("SECRET_KEY", "your-secret-key-here")
+        if secret_key == "your-secret-key-here":
+            raise ValueError(
+                "SECRET_KEY environment variable must be set to a secure value. "
+                "Do not use the default placeholder 'your-secret-key-here' in production."
+            )
+        self.secret_key = secret_key
+        
         self.environment = os.getenv("ENVIRONMENT", "development")
         self.debug = os.getenv("DEBUG", "false").lower() == "true"
 
