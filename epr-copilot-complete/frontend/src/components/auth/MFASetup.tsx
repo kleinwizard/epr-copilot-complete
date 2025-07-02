@@ -11,7 +11,7 @@ import { QrCode, Smartphone, Key, CheckCircle, AlertTriangle } from 'lucide-reac
 import { useToast } from '@/hooks/use-toast';
 
 export function MFASetup() {
-  const [mfaMethod, setMfaMethod] = useState<'sms' | 'authenticator' | null>(null);
+  const [mfaMethod, setMfaMethod] = useState<'authenticator' | null>(null);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
@@ -95,19 +95,20 @@ export function MFASetup() {
         </CardHeader>
         <CardContent>
           <Tabs value={mfaMethod || 'choose'} onValueChange={(value) => setMfaMethod(value as any)}>
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="choose">Choose Method</TabsTrigger>
-              <TabsTrigger value="sms">SMS</TabsTrigger>
+              {/* DISABLED: SMS option disabled for initial launch */}
               <TabsTrigger value="authenticator">Authenticator</TabsTrigger>
             </TabsList>
 
             <TabsContent value="choose" className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="cursor-pointer hover:bg-gray-50" onClick={() => setMfaMethod('sms')}>
+                {/* DISABLED: SMS MFA option disabled for initial launch */}
+                <Card className="opacity-50 cursor-not-allowed">
                   <CardContent className="p-4 text-center">
-                    <Smartphone className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                    <h3 className="font-semibold">SMS Verification</h3>
-                    <p className="text-sm text-muted-foreground">Receive codes via text message</p>
+                    <Smartphone className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                    <h3 className="font-semibold text-gray-400">SMS Verification</h3>
+                    <p className="text-sm text-gray-400">Feature disabled for initial launch</p>
                   </CardContent>
                 </Card>
 
@@ -121,39 +122,7 @@ export function MFASetup() {
               </div>
             </TabsContent>
 
-            <TabsContent value="sms" className="space-y-4">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="+1 (555) 123-4567"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                  />
-                </div>
-                <Button onClick={setupSMS} disabled={!phoneNumber}>
-                  Send Verification Code
-                </Button>
-
-                {phoneNumber && (
-                  <div className="space-y-2">
-                    <Label htmlFor="sms-code">Verification Code</Label>
-                    <Input
-                      id="sms-code"
-                      placeholder="Enter 6-digit code"
-                      value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value)}
-                      maxLength={6}
-                    />
-                    <Button onClick={verifyMFA} disabled={verificationCode.length !== 6}>
-                      Verify Code
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
+            {/* DISABLED: SMS MFA tab disabled for initial launch */}
 
             <TabsContent value="authenticator" className="space-y-4">
               <div className="space-y-4">

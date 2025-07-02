@@ -47,12 +47,14 @@ export function MaterialStats({
         </CardContent>
       </Card>
       
+      {/* DISABLED: Sustainability Score feature disabled for initial launch */}
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium">Avg. Score</span>
+            <span className="text-sm font-medium text-gray-400">Avg. Score</span>
           </div>
-          <div className="text-2xl font-bold mt-1">{avgSustainabilityScore.toFixed(0)}/100</div>
+          <div className="text-2xl font-bold mt-1 text-gray-400">Feature Disabled</div>
+          <div className="text-xs text-gray-500 mt-1">Available in future release</div>
         </CardContent>
       </Card>
     </div>

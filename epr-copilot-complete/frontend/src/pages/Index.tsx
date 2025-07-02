@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
-import { DashboardOverview } from '@/components/dashboard/DashboardOverview';
+import { Home } from '@/components/home/Home';
 import { CompanySetup } from '@/components/company/CompanySetup';
 import { ProductCatalog } from '@/components/products/ProductCatalog';
 import { MaterialLibrary } from '@/components/materials/MaterialLibrary';
@@ -26,7 +26,7 @@ import { MobileFramework } from '@/components/mobile/MobileFramework';
 import { ProjectExport } from '@/components/admin/ProjectExport';
 
 const Index = () => {
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  const [currentPage, setCurrentPage] = useState('home');
   const { user } = useAuth();
 
   // Initialize user from localStorage on mount
@@ -40,8 +40,8 @@ const Index = () => {
 
   const renderCurrentPage = () => {
     switch (currentPage) {
-      case 'dashboard':
-        return <DashboardOverview />;
+      case 'home':
+        return <Home onPageChange={setCurrentPage} />;
       case 'company':
         return <CompanySetup />;
       case 'product-catalog':
@@ -76,7 +76,15 @@ const Index = () => {
       case 'team':
         return <TeamManagement />;
       case 'admin-tools':
-        return <AdminTools />;
+        return (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">Feature Temporarily Disabled</h3>
+              <p className="text-gray-500">Admin Tools are currently disabled for the initial launch.</p>
+              <p className="text-gray-500">This feature will be available in a future release.</p>
+            </div>
+          </div>
+        );
       case 'auth':
         return <AuthPage />;
       case 'settings':
@@ -86,7 +94,7 @@ const Index = () => {
       case 'project-export':
         return <ProjectExport />;
       default:
-        return <DashboardOverview />;
+        return <Home />;
     }
   };
 
