@@ -96,7 +96,11 @@ const getActionsWithData = (userData: any): QuickAction[] => [
   }
 ];
 
-export function QuickActionsPanel() {
+interface QuickActionsPanelProps {
+  onPageChange?: (page: string) => void;
+}
+
+export function QuickActionsPanel({ onPageChange }: QuickActionsPanelProps) {
   const { toast } = useToast();
   const [quickActions, setQuickActions] = useState<QuickAction[]>(getZeroStateActions());
   const [recentActions, setRecentActions] = useState<Array<{ action: string; time: string; status: string }>>([]);
@@ -127,15 +131,25 @@ export function QuickActionsPanel() {
     }
   };
 
-  const handleQuickAction = (action: string) => {
+  const handleQuickAction = (action: string, onPageChange?: (page: string) => void) => {
     switch (action) {
       case 'add-product':
+        if (onPageChange) {
+          onPageChange('product-catalog');
+        } else {
+          window.location.hash = '#product-catalog';
+        }
         toast({
           title: "Product Setup",
           description: "Navigate to Product Catalog to add your first product...",
         });
         break;
       case 'setup-company':
+        if (onPageChange) {
+          onPageChange('company');
+        } else {
+          window.location.hash = '#company';
+        }
         toast({
           title: "Company Setup",
           description: "Navigate to Company Setup to complete your profile...",
@@ -148,12 +162,22 @@ export function QuickActionsPanel() {
         });
         break;
       case 'generate-report':
+        if (onPageChange) {
+          onPageChange('quarterly-reports');
+        } else {
+          window.location.hash = '#quarterly-reports';
+        }
         toast({
           title: "Report Generation Started",
           description: "Generating quarterly compliance report. This may take a few minutes...",
         });
         break;
       case 'calculate-fees':
+        if (onPageChange) {
+          onPageChange('fees');
+        } else {
+          window.location.hash = '#fees';
+        }
         toast({
           title: "Fee Calculation Started",
           description: "Analyzing current EPR fee calculations...",
@@ -243,7 +267,7 @@ export function QuickActionsPanel() {
                   size="sm" 
                   variant="outline" 
                   className="h-7 text-xs"
-                  onClick={() => handleQuickAction(action.action)}
+                  onClick={() => handleQuickAction(action.action, onPageChange)}
                 >
                   Start
                 </Button>
@@ -269,7 +293,7 @@ export function QuickActionsPanel() {
                   size="sm" 
                   variant="ghost" 
                   className="h-7 text-xs"
-                  onClick={() => handleQuickAction(action.action)}
+                  onClick={() => handleQuickAction(action.action, onPageChange)}
                 >
                   Do
                 </Button>
