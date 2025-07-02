@@ -6,7 +6,7 @@ from decimal import Decimal
 from datetime import datetime, timezone
 from ..database import (
     get_db, Jurisdiction, FeeRate, EcoModificationRule, MaterialCategory,
-    Material
+    Material, User, Report, Organization, Product
 )
 from ..auth import get_current_user
 
@@ -571,6 +571,28 @@ async def get_admin_stats(
         last_updated=datetime.now(timezone.utc)
     )
 
+
+@router.get("/dashboard-stats")
+async def get_dashboard_stats(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    """Get dashboard statistics for admin tools."""
+    verify_admin_access(current_user)
+    
+    total_users = db.query(User).count()
+    total_reports = db.query(Report).count()
+    total_organizations = db.query(Organization).count()
+    active_products = db.query(Product).count()
+    
+    return {
+        "totalUsers": total_users,
+        "customForms": 0,  # Placeholder - forms system not yet implemented
+        "customReports": total_reports,
+        "activeWorkflows": 0,  # Placeholder - workflow system not yet implemented
+        "totalOrganizations": total_organizations,
+        "activeProducts": active_products
+    }
 
 
 @router.post("/jurisdictions/{jurisdiction_id}/bulk-import")

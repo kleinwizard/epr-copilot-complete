@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SystemAdministration } from './SystemAdministration';
@@ -7,16 +7,32 @@ import { FormBuilder } from './FormBuilder';
 import { ReportDesigner } from './ReportDesigner';
 import { WorkflowDesigner } from './WorkflowDesigner';
 import { ProjectExport } from './ProjectExport';
+import { apiService } from '@/services/apiService';
 
 export const AdminTools = () => {
   const [activeTab, setActiveTab] = useState('system');
+  const [adminStats, setAdminStats] = useState({
+    totalUsers: 0,
+    customForms: 0,
+    customReports: 0,
+    activeWorkflows: 0
+  });
+  const [loading, setLoading] = useState(true);
 
-  const adminStats = {
-    totalUsers: 24,
-    customForms: 8,
-    customReports: 12,
-    activeWorkflows: 6
-  };
+  useEffect(() => {
+    const fetchDashboardStats = async () => {
+      try {
+        const stats = await apiService.get('/admin/dashboard-stats');
+        setAdminStats(stats);
+      } catch (error) {
+        console.error('Failed to fetch dashboard stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardStats();
+  }, []);
 
   return (
     <div className="p-6 space-y-6">
@@ -34,7 +50,9 @@ export const AdminTools = () => {
             <CardTitle className="text-sm font-medium">System Users</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{adminStats.totalUsers}</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {loading ? '...' : adminStats.totalUsers}
+            </div>
             <p className="text-xs text-gray-500">active users</p>
           </CardContent>
         </Card>
@@ -44,7 +62,9 @@ export const AdminTools = () => {
             <CardTitle className="text-sm font-medium">Custom Forms</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{adminStats.customForms}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {loading ? '...' : adminStats.customForms}
+            </div>
             <p className="text-xs text-gray-500">forms created</p>
           </CardContent>
         </Card>
@@ -54,7 +74,9 @@ export const AdminTools = () => {
             <CardTitle className="text-sm font-medium">Custom Reports</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{adminStats.customReports}</div>
+            <div className="text-2xl font-bold text-purple-600">
+              {loading ? '...' : adminStats.customReports}
+            </div>
             <p className="text-xs text-gray-500">reports designed</p>
           </CardContent>
         </Card>
@@ -64,7 +86,9 @@ export const AdminTools = () => {
             <CardTitle className="text-sm font-medium">Active Workflows</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{adminStats.activeWorkflows}</div>
+            <div className="text-2xl font-bold text-orange-600">
+              {loading ? '...' : adminStats.activeWorkflows}
+            </div>
             <p className="text-xs text-gray-500">workflows running</p>
           </CardContent>
         </Card>
