@@ -134,14 +134,21 @@ class EPRCalculationEngine:
             
     def _stage_1_data_ingestion(self, report_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Stage 1: Data Ingestion & Standardization
+        Stage 1: Data Ingestion & Standardization with v2.0 producer identification.
         
         Validate and normalize input data for calculation pipeline.
         """
         producer_data = report_data.get('producer_data', {})
-        producer_validation_errors = self.strategy.validate_producer_data(producer_data)
-        
         packaging_data = report_data.get('packaging_data', [])
+        
+        if hasattr(self.strategy, 'identify_responsible_producer'):
+            for component in packaging_data:
+                responsible_producer_id = self.strategy.identify_responsible_producer(
+                    component, report_data.get('product_data', {})
+                )
+                component['responsible_producer_id'] = responsible_producer_id
+        
+        producer_validation_errors = self.strategy.validate_producer_data(producer_data)
         packaging_validation_errors = self.strategy.validate_packaging_data(packaging_data)
         
         all_errors = producer_validation_errors + packaging_validation_errors
@@ -150,14 +157,15 @@ class EPRCalculationEngine:
             raise ValueError(f"Data validation failed: {'; '.join(all_errors)}")
             
         ingested_data = {
-            "producer_data": self._normalize_producer_data(producer_data),
-            "packaging_data": self._normalize_packaging_data(packaging_data),
+            "producer_data": self._normalize_producer_data_v2(producer_data),
+            "packaging_data": self._normalize_packaging_data_v2(packaging_data),
             "system_data": report_data.get('system_data', {}),
             "calculation_date": report_data.get('calculation_date', datetime.now().isoformat()),
             "metadata": {
                 "data_source": report_data.get('data_source', 'api'),
                 "validation_passed": True,
-                "total_components": len(packaging_data)
+                "total_components": len(packaging_data),
+                "v2_features_enabled": True
             }
         }
         
@@ -448,7 +456,7 @@ class EPRCalculationEngine:
         return self.calculation_steps
         
     def _normalize_producer_data(self, producer_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Normalize producer data to standard format."""
+        """Normalize producer data to standard format (v1.0 compatibility)."""
         return {
             "organization_id": producer_data.get("organization_id"),
             "annual_revenue": Decimal(str(producer_data.get("annual_revenue", 0))),
@@ -460,8 +468,25 @@ class EPRCalculationEngine:
             "annual_recycling_rates": producer_data.get("annual_recycling_rates", [])
         }
         
+    def _normalize_producer_data_v2(self, producer_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Normalize producer data to v2.0 format with enhanced producer hierarchy support."""
+        normalized = self._normalize_producer_data(producer_data)
+        
+        normalized.update({
+            "annual_revenue_scope": producer_data.get("annual_revenue_scope", "GLOBAL"),
+            "annual_revenue_in_state": Decimal(str(producer_data.get("annual_revenue_in_state", 0))),
+            "jurisdiction_code": producer_data.get("jurisdiction_code"),
+            "entity_roles": producer_data.get("entity_roles", []),
+            "parent_entity_id": producer_data.get("parent_entity_id"),
+            "brand_owner_id": producer_data.get("brand_owner_id"),
+            "ecommerce_shipper_id": producer_data.get("ecommerce_shipper_id"),
+            "designated_producer_id": producer_data.get("designated_producer_id")
+        })
+        
+        return normalized
+        
     def _normalize_packaging_data(self, packaging_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Normalize packaging data to standard format."""
+        """Normalize packaging data to standard format (v1.0 compatibility)."""
         normalized = []
         
         for component in packaging_data:
@@ -479,6 +504,41 @@ class EPRCalculationEngine:
                 "contains_pfas": component.get("contains_pfas", False),
                 "contains_phthalates": component.get("contains_phthalates", False)
             }
+            normalized.append(normalized_component)
+            
+        return normalized
+        
+    def _normalize_packaging_data_v2(self, packaging_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Normalize packaging data to v2.0 format with enhanced granularity and producer tracking."""
+        normalized = []
+        
+        for component in packaging_data:
+            normalized_component = {
+                "material_type": component.get("material_type", "unknown"),
+                "component_name": component.get("component_name", "unknown"),
+                "weight_per_unit": Decimal(str(component.get("weight_per_unit", 0))),
+                "weight_unit": component.get("weight_unit", "kg"),
+                "units_sold": int(component.get("units_sold", 0)),
+                "recycled_content_percentage": Decimal(str(component.get("recycled_content_percentage", 0))),
+                "recyclable": component.get("recyclable", True),
+                "reusable": component.get("reusable", False),
+                "disrupts_recycling": component.get("disrupts_recycling", False),
+                "recyclability_score": Decimal(str(component.get("recyclability_score", 50))),
+                "contains_pfas": component.get("contains_pfas", False),
+                "contains_phthalates": component.get("contains_phthalates", False)
+            }
+            
+            normalized_component.update({
+                "packaging_level": component.get("packaging_level", "PRIMARY"),
+                "responsible_producer_id": component.get("responsible_producer_id"),
+                "is_beverage_container": component.get("is_beverage_container", False),
+                "is_medical_exempt": component.get("is_medical_exempt", False),
+                "is_fifra_exempt": component.get("is_fifra_exempt", False),
+                "ca_plastic_component_flag": component.get("ca_plastic_component_flag", False),
+                "me_toxicity_flag": component.get("me_toxicity_flag", False),
+                "or_lca_bonus_tier": component.get("or_lca_bonus_tier")
+            })
+            
             normalized.append(normalized_component)
             
         return normalized

@@ -205,6 +205,11 @@ class CaliforniaFeeCalculationStrategy(FeeCalculationStrategy):
             component_weight = Decimal(str(component.get('weight_per_unit', 0))) * Decimal(str(component.get('units_sold', 0)))
             weight_ratio = component_weight / self._get_total_weight(packaging_data) if self._get_total_weight(packaging_data) > 0 else Decimal('0')
             
+            # California-specific plastic component penalty for v2.0
+            if component.get('ca_plastic_component_flag', False):
+                plastic_component_penalty = base_fee * weight_ratio * Decimal('0.10')  # 10% penalty
+                total_adjustment += plastic_component_penalty
+            
             if component.get('recyclable', True):
                 recyclability_bonus = base_fee * weight_ratio * Decimal('0.10')
                 total_adjustment -= recyclability_bonus
@@ -257,11 +262,12 @@ class CaliforniaFeeCalculationStrategy(FeeCalculationStrategy):
         """Apply California-specific exemptions beyond small producer exemption."""
         return fee
         
-    def get_small_producer_thresholds(self) -> Dict[str, Optional[Decimal]]:
-        """Return California's small producer thresholds."""
+    def get_small_producer_thresholds(self) -> Dict[str, Any]:
+        """Return California's small producer thresholds with v2.0 operator logic."""
         return {
             'revenue_threshold': Decimal('1000000'),  # $1M annual gross sales in CA
-            'tonnage_threshold': None                 # No tonnage threshold for CA
+            'tonnage_threshold': None,                # No tonnage threshold for CA
+            'operator': 'AND'
         }
         
     def _apply_small_producer_exemption(self, report_data: Dict[str, Any]) -> Dict[str, Any]:

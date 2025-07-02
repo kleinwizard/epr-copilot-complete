@@ -8,9 +8,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from epr_backend.main import app
-from epr_backend.database import get_db, Base
-from epr_backend.config import get_settings
+from epr_backend.app.main import app
+from epr_backend.app.database import get_db, Base
+from epr_backend.app.config import get_settings
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 
