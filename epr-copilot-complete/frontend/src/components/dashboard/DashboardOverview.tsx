@@ -6,7 +6,6 @@ import { RecentActivity } from './overview/RecentActivity';
 import { ComplianceScoreWidget } from './ComplianceScoreWidget';
 import { FinancialOverview } from './FinancialOverview';
 import { QuickActionsPanel } from './QuickActionsPanel';
-import { InteractiveCalendar } from './InteractiveCalendar';
 import { useComplianceDueDates } from '@/hooks/useComplianceDueDates';
 import { dataService } from '@/services/dataService';
 import { useEffect, useState } from 'react';
@@ -39,11 +38,18 @@ export function DashboardOverview() {
 
   const complianceScore = analyticsData?.complianceScore || 0;
   const daysToDeadline = analyticsData?.daysToDeadline || 0;
+  const totalFees = analyticsData?.totalFees || 0;
+  const totalProducts = analyticsData?.totalProducts || 0;
   
   return (
     <div className="space-y-6">
       {/* Key Metrics */}
-      <MetricsCards complianceScore={complianceScore} daysToDeadline={daysToDeadline} />
+      <MetricsCards 
+        complianceScore={complianceScore} 
+        daysToDeadline={daysToDeadline}
+        totalFees={totalFees}
+        totalProducts={totalProducts}
+      />
 
       {/* Enhanced Dashboard Widgets */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
@@ -52,8 +58,7 @@ export function DashboardOverview() {
       </div>
 
       {/* Interactive Features */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <InteractiveCalendar />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <QuickActionsPanel />
       </div>
 

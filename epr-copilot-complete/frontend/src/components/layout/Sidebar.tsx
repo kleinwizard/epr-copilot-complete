@@ -74,6 +74,7 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
   const { user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [hoveredSection, setHoveredSection] = useState<string | null>(null);
+  const [clickedSection, setClickedSection] = useState<string | null>(null);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -208,6 +209,7 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
                 <Button
                   variant="ghost"
                   className="w-full justify-between group hover:bg-gray-100"
+                  onClick={() => setClickedSection(clickedSection === section.id ? null : section.id)}
                 >
                   <div className="flex items-center">
                     {getIcon(section.icon)}
@@ -216,7 +218,7 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
                   <ChevronRight className="h-4 w-4 opacity-50 group-hover:opacity-100" />
                 </Button>
                 
-                {hoveredSection === section.id && (
+                {(hoveredSection === section.id || clickedSection === section.id) && (
                   <div className="absolute left-full top-0 ml-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-2">
                     {section.items.map((item) => (
                       <Button
