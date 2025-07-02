@@ -23,6 +23,13 @@ interface Material {
   type: string;
   weight: number;
   recyclable: boolean;
+  packagingLevel: 'PRIMARY' | 'SECONDARY' | 'TERTIARY' | 'ECOM_SHIPPER' | 'SERVICE_WARE';
+  isBeverageContainer: boolean;
+  isMedicalExempt: boolean;
+  isFifraExempt: boolean;
+  caPlasticComponentFlag: boolean;
+  meToxicityFlag: boolean;
+  orLcaBonusTier?: 'A' | 'B' | 'C';
 }
 
 interface Product {
@@ -38,6 +45,7 @@ interface Product {
   manufacturer?: string;
   lastUpdated: string;
   eprFee: number;
+  designatedProducerId?: string;
 }
 
 interface ProductFormProps {
@@ -58,7 +66,8 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
     upc: product?.upc || '',
     manufacturer: product?.manufacturer || '',
     lastUpdated: new Date().toISOString().split('T')[0],
-    eprFee: product?.eprFee || 0
+    eprFee: product?.eprFee || 0,
+    designatedProducerId: product?.designatedProducerId || undefined
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -231,6 +240,24 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                       placeholder="Enter manufacturer"
                     />
                   </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="designatedProducer">Designated Producer (California Override)</Label>
+                  <Select value={formData.designatedProducerId || ''} onValueChange={(value) => setFormData(prev => ({ ...prev, designatedProducerId: value || undefined }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Use Default (Brand Owner)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Use Default (Brand Owner)</SelectItem>
+                      <SelectItem value="org1">Alternative Producer 1</SelectItem>
+                      <SelectItem value="org2">Alternative Producer 2</SelectItem>
+                      <SelectItem value="org3">Alternative Producer 3</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">
+                    Override the default brand owner responsibility for California EPR compliance
+                  </p>
                 </div>
                 
                 <div className="space-y-2">
