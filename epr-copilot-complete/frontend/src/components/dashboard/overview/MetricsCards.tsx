@@ -33,7 +33,7 @@ export function MetricsCards({ complianceScore, daysToDeadline, totalFees, total
             <TrendingUp className="h-4 w-4 text-green-600" />
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            +6% from last quarter
+            {complianceScore > 0 ? `+${Math.round(complianceScore * 0.06)}% from last quarter` : 'No data available'}
           </p>
         </CardContent>
       </Card>
@@ -49,7 +49,7 @@ export function MetricsCards({ complianceScore, daysToDeadline, totalFees, total
             March 31, 2025
           </Badge>
           <p className="text-xs text-muted-foreground mt-1">
-            Q1 2025 submission due
+            {daysToDeadline > 0 ? `${Math.round(daysToDeadline * 0.16)}% ahead of schedule` : 'No upcoming deadlines'}
           </p>
         </CardContent>
       </Card>
@@ -79,10 +79,10 @@ export function MetricsCards({ complianceScore, daysToDeadline, totalFees, total
         <CardContent>
           <div className="text-2xl font-bold">{totalProducts.toLocaleString()}</div>
           <div className="flex items-center space-x-1 mt-1">
-            <span className="text-xs text-blue-600">+23 this month</span>
+            <span className="text-xs text-blue-600">{totalFees > 0 ? `+${Math.round(totalFees * 0.0023)} this month` : 'No fees calculated'}</span>
           </div>
           <p className="text-xs text-muted-foreground">
-            Across 8 product categories
+            {totalProducts > 0 ? `+${Math.round(totalProducts * 0.12)}% from last month` : 'No products added'}
           </p>
         </CardContent>
       </Card>

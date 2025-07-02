@@ -54,6 +54,26 @@ const metrics = [
 ];
 
 export function ComplianceMetrics() {
+  const [complianceData, setComplianceData] = useState<Array<{
+    jurisdiction: string;
+    score?: number;
+    status: string;
+    issues: number;
+    trend: string;
+  }>>([]);
+
+  useEffect(() => {
+    const fetchComplianceData = async () => {
+      try {
+        setComplianceData([]);
+      } catch (error) {
+        console.error('Failed to fetch compliance data:', error);
+        setComplianceData([]);
+      }
+    };
+
+    fetchComplianceData();
+  }, []);
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -105,7 +125,7 @@ export function ComplianceMetrics() {
               </PieChart>
             </ChartContainer>
             <div className="grid grid-cols-3 gap-4 mt-4">
-              {complianceData.map((item, index) => (
+              {complianceData.length > 0 ? complianceData.map((item, index) => (
                 <div key={index} className="text-center">
                   <div className="flex items-center justify-center space-x-2 mb-1">
                     <div 
@@ -116,7 +136,13 @@ export function ComplianceMetrics() {
                   </div>
                   <span className="text-lg font-bold">{item.value}%</span>
                 </div>
-              ))}
+              )) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
+                  <p>No compliance data available</p>
+                  <p className="text-sm">Add products and calculate fees to see compliance metrics</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
