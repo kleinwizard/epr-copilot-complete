@@ -22,6 +22,7 @@ import { AdminTools } from '@/components/admin/AdminTools';
 import { AuthPage } from '@/components/auth/AuthPage';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { SupportHelpSystem } from '@/components/support/SupportHelpSystem';
+import { SupportPage } from '@/components/support/SupportPage';
 import { MobileFramework } from '@/components/mobile/MobileFramework';
 import { ProjectExport } from '@/components/admin/ProjectExport';
 
@@ -91,6 +92,8 @@ const Index = () => {
         return <Settings />;
       case 'support-help':
         return <SupportHelpSystem />;
+      case 'support-page':
+        return <SupportPage />;
       case 'project-export':
         return <ProjectExport />;
       default:
