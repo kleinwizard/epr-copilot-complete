@@ -215,10 +215,6 @@ class MaineFeeCalculationStrategy(FeeCalculationStrategy):
             weight_ratio = component_weight / total_weight
             component_base_fee = base_fee * weight_ratio
             
-            if component.get('me_toxicity_flag', False):
-                toxicity_penalty = component_base_fee * Decimal('0.25')  # 25% penalty
-                total_adjustment += toxicity_penalty
-            
             if not component.get('recyclable', True):
                 recyclability_score = Decimal(str(component.get('recyclability_score', 0))) / Decimal('100')
                 
@@ -266,12 +262,11 @@ class MaineFeeCalculationStrategy(FeeCalculationStrategy):
         """Apply Maine-specific exemptions beyond the main exemption checks."""
         return fee
         
-    def get_small_producer_thresholds(self) -> Dict[str, Any]:
-        """Return Maine's small producer thresholds with v2.0 operator logic."""
+    def get_small_producer_thresholds(self) -> Dict[str, Optional[Decimal]]:
+        """Return Maine's small producer thresholds."""
         return {
             'revenue_threshold': Decimal('2000000'),  # $2M gross revenue
-            'tonnage_threshold': Decimal('1.0'),      # 1 ton of packaging
-            'operator': 'OR'  # Either condition qualifies for exemption
+            'tonnage_threshold': Decimal('1.0')       # 1 ton of packaging
         }
         
     def _check_exemptions(self, report_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
