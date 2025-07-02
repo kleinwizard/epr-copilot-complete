@@ -1,5 +1,4 @@
 
-import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -58,51 +57,6 @@ const optimizationOpportunities = [
 ];
 
 export function CostAnalysis() {
-  const [costData, setCostData] = useState<{
-    currentQuarterlyFees: number;
-    potentialSavings: number;
-    costPerUnit: number;
-    annualProjection: number;
-    costTrend: Array<{month: string; fees: number; savings: number; projected: number}>;
-    costBreakdown: Array<{category: string; value: number; percentage: number; color: string}>;
-    optimizationOpportunities: Array<{
-      title: string;
-      currentCost: number;
-      potentialSaving: number;
-      effort: string;
-      timeframe: string;
-      impact: string;
-    }>;
-  } | null>(null);
-
-  useEffect(() => {
-    const fetchCostData = async () => {
-      try {
-        setCostData({
-          currentQuarterlyFees: 0,
-          potentialSavings: 0,
-          costPerUnit: 0,
-          annualProjection: 0,
-          costTrend: [],
-          costBreakdown: [],
-          optimizationOpportunities: []
-        });
-      } catch (error) {
-        console.error('Failed to fetch cost data:', error);
-        setCostData({
-          currentQuarterlyFees: 0,
-          potentialSavings: 0,
-          costPerUnit: 0,
-          annualProjection: 0,
-          costTrend: [],
-          costBreakdown: [],
-          optimizationOpportunities: []
-        });
-      }
-    };
-
-    fetchCostData();
-  }, []);
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -115,9 +69,9 @@ export function CostAnalysis() {
               <div>
                 <p className="text-sm text-muted-foreground">Current Quarterly Fees</p>
                 <div className="flex items-center space-x-2">
-                  <span className="text-2xl font-bold">${costData?.currentQuarterlyFees.toLocaleString() || '0'}</span>
+                  <span className="text-2xl font-bold">$78,450</span>
                   <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                    {costData?.currentQuarterlyFees > 0 ? '+8.5%' : 'No data'}
+                    +8.5%
                   </Badge>
                 </div>
               </div>
@@ -134,9 +88,9 @@ export function CostAnalysis() {
               <div>
                 <p className="text-sm text-muted-foreground">Potential Savings</p>
                 <div className="flex items-center space-x-2">
-                  <span className="text-2xl font-bold text-green-600">${costData?.potentialSavings.toLocaleString() || '0'}</span>
+                  <span className="text-2xl font-bold text-green-600">$29,160</span>
                   <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    {costData?.potentialSavings > 0 ? '37% reduction' : 'No savings identified'}
+                    37% reduction
                   </Badge>
                 </div>
               </div>
@@ -153,9 +107,9 @@ export function CostAnalysis() {
               <div>
                 <p className="text-sm text-muted-foreground">Cost per Unit</p>
                 <div className="flex items-center space-x-2">
-                  <span className="text-2xl font-bold">${costData?.costPerUnit.toFixed(3) || '0.000'}</span>
+                  <span className="text-2xl font-bold">$0.063</span>
                   <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    {costData?.costPerUnit > 0 ? 'vs $0.071 avg' : 'No data'}
+                    vs $0.071 avg
                   </Badge>
                 </div>
               </div>
@@ -172,9 +126,9 @@ export function CostAnalysis() {
               <div>
                 <p className="text-sm text-muted-foreground">Annual Projection</p>
                 <div className="flex items-center space-x-2">
-                  <span className="text-2xl font-bold">${costData?.annualProjection ? Math.round(costData.annualProjection / 1000) : 0}k</span>
+                  <span className="text-2xl font-bold">$327k</span>
                   <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                    {costData?.annualProjection > 0 ? '+$52k YoY' : 'No projection data'}
+                    +$52k YoY
                   </Badge>
                 </div>
               </div>
@@ -191,7 +145,7 @@ export function CostAnalysis() {
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="h-[300px] w-full">
-              <ComposedChart data={costData?.costTrend || []}>
+              <ComposedChart data={costTrend}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
@@ -213,7 +167,7 @@ export function CostAnalysis() {
             <ChartContainer config={chartConfig} className="h-[200px] w-full">
               <PieChart>
                 <Pie
-                  data={costData?.costBreakdown || []}
+                  data={costBreakdown}
                   cx="50%"
                   cy="50%"
                   innerRadius={40}
@@ -221,7 +175,7 @@ export function CostAnalysis() {
                   paddingAngle={5}
                   dataKey="value"
                 >
-                  {(costData?.costBreakdown || []).map((entry, index) => (
+                  {costBreakdown.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -229,7 +183,7 @@ export function CostAnalysis() {
               </PieChart>
             </ChartContainer>
             <div className="grid grid-cols-2 gap-2 mt-4">
-              {(costData?.costBreakdown || []).map((item, index) => (
+              {costBreakdown.map((item, index) => (
                 <div key={index} className="flex items-center space-x-2 text-sm">
                   <div 
                     className="w-3 h-3 rounded-full" 
@@ -254,7 +208,7 @@ export function CostAnalysis() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {(costData?.optimizationOpportunities || []).map((opportunity, index) => (
+            {optimizationOpportunities.map((opportunity, index) => (
               <div key={index} className="border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="font-medium">{opportunity.title}</h4>
