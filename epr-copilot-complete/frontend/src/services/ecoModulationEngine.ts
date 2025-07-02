@@ -1,4 +1,5 @@
 import { EnhancedMaterial } from './enhancedFeeCalculation';
+import { calculateEprFeeV1, FeeCalculationRequestV1, PackagingComponentV1, ProducerDataV1 } from './feeCalculation';
 
 export interface EcoModulationFactors {
   carbonFootprint: number;
@@ -74,6 +75,97 @@ export class EcoModulationEngine {
       adjustmentPercentage,
       breakdown,
       sustainabilityScore
+    };
+  }
+
+  async calculateEcoModulationV1(
+    jurisdictionCode: string,
+    material: EnhancedMaterial,
+    ecoFactors: EcoModulationFactors,
+    producerData: ProducerDataV1,
+    unitsProduced: number = 1
+  ): Promise<EcoModulationResult> {
+    try {
+      const packagingComponent: PackagingComponentV1 = {
+        material_type: material.type,
+        component_name: 'Primary Component',
+        weight_per_unit: material.weight / 1000, // Convert grams to kg
+        weight_unit: 'kg',
+        units_sold: unitsProduced,
+        recycled_content_percentage: ecoFactors.recycledContent * 100,
+        recyclable: material.recyclable,
+        reusable: ecoFactors.reusability > 0.5,
+        disrupts_recycling: false,
+        recyclability_score: material.recyclable ? 75 : 25,
+        contains_pfas: false,
+        contains_phthalates: false,
+        marine_degradable: ecoFactors.biodegradability > 0.7,
+        harmful_to_marine_life: ecoFactors.biodegradability < 0.3,
+        bay_friendly: ecoFactors.localSourcing > 0.7,
+        cold_weather_stable: true
+      };
+
+      const enhancedProducerData: ProducerDataV1 = {
+        ...producerData,
+        has_lca_disclosure: ecoFactors.carbonFootprint < 5,
+        has_environmental_impact_reduction: ecoFactors.carbonFootprint < 3,
+        uses_reusable_packaging: ecoFactors.reusability > 0.5
+      };
+
+      // Calculate base fee first (without eco-modulation)
+      const baseRequest: FeeCalculationRequestV1 = {
+        jurisdiction_code: jurisdictionCode,
+        producer_data: enhancedProducerData,
+        packaging_data: [{ ...packagingComponent, recycled_content_percentage: 0, reusable: false }],
+        data_source: 'frontend_eco_modulation'
+      };
+
+      const baseResult = await calculateEprFeeV1(baseRequest);
+      const baseFee = baseResult.total_fee;
+
+      // Calculate modulated fee with eco factors
+      const modulatedRequest: FeeCalculationRequestV1 = {
+        jurisdiction_code: jurisdictionCode,
+        producer_data: enhancedProducerData,
+        packaging_data: [packagingComponent],
+        data_source: 'frontend_eco_modulation'
+      };
+
+      const modulatedResult = await calculateEprFeeV1(modulatedRequest);
+      const modulatedFee = modulatedResult.total_fee;
+
+      const totalAdjustment = modulatedFee - baseFee;
+      const adjustmentPercentage = baseFee > 0 ? (totalAdjustment / baseFee) * 100 : 0;
+
+      const breakdown = this.extractBreakdownFromCalculation(baseResult, modulatedResult);
+      const sustainabilityScore = this.calculateSustainabilityScore(ecoFactors, breakdown);
+
+      return {
+        originalFee: baseFee,
+        modulatedFee,
+        totalAdjustment,
+        adjustmentPercentage,
+        breakdown,
+        sustainabilityScore
+      };
+
+    } catch (error) {
+      console.error('Failed to calculate eco-modulation using backend rules:', error);
+      return this.calculateEcoModulation(material, 0, ecoFactors);
+    }
+  }
+
+  private extractBreakdownFromCalculation(baseResult: any, modulatedResult: any): any {
+    const baseBreakdown = baseResult.calculation_breakdown || {};
+    const modulatedBreakdown = modulatedResult.calculation_breakdown || {};
+
+    return {
+      carbonFootprintAdjustment: (modulatedBreakdown.eco_modulation?.carbon_footprint || 0) - (baseBreakdown.eco_modulation?.carbon_footprint || 0),
+      recycledContentBonus: (modulatedBreakdown.eco_modulation?.recycled_content || 0) - (baseBreakdown.eco_modulation?.recycled_content || 0),
+      biodegradabilityBonus: (modulatedBreakdown.eco_modulation?.biodegradability || 0) - (baseBreakdown.eco_modulation?.biodegradability || 0),
+      reusabilityBonus: (modulatedBreakdown.eco_modulation?.reusability || 0) - (baseBreakdown.eco_modulation?.reusability || 0),
+      localSourcingBonus: (modulatedBreakdown.eco_modulation?.local_sourcing || 0) - (baseBreakdown.eco_modulation?.local_sourcing || 0),
+      certificationBonus: (modulatedBreakdown.eco_modulation?.certifications || 0) - (baseBreakdown.eco_modulation?.certifications || 0)
     };
   }
 

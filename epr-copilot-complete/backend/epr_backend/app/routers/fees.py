@@ -4,10 +4,11 @@ from typing import List, Optional, Dict, Any, Union
 from pydantic import BaseModel
 from decimal import Decimal, ROUND_HALF_EVEN
 from datetime import datetime, timezone
-from ..database import get_db, Material
+from ..database import get_db, Material, CalculatedFee, CalculationStep
 from ..auth import get_current_user
 from ..cache import cache_result
 from ..validation_schemas import FeeCalculationValidationSchema
+from ..calculation_engine import EPRCalculationEngine
 
 router = APIRouter(prefix="/api/fees", tags=["fees"])
 
@@ -100,6 +101,86 @@ class FeeCalculationResult(BaseModel):
     breakdown: dict
 
 
+
+class ProducerData(BaseModel):
+    organization_id: str
+    annual_revenue: Decimal
+    annual_tonnage: Decimal
+    produces_perishable_food: bool = False
+    has_lca_disclosure: bool = False
+    has_environmental_impact_reduction: bool = False
+    uses_reusable_packaging: bool = False
+    annual_recycling_rates: List[float] = []
+
+
+class PackagingComponent(BaseModel):
+    material_type: str
+    component_name: str
+    weight_per_unit: Decimal
+    weight_unit: str
+    units_sold: int
+    recycled_content_percentage: Decimal = Decimal('0')
+    recyclable: bool = True
+    reusable: bool = False
+    disrupts_recycling: bool = False
+    recyclability_score: Decimal = Decimal('50')
+    contains_pfas: bool = False
+    contains_phthalates: bool = False
+    marine_degradable: bool = False
+    harmful_to_marine_life: bool = False
+    bay_friendly: bool = False
+    cold_weather_stable: bool = False
+
+
+class SystemData(BaseModel):
+    municipal_support_costs: Optional[Decimal] = None
+    infrastructure_costs: Optional[Decimal] = None
+    administrative_costs: Optional[Decimal] = None
+    education_outreach_costs: Optional[Decimal] = None
+    system_total_tonnage: Optional[Decimal] = None
+
+
+class FeeCalculationRequestV1(BaseModel):
+    jurisdiction_code: str
+    producer_data: ProducerData
+    packaging_data: List[PackagingComponent]
+    system_data: Optional[SystemData] = None
+    calculation_date: Optional[str] = None
+    data_source: str = "api"
+
+
+class CalculationStepResponse(BaseModel):
+    step_number: int
+    step_name: str
+    input_data: Dict[str, Any]
+    output_data: Dict[str, Any]
+    rule_applied: str
+    legal_citation: str
+    calculation_method: str
+    timestamp: str
+    jurisdiction: str
+
+
+class FeeCalculationResponseV1(BaseModel):
+    calculation_id: str
+    jurisdiction: str
+    total_fee: Decimal
+    currency: str
+    calculation_timestamp: str
+    calculation_breakdown: Dict[str, Any]
+    legal_citations: List[str]
+    compliance_status: str
+
+
+class AuditTraceResponse(BaseModel):
+    calculation_id: str
+    jurisdiction: str
+    total_steps: int
+    audit_trail: List[CalculationStepResponse]
+    legal_citations: List[str]
+    calculation_timestamp: str
+
+
 @router.post("/calculate", response_model=FeeCalculationResult)
 @cache_result()
 async def calculate_fees(
@@ -176,3 +257,150 @@ async def get_fee_history(
 ):
     """Get fee calculation history for the current user's organization."""
     return []
+
+
+
+@router.post("/v1/calculate-fee", response_model=FeeCalculationResponseV1)
+async def calculate_fee_v1(
+    request: FeeCalculationRequestV1,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    """
+    Execute the full 8-stage EPR calculation pipeline for a given producer report.
+    
+    This endpoint implements the comprehensive EPR fee calculation system as specified
+    in the EPR Compliance Application Specification. It processes producer data through
+    a standardized logical pipeline that is applied consistently across all jurisdictions.
+    
+    The calculation includes:
+    1. Data Ingestion & Standardization
+    2. Unit Standardization (convert to kg)
+    3. Material Classification
+    4. Base Fee Calculation
+    5. Eco-Modulation (sustainability bonuses/penalties)
+    6. Discounts & Exemptions
+    7. Aggregation & Rounding
+    8. Audit Trail Generation
+    
+    Returns a unique calculation_id that can be used to retrieve the detailed
+    audit trail via the /v1/fees/{calculation_id}/trace endpoint.
+    """
+    try:
+        supported_jurisdictions = ['OR', 'CA', 'CO', 'ME', 'MD', 'MN', 'WA']
+        if request.jurisdiction_code.upper() not in supported_jurisdictions:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Unsupported jurisdiction: {request.jurisdiction_code}. "
+                       f"Supported jurisdictions: {', '.join(supported_jurisdictions)}"
+            )
+        
+        engine = EPRCalculationEngine(request.jurisdiction_code.upper(), db)
+        
+        report_data = {
+            "producer_data": request.producer_data.dict(),
+            "packaging_data": [component.dict() for component in request.packaging_data],
+            "system_data": request.system_data.dict() if request.system_data else {},
+            "calculation_date": request.calculation_date,
+            "data_source": request.data_source
+        }
+        
+        result = engine.calculate_epr_fee_comprehensive(report_data)
+        
+        return FeeCalculationResponseV1(
+            calculation_id=result["calculation_id"],
+            jurisdiction=result["jurisdiction"],
+            total_fee=result["total_fee"],
+            currency=result["currency"],
+            calculation_timestamp=result["calculation_timestamp"],
+            calculation_breakdown=result["calculation_breakdown"],
+            legal_citations=result["legal_citations"],
+            compliance_status=result["compliance_status"]
+        )
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Calculation failed: {str(e)}")
+
+
+@router.get("/v1/fees/{calculation_id}/trace", response_model=AuditTraceResponse)
+async def get_calculation_trace(
+    calculation_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    """
+    Retrieve the detailed, immutable audit trail for a specific EPR fee calculation.
+    
+    This endpoint provides complete transparency into how a fee was calculated,
+    including every step of the calculation pipeline with legal citations.
+    This audit trail is essential for regulatory compliance and legal defensibility.
+    
+    The audit trail includes:
+    - Step-by-step calculation breakdown
+    - Input and output data for each step
+    - Rules and formulas applied at each step
+    - Legal citations and regulatory references
+    - Timestamps for each calculation step
+    
+    This feature is non-negotiable and essential for building user trust
+    and providing a defensible compliance record.
+    """
+    try:
+        calculated_fee = db.query(CalculatedFee).filter(
+            CalculatedFee.id == calculation_id
+        ).first()
+        
+        if not calculated_fee:
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Calculation with ID {calculation_id} not found"
+            )
+        
+        calculation_steps = db.query(CalculationStep).filter(
+            CalculationStep.calculated_fee_id == calculation_id
+        ).order_by(CalculationStep.step_number).all()
+        
+        if not calculation_steps:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Audit trail not found for calculation {calculation_id}"
+            )
+        
+        audit_trail = []
+        legal_citations = set()
+        
+        for step in calculation_steps:
+            step_response = CalculationStepResponse(
+                step_number=step.step_number,
+                step_name=step.step_name,
+                input_data=step.input_data or {},
+                output_data=step.output_data or {},
+                rule_applied=step.rule_applied or "",
+                legal_citation=step.legal_citation or "",
+                calculation_method=step.calculation_method or "",
+                timestamp=step.created_at.isoformat() if step.created_at else "",
+                jurisdiction=calculated_fee.jurisdiction_id or ""
+            )
+            audit_trail.append(step_response)
+            
+            if step.legal_citation:
+                legal_citations.add(step.legal_citation)
+        
+        return AuditTraceResponse(
+            calculation_id=calculation_id,
+            jurisdiction=calculated_fee.jurisdiction_id or "",
+            total_steps=len(audit_trail),
+            audit_trail=audit_trail,
+            legal_citations=list(legal_citations),
+            calculation_timestamp=calculated_fee.created_at.isoformat() if calculated_fee.created_at else ""
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to retrieve audit trail: {str(e)}"
+        )

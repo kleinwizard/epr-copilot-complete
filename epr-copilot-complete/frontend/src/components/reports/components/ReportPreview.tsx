@@ -1,6 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Clock, AlertTriangle } from 'lucide-react';
+import { complianceLibraryService } from '@/services/complianceLibraryService';
 
 interface ReportFormData {
   quarter: string;
@@ -30,7 +31,7 @@ export function ReportPreview({ formData }: ReportPreviewProps) {
           </div>
           <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
             <span className="font-medium">Jurisdiction</span>
-            <span className="capitalize">{formData.region}</span>
+            <span className="capitalize">{complianceLibraryService.getJurisdictionName(formData.region)}</span>
           </div>
           <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
             <span className="font-medium">Estimated Products</span>

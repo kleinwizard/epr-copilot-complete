@@ -53,9 +53,14 @@ export function EventFilters({ filters, onFiltersChange }: EventFiltersProps) {
 
   const jurisdictionOptions = [
     { value: 'all', label: 'All Jurisdictions' },
-    { value: 'California', label: 'California' },
-    { value: 'New York', label: 'New York' },
-    { value: 'Federal', label: 'Federal' }
+    { value: 'OR', label: 'Oregon' },
+    { value: 'CA', label: 'California' },
+    { value: 'CO', label: 'Colorado' },
+    { value: 'ME', label: 'Maine' },
+    { value: 'MD', label: 'Maryland' },
+    { value: 'MN', label: 'Minnesota' },
+    { value: 'WA', label: 'Washington' },
+    { value: 'EU', label: 'European Union' }
   ];
 
   const hasActiveFilters = Object.values(filters).some(filter => filter !== 'all');
