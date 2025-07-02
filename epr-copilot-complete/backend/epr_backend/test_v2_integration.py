@@ -2,6 +2,7 @@
 Integration test for v2.0 calculation engine with producer hierarchy.
 """
 
+import logging
 from app.calculation_engine import EPRCalculationEngine
 
 def test_v2_calculation_with_producer_hierarchy():
@@ -50,19 +51,22 @@ def test_v2_calculation_with_producer_hierarchy():
     try:
         result = engine.calculate_epr_fee_comprehensive(test_data)
         
-        print("=== V2.0 Calculation Engine Integration Test ===")
-        print(f"Calculation ID: {result.get('calculation_id', 'N/A')}")
-        print(f"Jurisdiction: {result.get('jurisdiction', 'N/A')}")
-        print(f"Total Fee: ${result.get('final_fee', 0):.2f}")
-        print(f"Currency: {result.get('currency', 'USD')}")
-        print(f"Calculation Steps: {len(result.get('audit_trail', []))}")
-        print(f"V2.0 Features Enabled: {result.get('metadata', {}).get('v2_features_enabled', False)}")
+        logging.basicConfig(level=logging.INFO)
+        logger = logging.getLogger(__name__)
+        
+        logger.info("=== V2.0 Calculation Engine Integration Test ===")
+        logger.info(f"Calculation ID: {result.get('calculation_id', 'N/A')}")
+        logger.info(f"Jurisdiction: {result.get('jurisdiction', 'N/A')}")
+        logger.info(f"Total Fee: ${result.get('final_fee', 0):.2f}")
+        logger.info(f"Currency: {result.get('currency', 'USD')}")
+        logger.info(f"Calculation Steps: {len(result.get('audit_trail', []))}")
+        logger.info(f"V2.0 Features Enabled: {result.get('metadata', {}).get('v2_features_enabled', False)}")
         
         metadata = result.get('metadata', {})
         if metadata.get('v2_features_enabled'):
-            print("✅ V2.0 features successfully enabled")
+            logger.info("✅ V2.0 features successfully enabled")
         else:
-            print("❌ V2.0 features not detected")
+            logger.warning("❌ V2.0 features not detected")
             
         audit_trail = result.get('audit_trail', [])
         producer_identification_found = False
@@ -72,15 +76,15 @@ def test_v2_calculation_with_producer_hierarchy():
                 break
                 
         if producer_identification_found:
-            print("✅ Producer hierarchy logic detected in audit trail")
+            logger.info("✅ Producer hierarchy logic detected in audit trail")
         else:
-            print("❌ Producer hierarchy logic not found in audit trail")
+            logger.warning("❌ Producer hierarchy logic not found in audit trail")
             
-        print(f"\n🎯 V2.0 calculation result: SUCCESS - Fee calculated: ${result.get('final_fee', 0):.2f}")
+        logger.info(f"\n🎯 V2.0 calculation result: SUCCESS - Fee calculated: ${result.get('final_fee', 0):.2f}")
         return True
         
     except Exception as e:
-        print(f"❌ V2.0 calculation failed: {str(e)}")
+        logger.error(f"❌ V2.0 calculation failed: {str(e)}")
         import traceback
         traceback.print_exc()
         return False

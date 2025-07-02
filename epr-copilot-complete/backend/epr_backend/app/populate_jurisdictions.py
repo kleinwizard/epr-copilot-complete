@@ -15,6 +15,7 @@ from decimal import Decimal
 from datetime import datetime, timezone
 from typing import List, Dict, Any
 import json
+import logging
 
 import sys
 import os
@@ -635,61 +636,64 @@ def create_eco_modulation_rules(db: Session, jurisdiction_mapping: Dict[str, str
 def populate_all_jurisdictions():
     """Main function to populate all jurisdiction data."""
     
-    print("Starting EPR jurisdiction data population...")
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+    
+    logger.info("Starting EPR jurisdiction data population...")
     
     Base.metadata.create_all(bind=engine)
     
     db = SessionLocal()
     
     try:
-        print("Creating jurisdictions...")
+        logger.info("Creating jurisdictions...")
         jurisdiction_mapping = create_jurisdictions(db)
         db.commit()
-        print(f"Created {len(jurisdiction_mapping)} jurisdictions")
+        logger.info(f"Created {len(jurisdiction_mapping)} jurisdictions")
         
-        print("Creating material categories...")
+        logger.info("Creating material categories...")
         material_mappings = {}
         
         oregon_materials = create_oregon_materials(db, jurisdiction_mapping["OR"])
         material_mappings["OR"] = oregon_materials
-        print(f"Created {len(oregon_materials)} Oregon material categories")
+        logger.info(f"Created {len(oregon_materials)} Oregon material categories")
         
         california_materials = create_california_cmc_materials(db, jurisdiction_mapping["CA"])
         material_mappings["CA"] = california_materials
-        print(f"Created {len(california_materials)} California CMC categories")
+        logger.info(f"Created {len(california_materials)} California CMC categories")
         
         other_materials = create_other_jurisdiction_materials(db, jurisdiction_mapping)
         material_mappings.update(other_materials)
         for jurisdiction, materials in other_materials.items():
-            print(f"Created {len(materials)} {jurisdiction} material categories")
+            logger.info(f"Created {len(materials)} {jurisdiction} material categories")
         
         db.commit()
         
-        print("Creating fee rates...")
+        logger.info("Creating fee rates...")
         create_fee_rates(db, jurisdiction_mapping, material_mappings)
         db.commit()
-        print("Fee rates created successfully")
+        logger.info("Fee rates created successfully")
         
-        print("Creating eco-modulation rules...")
+        logger.info("Creating eco-modulation rules...")
         create_eco_modulation_rules(db, jurisdiction_mapping)
         db.commit()
-        print("Eco-modulation rules created successfully")
+        logger.info("Eco-modulation rules created successfully")
         
-        print("EPR jurisdiction data population completed successfully!")
+        logger.info("EPR jurisdiction data population completed successfully!")
         
         total_jurisdictions = db.query(Jurisdiction).count()
         total_materials = db.query(MaterialCategory).count()
         total_fee_rates = db.query(FeeRate).count()
         total_eco_rules = db.query(EcoModificationRule).count()
         
-        print(f"\nSummary:")
-        print(f"- Jurisdictions: {total_jurisdictions}")
-        print(f"- Material Categories: {total_materials}")
-        print(f"- Fee Rates: {total_fee_rates}")
-        print(f"- Eco-Modulation Rules: {total_eco_rules}")
+        logger.info(f"\nSummary:")
+        logger.info(f"- Jurisdictions: {total_jurisdictions}")
+        logger.info(f"- Material Categories: {total_materials}")
+        logger.info(f"- Fee Rates: {total_fee_rates}")
+        logger.info(f"- Eco-Modulation Rules: {total_eco_rules}")
         
     except Exception as e:
-        print(f"Error during population: {str(e)}")
+        logger.error(f"Error during population: {str(e)}")
         db.rollback()
         raise
     finally:
