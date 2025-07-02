@@ -56,7 +56,7 @@ Frontend will run on http://localhost:8080
 
 ### Backend (.env in backend directory)
 ```
-SECRET_KEY=your-secret-key
+SECRET_KEY=your-secure-secret-key-here  # REQUIRED: Must be set to a secure value in production
 DATABASE_URL=postgresql://user:password@localhost/epr_copilot
 STRIPE_SECRET_KEY=sk_test_...
 SENDGRID_API_KEY=SG...
@@ -66,6 +66,216 @@ AWS_ACCESS_KEY_ID=...
 AWS_SECRET_ACCESS_KEY=...
 AWS_S3_BUCKET=your-bucket
 ```
+
+**SECURITY WARNING**: The `SECRET_KEY` environment variable must be set to a cryptographically secure value in production. The application will refuse to start if the default placeholder value is detected.
+
+## Production Deployment
+
+This section provides comprehensive instructions for deploying the EPR Co-Pilot application to a production environment.
+
+### Prerequisites
+
+- Docker and Docker Compose installed on the production server
+- PostgreSQL database (version 12 or higher)
+- Redis instance for caching and session management
+- SSL certificate for HTTPS (recommended)
+- Domain name configured with DNS
+
+### Environment Variables
+
+Create a `.env` file in the root directory with the following production configuration:
+
+#### Required Environment Variables
+```bash
+# Security (REQUIRED)
+SECRET_KEY=your-cryptographically-secure-secret-key-here
+ENVIRONMENT=production
+
+# Database Configuration
+DATABASE_URL=postgresql://username:password@host:port/database_name
+REDIS_URL=redis://redis-host:6379
+
+# External Services
+STRIPE_SECRET_KEY=sk_live_...
+SENDGRID_API_KEY=SG...
+SENDGRID_FROM_EMAIL=noreply@yourdomain.com
+
+# AWS Configuration (for file storage)
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
+AWS_S3_BUCKET=your-production-bucket
+AWS_REGION=us-west-2
+
+# Frontend Configuration
+VITE_API_URL=https://api.yourdomain.com
+VITE_API_BASE_URL=https://api.yourdomain.com
+```
+
+#### Optional Environment Variables
+```bash
+# Monitoring and Logging
+LOG_LEVEL=INFO
+SENTRY_DSN=https://your-sentry-dsn
+
+# Performance
+MAX_WORKERS=4
+WORKER_TIMEOUT=30
+
+# Security Headers
+CORS_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+```
+
+### Database Setup
+
+1. **Create Production Database**:
+   ```bash
+   createdb epr_copilot_production
+   ```
+
+2. **Run Database Migrations**:
+   ```bash
+   cd backend/epr_backend
+   alembic upgrade head
+   ```
+
+3. **Populate Jurisdiction Data**:
+   ```bash
+   python app/populate_jurisdictions.py
+   ```
+
+4. **Validate V2.0 Migration** (if upgrading from v1.x):
+   ```bash
+   python run_v2_migration.py
+   ```
+
+### Docker Production Deployment
+
+1. **Build Production Images**:
+   ```bash
+   docker-compose -f docker-compose.prod.yml build
+   ```
+
+2. **Start Services**:
+   ```bash
+   docker-compose -f docker-compose.prod.yml up -d
+   ```
+
+3. **Verify Deployment**:
+   ```bash
+   docker-compose -f docker-compose.prod.yml ps
+   docker-compose -f docker-compose.prod.yml logs
+   ```
+
+### SSL/HTTPS Configuration
+
+Configure your reverse proxy (nginx/Apache) or load balancer to handle SSL termination:
+
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name yourdomain.com;
+    
+    ssl_certificate /path/to/certificate.crt;
+    ssl_certificate_key /path/to/private.key;
+    
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    
+    location /api {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+### Health Checks and Monitoring
+
+The application includes built-in health check endpoints:
+
+- **Backend Health**: `GET /api/health`
+- **Database Health**: `GET /api/health/db`
+- **Redis Health**: `GET /api/health/redis`
+
+Configure your monitoring system to check these endpoints regularly.
+
+### Security Considerations
+
+1. **Multi-Tenant Data Isolation**: Ensure all API endpoints properly filter by organization_id
+2. **Secret Management**: Never commit secrets to version control
+3. **Database Security**: Use connection pooling and prepared statements
+4. **API Rate Limiting**: Configure rate limiting for production traffic
+5. **CORS Configuration**: Restrict CORS origins to your production domains
+
+### Backup and Recovery
+
+1. **Database Backups**:
+   ```bash
+   pg_dump epr_copilot_production > backup_$(date +%Y%m%d_%H%M%S).sql
+   ```
+
+2. **File Storage Backups**: Configure automated S3 bucket backups
+
+3. **Configuration Backups**: Store environment configurations securely
+
+### Performance Optimization
+
+1. **Database Indexing**: Ensure proper indexes on frequently queried columns
+2. **Redis Caching**: Configure Redis for session storage and API caching
+3. **CDN**: Use a CDN for static assets
+4. **Connection Pooling**: Configure database connection pooling
+
+### Troubleshooting
+
+#### Common Issues
+
+1. **Database Connection Errors**:
+   - Verify DATABASE_URL format and credentials
+   - Check network connectivity to database server
+   - Ensure database exists and migrations are applied
+
+2. **Authentication Issues**:
+   - Verify SECRET_KEY is set and secure
+   - Check JWT token expiration settings
+   - Validate user permissions and organization assignments
+
+3. **File Upload Issues**:
+   - Verify AWS credentials and S3 bucket permissions
+   - Check file size limits and CORS configuration
+   - Ensure proper content-type handling
+
+#### Log Analysis
+
+Application logs are structured and include:
+- Request/response logging
+- Database query logging
+- Error tracking with stack traces
+- Performance metrics
+
+Use log aggregation tools like ELK stack or Splunk for production log analysis.
+
+### Scaling Considerations
+
+For high-traffic deployments:
+
+1. **Horizontal Scaling**: Deploy multiple backend instances behind a load balancer
+2. **Database Scaling**: Consider read replicas for reporting queries
+3. **Caching Strategy**: Implement Redis clustering for session management
+4. **CDN Integration**: Use CloudFront or similar for global content delivery
+
+### Support and Maintenance
+
+- **Regular Updates**: Keep dependencies updated for security patches
+- **Monitoring**: Set up alerts for critical system metrics
+- **Backup Verification**: Regularly test backup restoration procedures
+- **Security Audits**: Perform periodic security assessments
 
 ### Frontend (.env in frontend directory)
 ```

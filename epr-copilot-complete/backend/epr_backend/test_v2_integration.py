@@ -2,6 +2,7 @@
 Integration test for v2.0 calculation engine with producer hierarchy.
 """
 
+import logging
 from app.calculation_engine import EPRCalculationEngine
 
 def test_v2_calculation_with_producer_hierarchy():
@@ -50,19 +51,22 @@ def test_v2_calculation_with_producer_hierarchy():
     try:
         result = engine.calculate_epr_fee_comprehensive(test_data)
         
-        print("=== V2.0 Calculation Engine Integration Test ===")
-        print(f"Calculation ID: {result.get('calculation_id', 'N/A')}")
-        print(f"Jurisdiction: {result.get('jurisdiction', 'N/A')}")
-        print(f"Total Fee: ${result.get('final_fee', 0):.2f}")
-        print(f"Currency: {result.get('currency', 'USD')}")
-        print(f"Calculation Steps: {len(result.get('audit_trail', []))}")
-        print(f"V2.0 Features Enabled: {result.get('metadata', {}).get('v2_features_enabled', False)}")
+        logging.basicConfig(level=logging.INFO)
+        logger = logging.getLogger(__name__)
+        
+        logger.info("=== V2.0 Calculation Engine Integration Test ===")
+        logger.info(f"Calculation ID: {result.get('calculation_id', 'N/A')}")
+        logger.info(f"Jurisdiction: {result.get('jurisdiction', 'N/A')}")
+        logger.info(f"Total Fee: ${result.get('final_fee', 0):.2f}")
+        logger.info(f"Currency: {result.get('currency', 'USD')}")
+        logger.info(f"Calculation Steps: {len(result.get('audit_trail', []))}")
+        logger.info(f"V2.0 Features Enabled: {result.get('metadata', {}).get('v2_features_enabled', False)}")
         
         metadata = result.get('metadata', {})
         if metadata.get('v2_features_enabled'):
-            print("✅ V2.0 features successfully enabled")
+            logger.info("✅ V2.0 features successfully enabled")
         else:
-            print("❌ V2.0 features not detected")
+            logger.warning("❌ V2.0 features not detected")
             
         audit_trail = result.get('audit_trail', [])
         producer_identification_found = False
@@ -72,19 +76,110 @@ def test_v2_calculation_with_producer_hierarchy():
                 break
                 
         if producer_identification_found:
-            print("✅ Producer hierarchy logic detected in audit trail")
+            logger.info("✅ Producer hierarchy logic detected in audit trail")
         else:
-            print("❌ Producer hierarchy logic not found in audit trail")
+            logger.warning("❌ Producer hierarchy logic not found in audit trail")
             
-        print(f"\n🎯 V2.0 calculation result: SUCCESS - Fee calculated: ${result.get('final_fee', 0):.2f}")
+        logger.info(f"\n🎯 V2.0 calculation result: SUCCESS - Fee calculated: ${result.get('final_fee', 0):.2f}")
         return True
         
     except Exception as e:
-        print(f"❌ V2.0 calculation failed: {str(e)}")
+        logger.error(f"❌ V2.0 calculation failed: {str(e)}")
         import traceback
         traceback.print_exc()
         return False
 
+def test_v2_edge_cases():
+    """Test V2.0 calculation engine with edge cases and multiple jurisdictions."""
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+    
+    test_cases = [
+        {
+            'name': 'California CMC Test',
+            'jurisdiction': 'CA',
+            'producer_data': {
+                'organization_id': 'test-ca-org',
+                'annual_revenue': 5000000,
+                'annual_revenue_scope': 'CALIFORNIA',
+                'annual_tonnage': 2.0,
+                'produces_perishable_food': True,
+                'jurisdiction_code': 'CA',
+                'entity_roles': ['BRAND_OWNER', 'IMPORTER'],
+                'brand_owner_id': 'test-ca-org'
+            },
+            'packaging_data': [{
+                'material_type': 'plastic',
+                'component_name': 'container',
+                'packaging_level': 'PRIMARY',
+                'weight_per_unit': 0.05,
+                'weight_unit': 'kg',
+                'units_sold': 5000,
+                'recycled_content_percentage': 50,
+                'recyclable': True,
+                'ca_plastic_component_flag': True,
+                'is_beverage_container': True
+            }]
+        },
+        {
+            'name': 'Maine Toxicity Test',
+            'jurisdiction': 'ME',
+            'producer_data': {
+                'organization_id': 'test-me-org',
+                'annual_revenue': 1000000,
+                'annual_revenue_scope': 'MAINE',
+                'annual_tonnage': 0.1,
+                'produces_perishable_food': False,
+                'jurisdiction_code': 'ME',
+                'entity_roles': ['BRAND_OWNER'],
+                'brand_owner_id': 'test-me-org'
+            },
+            'packaging_data': [{
+                'material_type': 'plastic',
+                'component_name': 'wrapper',
+                'packaging_level': 'SECONDARY',
+                'weight_per_unit': 0.01,
+                'weight_unit': 'kg',
+                'units_sold': 10000,
+                'recycled_content_percentage': 0,
+                'recyclable': False,
+                'me_toxicity_flag': True
+            }]
+        }
+    ]
+    
+    success_count = 0
+    for test_case in test_cases:
+        try:
+            engine = EPRCalculationEngine(test_case['jurisdiction'])
+            
+            test_data = {
+                'producer_data': test_case['producer_data'],
+                'packaging_data': test_case['packaging_data'],
+                'product_data': {
+                    'brand_owner_id': test_case['producer_data']['brand_owner_id'],
+                    'organization_id': test_case['producer_data']['organization_id']
+                },
+                'system_data': {
+                    'administrativeCosts': 500000,
+                    'infrastructureCosts': 2000000,
+                    'systemTotalTonnage': 50000
+                }
+            }
+            
+            result = engine.calculate_epr_fee_comprehensive(test_data)
+            logger.info(f"✅ {test_case['name']}: SUCCESS - Fee: ${result.get('final_fee', 0):.2f}")
+            success_count += 1
+            
+        except Exception as e:
+            logger.error(f"❌ {test_case['name']}: FAILED - {str(e)}")
+    
+    logger.info(f"V2.0 Edge Case Testing: {success_count}/{len(test_cases)} tests passed")
+    return success_count == len(test_cases)
+
 if __name__ == "__main__":
-    success = test_v2_calculation_with_producer_hierarchy()
-    exit(0 if success else 1)
+    basic_success = test_v2_calculation_with_producer_hierarchy()
+    edge_case_success = test_v2_edge_cases()
+    
+    overall_success = basic_success and edge_case_success
+    exit(0 if overall_success else 1)

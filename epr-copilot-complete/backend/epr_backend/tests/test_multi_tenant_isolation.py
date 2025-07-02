@@ -137,11 +137,70 @@ class TestMultiTenantIsolation:
         assert len(org2_reports) == 1
         assert org2_reports[0].total_fee == 200.75
     
-    def test_api_endpoint_tenant_filtering(self, setup_test_organizations):
+    def test_api_endpoint_tenant_filtering(self, setup_test_organizations, client, db_session):
         """Test that API endpoints properly filter by tenant"""
+        org1, org2 = setup_test_organizations
         
-        with pytest.raises(NotImplementedError):
-            raise NotImplementedError("API tenant filtering not implemented")
+        # Create test users for both organizations
+        user1 = User(
+            id="user1-api-test", 
+            email="user1@org1.com", 
+            password_hash="hash1", 
+            organization_id=org1.id
+        )
+        user2 = User(
+            id="user2-api-test", 
+            email="user2@org2.com", 
+            password_hash="hash2", 
+            organization_id=org2.id
+        )
+        
+        # Create test products for both organizations
+        product1 = Product(
+            id="prod1-api-test", 
+            name="Org1 Product", 
+            organization_id=org1.id, 
+            sku="SKU1"
+        )
+        product2 = Product(
+            id="prod2-api-test", 
+            name="Org2 Product", 
+            organization_id=org2.id, 
+            sku="SKU2"
+        )
+        
+        db_session.add_all([user1, user2, product1, product2])
+        db_session.commit()
+        
+        from app.auth import create_access_token
+        token1 = create_access_token(data={"sub": user1.id})
+        token2 = create_access_token(data={"sub": user2.id})
+        
+        response1 = client.get(
+            "/api/products/", 
+            headers={"Authorization": f"Bearer {token1}"}
+        )
+        assert response1.status_code == 200
+        products1 = response1.json()
+        product_ids1 = [p["id"] for p in products1]
+        assert product1.id in product_ids1
+        assert product2.id not in product_ids1
+        
+        response2 = client.get(
+            "/api/products/", 
+            headers={"Authorization": f"Bearer {token2}"}
+        )
+        assert response2.status_code == 200
+        products2 = response2.json()
+        product_ids2 = [p["id"] for p in products2]
+        assert product2.id in product_ids2
+        assert product1.id not in product_ids2
+        
+        response_cross_access = client.get(
+            f"/api/products/{product2.id}", 
+            headers={"Authorization": f"Bearer {token1}"}
+        )
+        assert response_cross_access.status_code == 404
     
     def test_database_query_isolation(self, setup_test_organizations, db_session):
         """Test that all database queries include organization_id filtering"""
