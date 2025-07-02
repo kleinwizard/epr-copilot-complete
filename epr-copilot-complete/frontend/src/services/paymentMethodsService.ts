@@ -6,8 +6,9 @@ export class PaymentMethodsService {
 
   async addPaymentMethod(method: Omit<PaymentMethod, 'id'>): Promise<PaymentMethod> {
     const token = localStorage.getItem('access_token');
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001';
     try {
-      const response = await fetch('https://app-mbypfbcs.fly.dev/api/payments/save-payment-method', {
+      const response = await fetch(`${API_BASE_URL}/api/payments/save-payment-method`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -47,8 +48,9 @@ export class PaymentMethodsService {
 
   async getPaymentMethods(): Promise<PaymentMethod[]> {
     const token = localStorage.getItem('access_token');
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001';
     try {
-      const response = await fetch('https://app-mbypfbcs.fly.dev/api/payments/payment-methods', {
+      const response = await fetch(`${API_BASE_URL}/api/payments/payment-methods`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',

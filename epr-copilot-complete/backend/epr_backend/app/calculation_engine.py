@@ -109,13 +109,19 @@ class EPRCalculationEngine:
             return {
                 "calculation_id": calculation_id,
                 "jurisdiction": self.jurisdiction_code,
+                "final_fee": aggregated_data["final_fee"],
                 "total_fee": aggregated_data["final_fee"],
                 "currency": "USD",
                 "calculation_timestamp": datetime.now(timezone.utc).isoformat(),
                 "audit_trail": audit_trail,
                 "calculation_breakdown": aggregated_data.get("calculation_breakdown", {}),
                 "legal_citations": self._get_legal_citations(),
-                "compliance_status": "CALCULATED"
+                "compliance_status": "CALCULATED",
+                "metadata": {
+                    "v2_features_enabled": True,
+                    "producer_hierarchy_enabled": hasattr(self.strategy, 'identify_responsible_producer'),
+                    "calculation_engine_version": "2.0"
+                }
             }
             
         except Exception as e:

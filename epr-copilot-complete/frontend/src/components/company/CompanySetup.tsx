@@ -20,6 +20,7 @@ import {
   Users
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 
 export function CompanySetup() {
   const [verificationStatus, setVerificationStatus] = useState('pending');
@@ -146,6 +147,7 @@ export function CompanySetup() {
           <TabsTrigger value="basic">Basic Information</TabsTrigger>
           <TabsTrigger value="contacts">Contacts</TabsTrigger>
           <TabsTrigger value="entities">Multi-Entity Setup</TabsTrigger>
+          <TabsTrigger value="compliance">Compliance Profiles</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
         </TabsList>
 
@@ -327,30 +329,114 @@ export function CompanySetup() {
         <TabsContent value="entities" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Multi-Entity Management</CardTitle>
-              <CardDescription>Manage multiple business entities under one account</CardDescription>
+              <CardTitle>Entity Roles & Hierarchy</CardTitle>
+              <CardDescription>Define entity roles and relationships for EPR compliance</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <h4 className="font-medium">Acme Corporation Inc. (Parent)</h4>
-                    <p className="text-sm text-muted-foreground">Primary entity - Manufacturing</p>
+                <h4 className="font-medium">Entity Roles</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-2">
+                    <Switch id="brand-owner" />
+                    <Label htmlFor="brand-owner">Brand Owner</Label>
                   </div>
-                  <Badge>Primary</Badge>
+                  <div className="flex items-center space-x-2">
+                    <Switch id="importer" />
+                    <Label htmlFor="importer">Importer</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch id="ecommerce-shipper" />
+                    <Label htmlFor="ecommerce-shipper">E-commerce Shipper</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch id="franchisor" />
+                    <Label htmlFor="franchisor">Franchisor</Label>
+                  </div>
                 </div>
-                
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <h4 className="font-medium">Acme Retail LLC</h4>
-                    <p className="text-sm text-muted-foreground">Subsidiary - Retail operations</p>
+              </div>
+              
+              <div className="space-y-4">
+                <h4 className="font-medium">Entity Hierarchy</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                      <h4 className="font-medium">Acme Corporation Inc.</h4>
+                      <p className="text-sm text-muted-foreground">Brand Owner, Importer</p>
+                    </div>
+                    <Badge>Primary</Badge>
                   </div>
-                  <Badge variant="outline">Subsidiary</Badge>
+                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                      <h4 className="font-medium">Acme Logistics LLC</h4>
+                      <p className="text-sm text-muted-foreground">E-commerce Shipper</p>
+                    </div>
+                    <Badge variant="secondary">Subsidiary</Badge>
+                  </div>
                 </div>
                 
                 <Button variant="outline" className="w-full">
                   + Add New Entity
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="compliance" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Jurisdictional Compliance Profiles</CardTitle>
+              <CardDescription>
+                Manage your annual revenue and tonnage data for each jurisdiction where you operate
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-lg">
+                  <div className="space-y-2">
+                    <Label>Jurisdiction</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select jurisdiction" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="OR">Oregon</SelectItem>
+                        <SelectItem value="CA">California</SelectItem>
+                        <SelectItem value="ME">Maine</SelectItem>
+                        <SelectItem value="CO">Colorado</SelectItem>
+                        <SelectItem value="MD">Maryland</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Annual Gross Revenue</Label>
+                    <Input type="number" placeholder="0" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Annual Tonnage</Label>
+                    <Input type="number" placeholder="0" step="0.1" />
+                  </div>
+                  <div className="flex items-end">
+                    <Button className="w-full">Add Profile</Button>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <span className="font-medium">Oregon</span>
+                      <p className="text-sm text-gray-600">$2.5M revenue • 1.2 tons</p>
+                    </div>
+                    <Button variant="ghost" size="sm">Remove</Button>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <span className="font-medium">California</span>
+                      <p className="text-sm text-gray-600">$5.8M revenue • 3.4 tons</p>
+                    </div>
+                    <Button variant="ghost" size="sm">Remove</Button>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

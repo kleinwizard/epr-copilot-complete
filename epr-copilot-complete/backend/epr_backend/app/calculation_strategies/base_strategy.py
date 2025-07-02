@@ -212,6 +212,25 @@ class FeeCalculationStrategy(ABC):
         
         return revenue_qualifies and tonnage_qualifies
         
+    def identify_responsible_producer(self, component_data: Dict[str, Any], product_data: Dict[str, Any]) -> str:
+        """
+        Identify the responsible producer for a packaging component using v2.0 hierarchy logic.
+        
+        Args:
+            component_data: Packaging component information
+            product_data: Product information including producer designations
+            
+        Returns:
+            Organization ID of the responsible producer
+        """
+        brand_owner_id = product_data.get('brand_owner_id')
+        designated_producer_id = product_data.get('designated_producer_id')
+        
+        if designated_producer_id and self.jurisdiction_code == 'CA':
+            return designated_producer_id
+        
+        return brand_owner_id or product_data.get('organization_id', 'unknown')
+
     def create_calculation_step(self, step_number: int, step_name: str, 
                               input_data: Any, output_data: Any,
                               rule_applied: str, legal_citation: str,
