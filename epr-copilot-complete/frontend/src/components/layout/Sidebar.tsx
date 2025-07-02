@@ -24,7 +24,6 @@ import {
   Calendar,
   Check,
   ChevronDown,
-  ChevronRight,
   Cog,
   Compass,
   CreditCard,
@@ -73,8 +72,7 @@ interface SidebarProps {
 export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
   const { user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [hoveredSection, setHoveredSection] = useState<string | null>(null);
-  const [clickedSection, setClickedSection] = useState<string | null>(null);
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -95,7 +93,7 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
       label: 'Home',
       icon: 'home',
       items: [
-        { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' }
+        { id: 'home', label: 'Home', icon: 'home' }
       ]
     },
     {
@@ -200,40 +198,36 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
         </div>
         <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto" aria-label="Sidebar">
           {hierarchicalMenu.map((section) => (
-            <div key={section.id} className="relative">
-              <div
-                className="relative"
-                onMouseEnter={() => setHoveredSection(section.id)}
-                onMouseLeave={() => setHoveredSection(null)}
+            <div key={section.id} className="space-y-1">
+              <Button
+                variant="ghost"
+                className="w-full justify-between group hover:bg-gray-100"
+                onClick={() => setExpandedSection(expandedSection === section.id ? null : section.id)}
               >
-                <Button
-                  variant="ghost"
-                  className="w-full justify-between group hover:bg-gray-100"
-                  onClick={() => setClickedSection(clickedSection === section.id ? null : section.id)}
-                >
-                  <div className="flex items-center">
-                    {getIcon(section.icon)}
-                    {section.label}
-                  </div>
-                  <ChevronRight className="h-4 w-4 opacity-50 group-hover:opacity-100" />
-                </Button>
-                
-                {(hoveredSection === section.id || clickedSection === section.id) && (
-                  <div className="absolute left-full top-0 ml-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-2">
-                    {section.items.map((item) => (
-                      <Button
-                        key={item.id}
-                        variant={currentPage === item.id ? "default" : "ghost"}
-                        className="w-full justify-start mx-2 mb-1"
-                        onClick={() => handlePageChange(item.id)}
-                      >
-                        {getIcon(item.icon)}
-                        {item.label}
-                      </Button>
-                    ))}
-                  </div>
-                )}
-              </div>
+                <div className="flex items-center">
+                  {getIcon(section.icon)}
+                  {section.label}
+                </div>
+                <ChevronDown className={`h-4 w-4 opacity-50 group-hover:opacity-100 transition-transform ${
+                  expandedSection === section.id ? 'rotate-180' : ''
+                }`} />
+              </Button>
+              
+              {expandedSection === section.id && (
+                <div className="ml-4 space-y-1 border-l border-gray-200 pl-4">
+                  {section.items.map((item) => (
+                    <Button
+                      key={item.id}
+                      variant={currentPage === item.id ? "default" : "ghost"}
+                      className="w-full justify-start text-sm"
+                      onClick={() => handlePageChange(item.id)}
+                    >
+                      {getIcon(item.icon, "mr-2 h-3 w-3")}
+                      {item.label}
+                    </Button>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </nav>

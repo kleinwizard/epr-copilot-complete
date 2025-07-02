@@ -19,11 +19,11 @@ interface Material {
   type: string;
   recyclable: boolean;
   eprRate: number;
-  sustainabilityScore: number;
+  // DISABLED: sustainabilityScore: number;
   complianceStatus: 'Compliant' | 'Restricted' | 'Banned';
   lastUpdated: string;
   description: string;
-  carbonFootprint: number;
+  // DISABLED: carbonFootprint: number;
 }
 
 interface MaterialCardProps {
@@ -106,19 +106,18 @@ export function MaterialCard({ material, onViewDetails, onEdit }: MaterialCardPr
             </div>
           </div>
           
+          {/* DISABLED: Sustainability and Carbon Footprint features disabled for initial launch */}
           <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-600">Sustainability:</span>
+            <span className="text-gray-400">Sustainability:</span>
             <div className="flex items-center space-x-1">
-              <Leaf className="h-3 w-3 text-green-600" />
-              <span className={`font-medium ${getSustainabilityColor(material.sustainabilityScore)}`}>
-                {material.sustainabilityScore}/100
-              </span>
+              <Leaf className="h-3 w-3 text-gray-400" />
+              <span className="font-medium text-gray-400">Feature Disabled</span>
             </div>
           </div>
           
           <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-600">Carbon:</span>
-            <span className="font-medium">{material.carbonFootprint} kg CO₂/kg</span>
+            <span className="text-gray-400">Carbon:</span>
+            <span className="font-medium text-gray-400">Feature Disabled</span>
           </div>
         </div>
 

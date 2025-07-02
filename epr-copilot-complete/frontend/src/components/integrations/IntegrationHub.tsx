@@ -85,7 +85,14 @@ export const IntegrationHub = () => {
         </TabsContent>
 
         <TabsContent value="supply-chain" className="mt-6">
-          <SupplyChainIntegrations />
+          {/* DISABLED: SupplyChainIntegrations disabled for initial launch */}
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">Feature Temporarily Disabled</h3>
+              <p className="text-gray-500">Supply Chain Integrations are currently disabled for the initial launch.</p>
+              <p className="text-gray-500">This feature will be available in a future release.</p>
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="custom-apis" className="mt-6">
