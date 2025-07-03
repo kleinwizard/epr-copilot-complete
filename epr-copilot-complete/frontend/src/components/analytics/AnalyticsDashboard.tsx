@@ -51,19 +51,19 @@ export function AnalyticsDashboard() {
   return (
     <div className="space-y-6">
       {/* Enhanced Header with more analytics context */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight flex items-center space-x-2">
-            <BarChart3 className="h-8 w-8 text-blue-600" />
-            <span>Advanced Analytics &amp; Insights</span>
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-2xl lg:text-3xl font-bold tracking-tight flex items-center space-x-2">
+            <BarChart3 className="h-6 w-6 lg:h-8 lg:w-8 text-blue-600 flex-shrink-0" />
+            <span className="truncate">Advanced Analytics &amp; Insights</span>
           </h2>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground mt-1 text-sm lg:text-base">
             Comprehensive insights into EPR compliance, sustainability impact, and cost optimization opportunities
           </p>
-          <div className="flex items-center space-x-4 mt-2">
+          <div className="flex flex-wrap items-center gap-2 mt-2">
             <Badge 
               variant="outline" 
-              className={`${
+              className={`text-xs lg:text-sm ${
                 sustainabilityScore.status === 'insufficient_data' 
                   ? 'bg-gray-50 text-gray-500 border-gray-200' 
                   : 'bg-blue-50 text-blue-700 border-blue-200'
@@ -77,7 +77,7 @@ export function AnalyticsDashboard() {
             </Badge>
             <Badge 
               variant="outline" 
-              className={`${
+              className={`text-xs lg:text-sm ${
                 optimizationPotential.status === 'insufficient_data' 
                   ? 'bg-gray-50 text-gray-500 border-gray-200' 
                   : 'bg-orange-50 text-orange-700 border-orange-200'
@@ -92,9 +92,9 @@ export function AnalyticsDashboard() {
           </div>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
           <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-28 lg:w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -104,17 +104,18 @@ export function AnalyticsDashboard() {
             </SelectContent>
           </Select>
           
-          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 hidden sm:flex">
             <Calendar className="h-3 w-3 mr-1" />
             Q4 2024
           </Badge>
           
-          <Button variant="outline" size="sm" onClick={() => {
+          <Button variant="outline" size="sm" className="hidden md:flex" onClick={() => {
             console.log('Advanced Filters clicked');
             alert('Advanced Filters panel will be implemented');
           }}>
             <Filter className="h-4 w-4 mr-2" />
-            Advanced Filters
+            <span className="hidden lg:inline">Advanced Filters</span>
+            <span className="lg:hidden">Filters</span>
           </Button>
           
           <Button variant="outline" size="sm" onClick={() => {
@@ -122,17 +123,75 @@ export function AnalyticsDashboard() {
             window.location.reload();
           }}>
             <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh Data
+            <span className="hidden sm:inline">Refresh Data</span>
+            <span className="sm:hidden">Refresh</span>
           </Button>
           
-          <Button size="sm" onClick={() => window.location.href = '/reports/export'}>
+          <Button size="sm" onClick={async () => {
+            try {
+              const exportData = {
+                period: selectedPeriod,
+                timestamp: new Date().toISOString(),
+                analytics: analyticsData,
+                sustainabilityScore: sustainabilityScore.value,
+                optimizationPotential: optimizationPotential.value
+              };
+              
+              const dataStr = JSON.stringify(exportData, null, 2);
+              const dataBlob = new Blob([dataStr], { type: 'application/json' });
+              const url = URL.createObjectURL(dataBlob);
+              
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = `analytics-report-${selectedPeriod}-${new Date().toISOString().split('T')[0]}.json`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+            } catch (error) {
+              console.error('Failed to export report:', error);
+              alert('Failed to export report. Please try again.');
+            }
+          }}>
             <Download className="h-4 w-4 mr-2" />
-            Export Report
+            <span className="hidden sm:inline">Export Report</span>
+            <span className="sm:hidden">Export</span>
           </Button>
           
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" className="hidden sm:flex" onClick={async () => {
+            try {
+              const shareableData = {
+                period: selectedPeriod,
+                timestamp: new Date().toISOString(),
+                sustainabilityScore: sustainabilityScore.value,
+                optimizationPotential: optimizationPotential.value,
+                summary: {
+                  totalFees: analyticsData?.overview?.totalFees || 0,
+                  totalProducts: analyticsData?.overview?.totalProducts || 0,
+                  recyclabilityRate: analyticsData?.overview?.recyclabilityRate || 0
+                }
+              };
+              
+              const shareUrl = `${window.location.origin}/analytics/shared?data=${encodeURIComponent(btoa(JSON.stringify(shareableData)))}`;
+              
+              if (navigator.share) {
+                await navigator.share({
+                  title: 'EPR Analytics Dashboard',
+                  text: 'View my EPR compliance analytics dashboard',
+                  url: shareUrl
+                });
+              } else {
+                await navigator.clipboard.writeText(shareUrl);
+                alert('Shareable link copied to clipboard!');
+              }
+            } catch (error) {
+              console.error('Failed to share dashboard:', error);
+              alert('Failed to share dashboard. Please try again.');
+            }
+          }}>
             <Share className="h-4 w-4 mr-2" />
-            Share Dashboard
+            <span className="hidden lg:inline">Share Dashboard</span>
+            <span className="lg:hidden">Share</span>
           </Button>
         </div>
       </div>
@@ -152,11 +211,11 @@ export function AnalyticsDashboard() {
 
       {/* Enhanced Analytics Tabs with new sections */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="costs">Cost Analysis</TabsTrigger>
           <TabsTrigger value="materials">Materials</TabsTrigger>
-          <TabsTrigger value="sustainability">Sustainability</TabsTrigger>
+          {/* <TabsTrigger value="sustainability">Sustainability</TabsTrigger> */}
           <TabsTrigger value="projections">Projections</TabsTrigger>
         </TabsList>
 

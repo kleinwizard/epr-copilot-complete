@@ -79,7 +79,38 @@ export const InAppMessaging = () => {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">Channels</CardTitle>
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" onClick={async () => {
+              try {
+                const channelName = prompt('Enter channel name:');
+                if (!channelName) return;
+                
+                const channelType = confirm('Make this a private channel?') ? 'private' : 'public';
+                
+                const newChannel = await messagingService.createChannel({
+                  name: channelName,
+                  type: channelType,
+                  description: `${channelType} channel for ${channelName}`,
+                  members: [{
+                    userId: 'current-user',
+                    userName: 'Current User',
+                    role: 'admin',
+                    joinedAt: new Date().toISOString(),
+                    isOnline: true,
+                    lastSeen: new Date().toISOString()
+                  }],
+                  createdBy: 'current-user',
+                  isArchived: false
+                });
+                
+                if (newChannel) {
+                  loadChannels();
+                  setActiveChannel(newChannel.id);
+                }
+              } catch (error) {
+                console.error('Failed to create channel:', error);
+                alert('Failed to create channel. Please try again.');
+              }
+            }}>
               <Plus className="h-4 w-4 mr-1" />
               New
             </Button>

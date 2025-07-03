@@ -61,30 +61,30 @@ export function ProjectionsTab() {
           }
         } else {
           setProjectionMetrics({
-            quarterlyGrowth: 12.5,
-            annualFees: 142000,
-            yearOverYearIncrease: 18500,
-            recyclabilitySavings: 24500,
-            discountOpportunities: 8,
-            costOptimization: 15200,
-            riskLevel: 'Low',
-            recyclabilityRate: 78.5,
-            growthRate: 12.5
+            quarterlyGrowth: 0,
+            annualFees: 0,
+            yearOverYearIncrease: 0,
+            recyclabilitySavings: 0,
+            discountOpportunities: 0,
+            costOptimization: 0,
+            riskLevel: 'Unknown',
+            recyclabilityRate: 0,
+            growthRate: 0
           });
         }
       } catch (error) {
         console.error('Failed to load projections data:', error);
-        setProjections(await calculateFeeProjections(6));
+        setProjections(null);
         setProjectionMetrics({
-          quarterlyGrowth: 12.5,
-          annualFees: 142000,
-          yearOverYearIncrease: 18500,
-          recyclabilitySavings: 24500,
-          discountOpportunities: 8,
-          costOptimization: 15200,
-          riskLevel: 'Low',
-          recyclabilityRate: 78.5,
-          growthRate: 12.5
+          quarterlyGrowth: 0,
+          annualFees: 0,
+          yearOverYearIncrease: 0,
+          recyclabilitySavings: 0,
+          discountOpportunities: 0,
+          costOptimization: 0,
+          riskLevel: 'Unknown',
+          recyclabilityRate: 0,
+          growthRate: 0
         });
       } finally {
         setIsLoading(false);

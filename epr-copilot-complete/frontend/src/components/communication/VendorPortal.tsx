@@ -70,7 +70,30 @@ export const VendorPortal = () => {
             <Search className="h-4 w-4" />
           </Button>
         </div>
-        <Button>Invite Vendor</Button>
+        <Button onClick={async () => {
+          try {
+            const companyName = prompt('Enter vendor company name:');
+            if (!companyName) return;
+            
+            const contactName = prompt('Enter contact person name:');
+            if (!contactName) return;
+            
+            const email = prompt('Enter vendor email:');
+            if (!email) return;
+            
+            const success = await vendorPortalService.inviteVendor(email, companyName);
+            
+            if (success) {
+              loadVendors();
+              alert('Vendor invitation sent successfully!');
+            } else {
+              alert('Failed to send vendor invitation. Please try again.');
+            }
+          } catch (error) {
+            console.error('Failed to invite vendor:', error);
+            alert('Failed to send vendor invitation. Please try again.');
+          }
+        }}>Invite Vendor</Button>
       </div>
 
       {/* Vendor Grid */}

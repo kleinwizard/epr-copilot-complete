@@ -13,53 +13,7 @@ import type { QuarterlyReport } from '@/services/reportService';
 
 export function QuarterlyReports() {
   const [currentView, setCurrentView] = useState<'list' | 'generator' | 'viewer' | 'builder' | 'export' | 'collaboration'>('list');
-  const [reports, setReports] = useState<QuarterlyReport[]>([
-    {
-      id: 'Q3-2023',
-      quarter: 'Q3',
-      year: 2023,
-      status: 'Submitted',
-      createdDate: '2023-09-15',
-      submissionDate: '2023-10-28',
-      dueDate: '2023-10-30',
-      products: [],
-      summary: {
-        totalProducts: 0,
-        totalWeight: 0,
-        totalUnits: 0,
-        recyclablePercentage: 0,
-        materialBreakdown: {}
-      },
-      fees: {
-        totalBaseFee: 0,
-        recyclabilityDiscount: 0,
-        totalDue: 0,
-        paymentStatus: 'Paid'
-      }
-    },
-    {
-      id: 'Q4-2023',
-      quarter: 'Q4',
-      year: 2023,
-      status: 'Draft',
-      createdDate: '2023-12-20',
-      dueDate: '2024-01-30',
-      products: [],
-      summary: {
-        totalProducts: 0,
-        totalWeight: 0,
-        totalUnits: 0,
-        recyclablePercentage: 0,
-        materialBreakdown: {}
-      },
-      fees: {
-        totalBaseFee: 0,
-        recyclabilityDiscount: 0,
-        totalDue: 0,
-        paymentStatus: 'Pending'
-      }
-    }
-  ]);
+  const [reports, setReports] = useState<QuarterlyReport[]>([]);
   const [selectedReport, setSelectedReport] = useState<QuarterlyReport | null>(null);
 
   const handleViewReport = (report: QuarterlyReport) => {

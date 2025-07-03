@@ -58,60 +58,35 @@ export function CostAnalysis() {
           }
         } else {
           setCostMetrics({
-            currentQuarterlyFees: 32500,
-            quarterlyChange: 8.2,
-            potentialSavings: 12400,
-            savingsPercentage: 15.3,
-            costPerUnit: 2.45,
-            avgCostPerUnit: 2.78,
-            annualProjection: 142000,
-            yearOverYearChange: 18500
+            currentQuarterlyFees: 0,
+            quarterlyChange: 0,
+            potentialSavings: 0,
+            savingsPercentage: 0,
+            costPerUnit: 0,
+            avgCostPerUnit: 0,
+            annualProjection: 0,
+            yearOverYearChange: 0
           });
           
-          setCostTrend([
-            { month: 'Jan', fees: 28000, savings: 3200, projected: 30000 },
-            { month: 'Feb', fees: 29500, savings: 3800, projected: 31200 },
-            { month: 'Mar', fees: 32500, savings: 4100, projected: 33500 }
-          ]);
-          
-          setCostBreakdown([
-            { category: 'Plastic', value: 18500, color: '#ef4444' },
-            { category: 'Paper', value: 8200, color: '#10b981' },
-            { category: 'Metal', value: 4100, color: '#3b82f6' },
-            { category: 'Glass', value: 1700, color: '#f59e0b' }
-          ]);
-          
-          setOptimizationOpportunities([
-            {
-              title: 'Switch to Recycled Plastic',
-              impact: 'High',
-              effort: 'Medium',
-              currentCost: 18500,
-              potentialSaving: 5200,
-              timeframe: '6 months'
-            },
-            {
-              title: 'Optimize Packaging Weight',
-              impact: 'Medium',
-              effort: 'Low',
-              currentCost: 8200,
-              potentialSaving: 2400,
-              timeframe: '3 months'
-            }
-          ]);
+          setCostTrend([]);
+          setCostBreakdown([]);
+          setOptimizationOpportunities([]);
         }
       } catch (error) {
         console.error('Failed to load cost analysis data:', error);
         setCostMetrics({
-          currentQuarterlyFees: 32500,
-          quarterlyChange: 8.2,
-          potentialSavings: 12400,
-          savingsPercentage: 15.3,
-          costPerUnit: 2.45,
-          avgCostPerUnit: 2.78,
-          annualProjection: 142000,
-          yearOverYearChange: 18500
+          currentQuarterlyFees: 0,
+          quarterlyChange: 0,
+          potentialSavings: 0,
+          savingsPercentage: 0,
+          costPerUnit: 0,
+          avgCostPerUnit: 0,
+          annualProjection: 0,
+          yearOverYearChange: 0
         });
+        setCostTrend([]);
+        setCostBreakdown([]);
+        setOptimizationOpportunities([]);
       } finally {
         setIsLoading(false);
       }

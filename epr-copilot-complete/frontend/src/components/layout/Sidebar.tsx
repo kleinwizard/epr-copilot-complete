@@ -172,11 +172,11 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
         <div className="flex items-center h-16 px-6 bg-white border-b">
           <span className="font-bold text-lg">EPR Compliance</span>
         </div>
-        <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto" aria-label="Sidebar">
+        <nav className="flex-1 px-2 py-4 space-y-2 overflow-y-auto" aria-label="Sidebar">
           {/* Home Button - Single clickable button */}
           <Button
             variant={currentPage === 'home' ? "default" : "ghost"}
-            className="w-full justify-start mb-4"
+            className="w-full justify-start"
             onClick={() => handlePageChange('home')}
           >
             <Home className="mr-2 h-4 w-4" />
@@ -186,7 +186,7 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
           {/* Integration Hub Button - Elevated to top-level */}
           <Button
             variant={currentPage === 'integration-hub' ? "default" : "ghost"}
-            className="w-full justify-start mb-4"
+            className="w-full justify-start"
             onClick={() => handlePageChange('integration-hub')}
           >
             <Zap className="mr-2 h-4 w-4" />
@@ -228,7 +228,7 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
           ))}
 
           {/* Settings Button - Moved to bottom */}
-          <div className="mt-auto pt-4">
+          <div className="mt-auto pt-2">
             <Button
               variant={currentPage === 'settings' ? "default" : "ghost"}
               className="w-full justify-start"

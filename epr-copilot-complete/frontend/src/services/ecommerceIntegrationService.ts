@@ -9,31 +9,7 @@ export class EcommerceIntegrationService {
   }
 
   private initializeMockIntegrations() {
-    const mockIntegrations: EcommerceIntegration[] = [
-      {
-        id: 'shopify-001',
-        platform: 'shopify',
-        name: 'Main Store',
-        status: 'connected',
-        storeUrl: 'https://store.myshopify.com',
-        lastSync: '2024-06-24T10:30:00Z',
-        syncFrequency: 'hourly',
-        dataTypes: ['products', 'orders', 'customers', 'inventory'],
-        productCount: 1247,
-        orderCount: 4563
-      },
-      {
-        id: 'amazon-001',
-        platform: 'amazon',
-        name: 'Amazon Seller Central',
-        status: 'connected',
-        lastSync: '2024-06-24T09:15:00Z',
-        syncFrequency: 'daily',
-        dataTypes: ['products', 'orders', 'inventory', 'fees'],
-        productCount: 892,
-        orderCount: 2134
-      }
-    ];
+    const mockIntegrations: EcommerceIntegration[] = [];
 
     mockIntegrations.forEach(integration => {
       this.integrations.set(integration.id, integration);

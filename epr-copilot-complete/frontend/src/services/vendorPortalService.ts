@@ -5,48 +5,6 @@ export class VendorPortalService {
   private vendors: Map<string, VendorProfile> = new Map();
 
   constructor() {
-    this.initializeMockVendors();
-  }
-
-  private initializeMockVendors() {
-    const mockVendors: VendorProfile[] = [
-      {
-        id: 'vendor-1',
-        companyName: 'EcoPackaging Solutions',
-        contactName: 'Jennifer Martinez',
-        email: 'jennifer@ecopackaging.com',
-        phone: '+1-555-0123',
-        website: 'https://ecopackaging.com',
-        description: 'Sustainable packaging solutions for modern businesses',
-        categories: ['Packaging', 'Sustainable Materials'],
-        certifications: ['FSC Certified', 'Recyclable', 'Biodegradable'],
-        status: 'active',
-        joinedDate: '2024-01-15T10:00:00Z',
-        lastActive: new Date().toISOString(),
-        rating: 4.8,
-        reviewCount: 127
-      },
-      {
-        id: 'vendor-2',
-        companyName: 'Green Materials Corp',
-        contactName: 'David Kim',
-        email: 'david@greenmaterials.com',
-        phone: '+1-555-0124',
-        website: 'https://greenmaterials.com',
-        description: 'Raw materials and components for eco-friendly products',
-        categories: ['Raw Materials', 'Components'],
-        certifications: ['Bio-based', 'Carbon Neutral', 'ISO 14001'],
-        status: 'active',
-        joinedDate: '2024-02-01T14:30:00Z',
-        lastActive: new Date(Date.now() - 1800000).toISOString(),
-        rating: 4.6,
-        reviewCount: 89
-      }
-    ];
-
-    mockVendors.forEach(vendor => {
-      this.vendors.set(vendor.id, vendor);
-    });
   }
 
   getVendors(): VendorProfile[] {
