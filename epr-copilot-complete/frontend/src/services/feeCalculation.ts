@@ -127,7 +127,7 @@ export async function calculateEprFee(materials: Array<{
   recyclable: boolean;
 }>): Promise<FeeCalculation> {
   const token = localStorage.getItem('access_token');
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
   const response = await fetch(`${API_BASE_URL}/api/fees/calculate`, {
     method: 'POST',
     headers: {
@@ -167,7 +167,7 @@ export async function calculateEprFee(materials: Array<{
 
 export async function calculateEprFeeV1(request: FeeCalculationRequestV1): Promise<FeeCalculationResponseV1> {
   const token = localStorage.getItem('access_token');
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
   const response = await fetch(`${API_BASE_URL}/api/fees/v1/calculate-fee`, {
     method: 'POST',
     headers: {
@@ -187,7 +187,7 @@ export async function calculateEprFeeV1(request: FeeCalculationRequestV1): Promi
 
 export async function getCalculationTrace(calculationId: string): Promise<AuditTraceResponse> {
   const token = localStorage.getItem('access_token');
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
   const response = await fetch(`${API_BASE_URL}/api/fees/v1/fees/${calculationId}/trace`, {
     method: 'GET',
     headers: {
@@ -248,7 +248,7 @@ export async function calculateMonthlyFeesV1(
 
 export async function getSupportedJurisdictions(): Promise<Array<{code: string, name: string, model_type: string}>> {
   const token = localStorage.getItem('access_token');
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
   const response = await fetch(`${API_BASE_URL}/api/admin/jurisdictions`, {
     method: 'GET',
     headers: {

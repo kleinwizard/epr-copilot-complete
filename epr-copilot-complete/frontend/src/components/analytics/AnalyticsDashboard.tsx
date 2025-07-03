@@ -138,7 +138,17 @@ export function AnalyticsDashboard() {
       </div>
 
       {/* Quick Stats Overview */}
-      <AnalyticsOverview data={analyticsData} />
+      {isLoading ? (
+        <div className="flex items-center justify-center p-8">
+          <div className="text-muted-foreground">Loading analytics data...</div>
+        </div>
+      ) : analyticsData ? (
+        <AnalyticsOverview data={analyticsData} />
+      ) : (
+        <div className="flex items-center justify-center p-8">
+          <div className="text-muted-foreground">No analytics data available</div>
+        </div>
+      )}
 
       {/* Enhanced Analytics Tabs with new sections */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -151,7 +161,7 @@ export function AnalyticsDashboard() {
         </TabsList>
 
         <TabsContent value="overview">
-          <OverviewTab analyticsData={analyticsData} />
+          {analyticsData && <OverviewTab analyticsData={analyticsData} />}
         </TabsContent>
 
 
@@ -160,7 +170,7 @@ export function AnalyticsDashboard() {
         </TabsContent>
 
         <TabsContent value="materials">
-          <MaterialBreakdownChart data={analyticsData.materialBreakdown} />
+          {analyticsData?.materialBreakdown && <MaterialBreakdownChart data={analyticsData.materialBreakdown} />}
         </TabsContent>
 
         <TabsContent value="sustainability">

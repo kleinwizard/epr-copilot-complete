@@ -244,12 +244,12 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                 
                 <div className="space-y-2">
                   <Label htmlFor="designatedProducer">Designated Producer (California Override)</Label>
-                  <Select value={formData.designatedProducerId || ''} onValueChange={(value) => setFormData(prev => ({ ...prev, designatedProducerId: value || undefined }))}>
+                  <Select value={formData.designatedProducerId || 'default'} onValueChange={(value) => setFormData(prev => ({ ...prev, designatedProducerId: value === 'default' ? undefined : value }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Use Default (Brand Owner)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Use Default (Brand Owner)</SelectItem>
+                      <SelectItem value="default">Use Default (Brand Owner)</SelectItem>
                       <SelectItem value="org1">Alternative Producer 1</SelectItem>
                       <SelectItem value="org2">Alternative Producer 2</SelectItem>
                       <SelectItem value="org3">Alternative Producer 3</SelectItem>
