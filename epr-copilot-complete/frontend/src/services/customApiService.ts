@@ -10,46 +10,6 @@ export class CustomApiService {
   }
 
   private initializeMockAPIs() {
-    const mockAPIs: CustomAPI[] = [
-      {
-        id: 'api-001',
-        name: 'Material Database Lookup',
-        description: 'Lookup material properties and recycling information',
-        endpoint: 'https://api.materialdb.com/lookup',
-        method: 'GET',
-        authentication: 'api_key',
-        headers: { 'Content-Type': 'application/json' },
-        parameters: [
-          {
-            name: 'material_id',
-            type: 'string',
-            required: true,
-            description: 'Unique material identifier'
-          },
-          {
-            name: 'include_recycling',
-            type: 'boolean',
-            required: false,
-            description: 'Include recycling information',
-            defaultValue: true
-          }
-        ],
-        responseSchema: {
-          type: 'object',
-          properties: {
-            material: { type: 'object' },
-            recycling: { type: 'object' }
-          }
-        },
-        isActive: true,
-        usage: 1247,
-        lastUsed: '2024-06-24T10:15:00Z'
-      }
-    ];
-
-    mockAPIs.forEach(api => {
-      this.apis.set(api.id, api);
-    });
   }
 
   getAPIs(): CustomAPI[] {

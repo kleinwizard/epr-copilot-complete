@@ -98,7 +98,26 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
     return data;
   } catch (error) {
     console.error('Error fetching analytics data:', error);
-    return mockAnalyticsData;
+    return {
+      overview: {
+        totalFees: 0,
+        totalProducts: 0,
+        totalWeight: 0,
+        recyclabilityRate: 0,
+        quarterlyGrowth: 0,
+        costSavings: 0
+      },
+      feesTrend: [],
+      materialBreakdown: [],
+      productCategories: [],
+      quarterlyComparison: [],
+      sustainabilityMetrics: {
+        recyclablePercentage: 0,
+        wasteReduction: 0,
+        carbonFootprint: 0,
+        circularityScore: 0
+      }
+    };
   }
 }
 
@@ -117,17 +136,7 @@ export async function calculateFeeProjections(months: number): Promise<Array<{ m
     return data.projections;
   } catch (error) {
     console.error('Error fetching fee projections:', error);
-    const hasInsufficientData = Math.random() < 0.2; // 20% chance of insufficient data
-    
-    if (hasInsufficientData) {
-      return null;
-    } else {
-      const currentMonthFees = 23850;
-      return Array.from({ length: months }, (_, i) => ({
-        month: new Date(2024, 6 + i, 1).toLocaleDateString('en-US', { month: 'short' }),
-        projected: Math.round(currentMonthFees * Math.pow(1.08, i + 1))
-      }));
-    }
+    return null;
   }
 }
 
@@ -145,8 +154,9 @@ export async function getSustainabilityScore(): Promise<{value: number | null, s
   } catch (error) {
     console.error('Error fetching sustainability score:', error);
     return {
-      value: 85,
-      status: "success"
+      value: null,
+      status: "insufficient_data",
+      message: "No data available. Start adding products to see your sustainability score."
     };
   }
 }
@@ -173,19 +183,10 @@ export async function getOptimizationPotential(): Promise<{value: number | null,
     };
   } catch (error) {
     console.error('Error fetching optimization potential:', error);
-    const hasInsufficientData = Math.random() < 0.3; // 30% chance of insufficient data
-    
-    if (hasInsufficientData) {
-      return {
-        value: null,
-        status: "insufficient_data",
-        message: "More data required. This metric will populate after 3 months of data is available."
-      };
-    } else {
-      return {
-        value: 12500,
-        status: "success"
-      };
-    }
+    return {
+      value: null,
+      status: "insufficient_data",
+      message: "More data required. This metric will populate after 3 months of data is available."
+    };
   }
 }

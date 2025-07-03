@@ -19,69 +19,7 @@ export interface CalendarView {
   events: ComplianceEvent[];
 }
 
-// Mock data for compliance calendar
-const mockEvents: ComplianceEvent[] = [
-  {
-    id: '1',
-    title: 'Q4 2024 EPR Report Due',
-    description: 'Submit quarterly packaging data report to environmental agency',
-    date: new Date('2024-01-31'),
-    type: 'deadline',
-    status: 'upcoming',
-    priority: 'critical',
-    category: 'quarterly-report',
-    jurisdiction: 'California',
-    reminderDays: [30, 14, 7, 1]
-  },
-  {
-    id: '2',
-    title: 'Annual Fee Payment',
-    description: 'Pay annual EPR compliance fees based on 2024 data',
-    date: new Date('2024-03-15'),
-    type: 'deadline',
-    status: 'upcoming',
-    priority: 'high',
-    category: 'fee-payment',
-    jurisdiction: 'California',
-    reminderDays: [30, 7]
-  },
-  {
-    id: '3',
-    title: 'Product Registration Update',
-    description: 'Update product catalog for new items introduced in Q4',
-    date: new Date('2024-02-28'),
-    type: 'submission',
-    status: 'upcoming',
-    priority: 'medium',
-    category: 'data-submission',
-    jurisdiction: 'California',
-    reminderDays: [14, 3]
-  },
-  {
-    id: '4',
-    title: 'Compliance Audit Preparation',
-    description: 'Prepare documentation for annual compliance audit',
-    date: new Date('2024-04-10'),
-    type: 'meeting',
-    status: 'upcoming',
-    priority: 'high',
-    category: 'audit',
-    jurisdiction: 'California',
-    reminderDays: [21, 7]
-  },
-  {
-    id: '5',
-    title: 'Q1 2025 Data Submission',
-    description: 'Submit Q1 packaging data and material declarations',
-    date: new Date('2024-04-30'),
-    type: 'deadline',
-    status: 'upcoming',
-    priority: 'critical',
-    category: 'quarterly-report',
-    jurisdiction: 'California',
-    reminderDays: [30, 14, 7, 1]
-  }
-];
+const mockEvents: ComplianceEvent[] = [];
 
 export function getCalendarEvents(month?: number, year?: number): ComplianceEvent[] {
   const hasOrganizationData = localStorage.getItem('epr_organization_initialized') === 'true';

@@ -128,14 +128,6 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
       ]
     },
     {
-      id: 'integrations',
-      label: 'Integrations',
-      icon: 'zap',
-      items: [
-        { id: 'integration-hub', label: 'Integration Hub', icon: 'zap' }
-      ]
-    },
-    {
       id: 'support',
       label: 'Support',
       icon: 'help-circle',
@@ -191,14 +183,14 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
             Home
           </Button>
 
-          {/* Settings Button - Single clickable button */}
+          {/* Integration Hub Button - Elevated to top-level */}
           <Button
-            variant={currentPage === 'settings' ? "default" : "ghost"}
+            variant={currentPage === 'integration-hub' ? "default" : "ghost"}
             className="w-full justify-start mb-4"
-            onClick={() => handlePageChange('settings')}
+            onClick={() => handlePageChange('integration-hub')}
           >
-            <Settings className="mr-2 h-4 w-4" />
-            Settings
+            <Zap className="mr-2 h-4 w-4" />
+            Integration Hub
           </Button>
 
           {hierarchicalMenu.map((section) => (
@@ -234,8 +226,20 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
               )}
             </div>
           ))}
+
+          {/* Settings Button - Moved to bottom */}
+          <div className="mt-auto pt-4">
+            <Button
+              variant={currentPage === 'settings' ? "default" : "ghost"}
+              className="w-full justify-start"
+              onClick={() => handlePageChange('settings')}
+            >
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
+            </Button>
+          </div>
         </nav>
-        <div className="flex items-center px-6 py-4 mt-auto bg-white border-t">
+        <div className="flex items-center px-6 py-4 bg-white border-t">
           <Avatar className="h-8 w-8">
             <AvatarImage src="https://github.com/shadcn.png" alt={user?.email || "Avatar"} />
             <AvatarFallback>{user?.email ? user.email[0].toUpperCase() : "U"}</AvatarFallback>

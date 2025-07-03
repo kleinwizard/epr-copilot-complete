@@ -6,40 +6,6 @@ export class WebhookService {
   private logs: Map<string, WebhookLog[]> = new Map();
 
   constructor() {
-    this.initializeMockWebhooks();
-  }
-
-  private initializeMockWebhooks() {
-    const mockWebhooks: Webhook[] = [
-      {
-        id: 'webhook-001',
-        name: 'Product Update Notification',
-        url: 'https://api.partner.com/webhooks/product-update',
-        events: ['product.created', 'product.updated', 'product.deleted'],
-        isActive: true,
-        retryCount: 3,
-        lastTriggered: '2024-06-24T09:30:00Z',
-        successRate: 98.5,
-        headers: { 'Content-Type': 'application/json' }
-      },
-      {
-        id: 'webhook-002',
-        name: 'Fee Calculation Alert',
-        url: 'https://api.accounting.com/webhooks/fee-alert',
-        events: ['fee.calculated', 'fee.updated'],
-        secret: 'webhook_secret_key',
-        isActive: true,
-        retryCount: 5,
-        lastTriggered: '2024-06-24T08:15:00Z',
-        successRate: 95.2,
-        headers: { 'Content-Type': 'application/json', 'X-Custom-Header': 'EPR-System' }
-      }
-    ];
-
-    mockWebhooks.forEach(webhook => {
-      this.webhooks.set(webhook.id, webhook);
-      this.logs.set(webhook.id, []);
-    });
   }
 
   getWebhooks(): Webhook[] {

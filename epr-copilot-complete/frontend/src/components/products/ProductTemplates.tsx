@@ -42,61 +42,9 @@ interface ProductTemplatesProps {
   onUseTemplate: (template: ProductTemplate) => void;
 }
 
-const mockTemplates: ProductTemplate[] = [
-  {
-    id: '1',
-    name: 'Glass Sauce Jar',
-    description: 'Standard glass sauce jar with metal lid and paper label',
-    category: 'Food & Beverage',
-    materials: [
-      { type: 'Glass', weight: 450, recyclable: true },
-      { type: 'Metal (Steel)', weight: 30, recyclable: true },
-      { type: 'Paper (Label)', weight: 15, recyclable: true }
-    ],
-    estimatedFee: 0.24,
-    isIndustryTemplate: true,
-    isFavorite: false,
-    usageCount: 127,
-    createdBy: 'System',
-    createdAt: '2024-01-01'
-  },
-  {
-    id: '2',
-    name: 'Plastic Shampoo Bottle',
-    description: 'HDPE bottle with PP pump and paper label',
-    category: 'Personal Care',
-    materials: [
-      { type: 'Plastic (HDPE)', weight: 35, recyclable: true },
-      { type: 'Plastic (PP)', weight: 8, recyclable: true },
-      { type: 'Paper (Label)', weight: 12, recyclable: true }
-    ],
-    estimatedFee: 0.18,
-    isIndustryTemplate: true,
-    isFavorite: true,
-    usageCount: 89,
-    createdBy: 'System',
-    createdAt: '2024-01-01'
-  },
-  {
-    id: '3',
-    name: 'Cereal Box',
-    description: 'Cardboard box with plastic liner',
-    category: 'Food & Beverage',
-    materials: [
-      { type: 'Cardboard', weight: 85, recyclable: true },
-      { type: 'Plastic (LDPE)', weight: 25, recyclable: false }
-    ],
-    estimatedFee: 0.32,
-    isIndustryTemplate: false,
-    isFavorite: false,
-    usageCount: 45,
-    createdBy: 'John Doe',
-    createdAt: '2024-01-15'
-  }
-];
 
 export function ProductTemplates({ onUseTemplate }: ProductTemplatesProps) {
-  const [templates, setTemplates] = useState<ProductTemplate[]>(mockTemplates);
+  const [templates, setTemplates] = useState<ProductTemplate[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newTemplate, setNewTemplate] = useState({
