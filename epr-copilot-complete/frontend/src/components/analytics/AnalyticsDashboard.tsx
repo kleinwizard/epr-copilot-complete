@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -17,7 +17,34 @@ import { Download, RefreshCw, Calendar, Filter, Share, BarChart3, TrendingUp } f
 export function AnalyticsDashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState('quarterly');
   const [activeTab, setActiveTab] = useState('overview');
-  const analyticsData = getAnalyticsData();
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [complianceScore, setComplianceScore] = useState(0);
+  const [sustainabilityScore, setSustainabilityScore] = useState(0);
+  const [optimizationPotential, setOptimizationPotential] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadAnalyticsData = async () => {
+      try {
+        setIsLoading(true);
+        
+        setComplianceScore(0);
+        setSustainabilityScore(0);
+        setOptimizationPotential(0);
+        setAnalyticsData(getAnalyticsData());
+      } catch (error) {
+        console.error('Failed to load analytics data:', error);
+        setComplianceScore(0);
+        setSustainabilityScore(0);
+        setOptimizationPotential(0);
+        setAnalyticsData(getAnalyticsData());
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadAnalyticsData();
+  }, [selectedPeriod]);
 
   return (
     <div className="space-y-6">
@@ -26,7 +53,7 @@ export function AnalyticsDashboard() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight flex items-center space-x-2">
             <BarChart3 className="h-8 w-8 text-blue-600" />
-            <span>Advanced Analytics & Insights</span>
+            <span>Advanced Analytics &amp; Insights</span>
           </h2>
           <p className="text-muted-foreground mt-1">
             Comprehensive insights into EPR compliance, sustainability impact, and cost optimization opportunities
@@ -34,13 +61,13 @@ export function AnalyticsDashboard() {
           <div className="flex items-center space-x-4 mt-2">
             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
               <TrendingUp className="h-3 w-3 mr-1" />
-              94% Compliance Score
+              {isLoading ? 'Loading...' : `${complianceScore}% Compliance Score`}
             </Badge>
             <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-              67/100 Sustainability Score
+              {isLoading ? 'Loading...' : `${sustainabilityScore}/100 Sustainability Score`}
             </Badge>
             <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-              $29k Optimization Potential
+              {isLoading ? 'Loading...' : `$${optimizationPotential}k Optimization Potential`}
             </Badge>
           </div>
         </div>

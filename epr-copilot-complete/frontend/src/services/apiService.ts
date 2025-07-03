@@ -111,6 +111,94 @@ class ApiService {
   async getComplianceDueDates() {
     return this.get('/api/compliance/due-dates');
   }
+
+  async getFeeDeadlines() {
+    return this.get('/api/fees/deadlines');
+  }
+
+  async getFeeHistory() {
+    return this.get('/api/fees/history');
+  }
+
+  async getActiveVendorsCount() {
+    return this.get('/api/vendors/count?status=active');
+  }
+
+  async getConnectedVendorsCount() {
+    return this.get('/api/vendors/count?status=connected');
+  }
+
+  async getWorkspacesCount() {
+    return this.get('/api/workspaces/count');
+  }
+
+  async getUnreadMessagesCount() {
+    return this.get('/api/messages/count?unread=true');
+  }
+
+  async getEcommerceIntegrationsCount() {
+    return this.get('/api/integrations/count?type=ecommerce');
+  }
+
+  async getSupplyChainIntegrationsCount() {
+    return this.get('/api/integrations/count?type=supply-chain');
+  }
+
+  async getCustomApiIntegrationsCount() {
+    return this.get('/api/integrations/count?type=custom-api');
+  }
+
+  async getWebhookIntegrationsCount() {
+    return this.get('/api/integrations/count?type=webhook');
+  }
+
+  async getNotifications() {
+    return this.get('/api/notifications');
+  }
+
+  async markNotificationAsRead(id: string) {
+    return this.put(`/api/notifications/${id}/read`, {});
+  }
+
+  async getDataUsage() {
+    return this.get('/api/data/usage');
+  }
+
+  async exportData(type: string, format: string) {
+    return this.get(`/api/export/${type}?format=${format}`);
+  }
+
+  async exportProducts(format: string = 'csv') {
+    return this.get(`/api/export/products?format=${format}`);
+  }
+
+  async exportMaterials(format: string = 'json') {
+    return this.get(`/api/export/materials?format=${format}`);
+  }
+
+  async exportReports(format: string = 'pdf') {
+    return this.get(`/api/export/reports?format=${format}`);
+  }
+
+  async exportFullData() {
+    return this.get('/api/export/full-data');
+  }
+
+  async getAnalyticsOverview() {
+    return this.get('/api/analytics/overview');
+  }
+
+  async getComplianceMetrics() {
+    return this.get('/api/analytics/compliance-metrics');
+  }
+
+  async getCostAnalysis() {
+    return this.get('/api/analytics/cost-analysis');
+  }
+
+  async getProjections() {
+    return this.get('/api/analytics/projections');
+  }
 }
 
 export const apiService = new ApiService();

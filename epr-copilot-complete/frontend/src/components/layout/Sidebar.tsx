@@ -89,14 +89,6 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
 
   const hierarchicalMenu = [
     {
-      id: 'home',
-      label: 'Home',
-      icon: 'home',
-      items: [
-        { id: 'home', label: 'Home', icon: 'home' }
-      ]
-    },
-    {
       id: 'catalog-data',
       label: 'Catalog & Data',
       icon: 'database',
@@ -154,14 +146,6 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
         { id: 'guides', label: 'Guides', icon: 'book-open' }
       ]
     },
-    {
-      id: 'admin-settings',
-      label: 'Admin & Settings',
-      icon: 'settings',
-      items: [
-        { id: 'settings', label: 'Settings', icon: 'settings' }
-      ]
-    }
   ];
 
   const getIcon = (iconName: string, className: string = "mr-2 h-4 w-4") => {
@@ -197,6 +181,26 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
           <span className="font-bold text-lg">EPR Compliance</span>
         </div>
         <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto" aria-label="Sidebar">
+          {/* Home Button - Single clickable button */}
+          <Button
+            variant={currentPage === 'home' ? "default" : "ghost"}
+            className="w-full justify-start mb-4"
+            onClick={() => handlePageChange('home')}
+          >
+            <Home className="mr-2 h-4 w-4" />
+            Home
+          </Button>
+
+          {/* Settings Button - Single clickable button */}
+          <Button
+            variant={currentPage === 'settings' ? "default" : "ghost"}
+            className="w-full justify-start mb-4"
+            onClick={() => handlePageChange('settings')}
+          >
+            <Settings className="mr-2 h-4 w-4" />
+            Settings
+          </Button>
+
           {hierarchicalMenu.map((section) => (
             <div key={section.id} className="space-y-1">
               <Button

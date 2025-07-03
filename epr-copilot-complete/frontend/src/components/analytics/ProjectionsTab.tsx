@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -11,7 +12,62 @@ const chartConfig = {
 };
 
 export function ProjectionsTab() {
-  const projections = calculateFeeProjections(6);
+  const [projections, setProjections] = useState([]);
+  const [projectionMetrics, setProjectionMetrics] = useState({
+    quarterlyGrowth: 0,
+    annualFees: 0,
+    yearOverYearIncrease: 0,
+    recyclabilitySavings: 0,
+    discountOpportunities: 0,
+    costOptimization: 0,
+    complianceScore: 0,
+    riskLevel: 'Unknown',
+    recyclabilityRate: 0,
+    growthRate: 0
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadProjectionsData = async () => {
+      try {
+        setIsLoading(true);
+        // const projectionsData = await projectionsService.getFeeProjections(6);
+        
+        setProjections(calculateFeeProjections(6));
+        setProjectionMetrics({
+          quarterlyGrowth: 0,
+          annualFees: 0,
+          yearOverYearIncrease: 0,
+          recyclabilitySavings: 0,
+          discountOpportunities: 0,
+          costOptimization: 0,
+          complianceScore: 0,
+          riskLevel: 'Unknown',
+          recyclabilityRate: 0,
+          growthRate: 0
+        });
+      } catch (error) {
+        console.error('Failed to load projections data:', error);
+        setProjections(calculateFeeProjections(6));
+        setProjectionMetrics({
+          quarterlyGrowth: 0,
+          annualFees: 0,
+          yearOverYearIncrease: 0,
+          recyclabilitySavings: 0,
+          discountOpportunities: 0,
+          costOptimization: 0,
+          complianceScore: 0,
+          riskLevel: 'Unknown',
+          recyclabilityRate: 0,
+          growthRate: 0
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadProjectionsData();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -43,12 +99,19 @@ export function ProjectionsTab() {
           
           <div className="mt-4 p-4 bg-blue-50 rounded-lg">
             <h4 className="font-medium text-blue-900 mb-2">Key Insights & Recommendations</h4>
-            <ul className="text-sm text-blue-700 space-y-1">
-              <li>• Projected 8% quarterly growth based on current trends</li>
-              <li>• Estimated annual fees: $312,000 (+$47,000 vs current year)</li>
-              <li>• Recyclability improvements could save an additional $12,000</li>
-              <li>• Early compliance submissions offer 3% discount opportunities</li>
-            </ul>
+            {isLoading ? (
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="text-blue-700 text-sm mt-2">Loading insights...</p>
+              </div>
+            ) : (
+              <ul className="text-sm text-blue-700 space-y-1">
+                <li>• Projected {projectionMetrics.quarterlyGrowth}% quarterly growth based on current trends</li>
+                <li>• Estimated annual fees: ${projectionMetrics.annualFees.toLocaleString()} (+${projectionMetrics.yearOverYearIncrease.toLocaleString()} vs current year)</li>
+                <li>• Recyclability improvements could save an additional ${projectionMetrics.recyclabilitySavings.toLocaleString()}</li>
+                <li>• Early compliance submissions offer {projectionMetrics.discountOpportunities}% discount opportunities</li>
+              </ul>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -59,7 +122,9 @@ export function ProjectionsTab() {
             <CardTitle className="text-lg">Cost Optimization</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600 mb-2">-$15,680</div>
+            <div className="text-2xl font-bold text-green-600 mb-2">
+              {isLoading ? 'Loading...' : `-$${projectionMetrics.costOptimization.toLocaleString()}`}
+            </div>
             <p className="text-sm text-muted-foreground mb-4">Potential annual savings</p>
             <ul className="text-sm space-y-2">
               <li>• Increase recyclable materials by 5%</li>
@@ -78,12 +143,14 @@ export function ProjectionsTab() {
             <CardTitle className="text-lg">Compliance Risk Assessment</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600 mb-2">Low Risk</div>
+            <div className="text-2xl font-bold text-green-600 mb-2">
+              {isLoading ? 'Loading...' : projectionMetrics.riskLevel}
+            </div>
             <p className="text-sm text-muted-foreground mb-4">Current risk level</p>
             <ul className="text-sm space-y-2">
-              <li>• 94% compliance score</li>
+              <li>• {isLoading ? 'Loading...' : `${projectionMetrics.complianceScore}% compliance score`}</li>
               <li>• All deadlines met this year</li>
-              <li>• Strong recyclability rate (82%)</li>
+              <li>• Strong recyclability rate ({isLoading ? 'Loading...' : `${projectionMetrics.recyclabilityRate}%`})</li>
               <li>• Proactive monitoring in place</li>
             </ul>
             <Button size="sm" variant="outline" className="mt-3 w-full">
@@ -97,7 +164,9 @@ export function ProjectionsTab() {
             <CardTitle className="text-lg">Growth Impact Analysis</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600 mb-2">+8.5%</div>
+            <div className="text-2xl font-bold text-blue-600 mb-2">
+              {isLoading ? 'Loading...' : `${projectionMetrics.growthRate > 0 ? '+' : ''}${projectionMetrics.growthRate}%`}
+            </div>
             <p className="text-sm text-muted-foreground mb-4">Quarterly growth rate</p>
             <ul className="text-sm space-y-2">
               <li>• Product portfolio expansion</li>

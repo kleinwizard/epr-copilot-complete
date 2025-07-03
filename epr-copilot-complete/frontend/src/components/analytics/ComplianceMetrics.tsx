@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -12,48 +13,121 @@ const chartConfig = {
   overdue: { label: "Overdue", color: "#ef4444" }
 };
 
-const complianceData = [
-  { name: 'Compliant', value: 89, color: '#10b981' },
-  { name: 'Pending', value: 8, color: '#f59e0b' },
-  { name: 'Overdue', value: 3, color: '#ef4444' }
-];
-
-const metrics = [
-  {
-    title: 'Compliance Score',
-    value: '94%',
-    change: '+2.1%',
-    icon: CheckCircle,
-    color: 'text-green-600',
-    bgColor: 'bg-green-50'
-  },
-  {
-    title: 'On-Time Submissions',
-    value: '12/13',
-    change: '92.3%',
-    icon: Clock,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50'
-  },
-  {
-    title: 'Risk Level',
-    value: 'Low',
-    change: 'Stable',
-    icon: Target,
-    color: 'text-green-600',
-    bgColor: 'bg-green-50'
-  },
-  {
-    title: 'Action Items',
-    value: '3',
-    change: '-2 this week',
-    icon: AlertTriangle,
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-50'
-  }
-];
 
 export function ComplianceMetrics() {
+  const [complianceData, setComplianceData] = useState([
+    { name: 'Compliant', value: 0, color: '#10b981' },
+    { name: 'Pending', value: 0, color: '#f59e0b' },
+    { name: 'Overdue', value: 0, color: '#ef4444' }
+  ]);
+  
+  const [metrics, setMetrics] = useState([
+    {
+      title: 'Compliance Score',
+      value: '0%',
+      change: '0%',
+      icon: CheckCircle,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50'
+    },
+    {
+      title: 'On-Time Submissions',
+      value: '0/0',
+      change: '0%',
+      icon: Clock,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50'
+    },
+    {
+      title: 'Risk Level',
+      value: 'Unknown',
+      change: 'Loading',
+      icon: Target,
+      color: 'text-gray-600',
+      bgColor: 'bg-gray-50'
+    },
+    {
+      title: 'Action Items',
+      value: '0',
+      change: 'Loading',
+      icon: AlertTriangle,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50'
+    }
+  ]);
+  
+  const [quarterlyProgress, setQuarterlyProgress] = useState([
+    { name: 'Product Registration', completed: 0, total: 0, percentage: 0 },
+    { name: 'Material Documentation', completed: 0, total: 0, percentage: 0 },
+    { name: 'Fee Calculations', completed: 0, total: 0, percentage: 0 },
+    { name: 'Report Submissions', completed: 0, total: 0, percentage: 0 }
+  ]);
+  
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadComplianceData = async () => {
+      try {
+        setIsLoading(true);
+        // const complianceStats = await complianceService.getComplianceDistribution();
+        // const complianceMetrics = await complianceService.getMetrics();
+        
+        setComplianceData([
+          { name: 'Compliant', value: 0, color: '#10b981' },
+          { name: 'Pending', value: 0, color: '#f59e0b' },
+          { name: 'Overdue', value: 0, color: '#ef4444' }
+        ]);
+        
+        setMetrics([
+          {
+            title: 'Compliance Score',
+            value: '0%',
+            change: '0%',
+            icon: CheckCircle,
+            color: 'text-green-600',
+            bgColor: 'bg-green-50'
+          },
+          {
+            title: 'On-Time Submissions',
+            value: '0/0',
+            change: '0%',
+            icon: Clock,
+            color: 'text-blue-600',
+            bgColor: 'bg-blue-50'
+          },
+          {
+            title: 'Risk Level',
+            value: 'Unknown',
+            change: 'Loading',
+            icon: Target,
+            color: 'text-gray-600',
+            bgColor: 'bg-gray-50'
+          },
+          {
+            title: 'Action Items',
+            value: '0',
+            change: 'Loading',
+            icon: AlertTriangle,
+            color: 'text-orange-600',
+            bgColor: 'bg-orange-50'
+          }
+        ]);
+        
+        setQuarterlyProgress([
+          { name: 'Product Registration', completed: 0, total: 0, percentage: 0 },
+          { name: 'Material Documentation', completed: 0, total: 0, percentage: 0 },
+          { name: 'Fee Calculations', completed: 0, total: 0, percentage: 0 },
+          { name: 'Report Submissions', completed: 0, total: 0, percentage: 0 }
+        ]);
+      } catch (error) {
+        console.error('Failed to load compliance data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadComplianceData();
+  }, []);
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -128,34 +202,22 @@ export function ComplianceMetrics() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Product Registration</span>
-                  <span>89/95 (94%)</span>
+              {isLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="text-gray-500 mt-2">Loading progress data...</p>
                 </div>
-                <Progress value={94} className="h-2" />
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Material Documentation</span>
-                  <span>156/160 (98%)</span>
-                </div>
-                <Progress value={98} className="h-2" />
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Fee Calculations</span>
-                  <span>1247/1250 (99%)</span>
-                </div>
-                <Progress value={99} className="h-2" />
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Report Submissions</span>
-                  <span>12/13 (92%)</span>
-                </div>
-                <Progress value={92} className="h-2" />
-              </div>
+              ) : (
+                quarterlyProgress.map((item, index) => (
+                  <div key={index}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>{item.name}</span>
+                      <span>{item.completed}/{item.total} ({item.percentage}%)</span>
+                    </div>
+                    <Progress value={item.percentage} className="h-2" />
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>

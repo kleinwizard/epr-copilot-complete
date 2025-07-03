@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Calendar, DollarSign, Eye, Download } from 'lucide-react';
 import type { QuarterlyReport } from '@/services/reportService';
+import { exportEnhancedReport } from '@/services/reportExportService';
 
 interface ReportListProps {
   reports: QuarterlyReport[];
@@ -73,7 +74,27 @@ export function ReportList({ reports, onViewReport }: ReportListProps) {
                   <p className="text-gray-600">{report.summary.totalUnits.toLocaleString()} units</p>
                 </div>
                 
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    try {
+                      const exportData = exportEnhancedReport(report, 'pdf');
+                      const blob = new Blob([exportData], { type: 'application/pdf' });
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.style.display = 'none';
+                      a.href = url;
+                      a.download = `${report.quarter}_${report.year}_report.pdf`;
+                      document.body.appendChild(a);
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      document.body.removeChild(a);
+                    } catch (error) {
+                      console.error('Export failed:', error);
+                    }
+                  }}
+                >
                   <Download className="h-3 w-3 mr-1" />
                   Export
                 </Button>

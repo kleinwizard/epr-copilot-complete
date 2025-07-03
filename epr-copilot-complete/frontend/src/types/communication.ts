@@ -106,30 +106,3 @@ export interface WorkspaceDocument {
   version: string;
   tags: string[];
 }
-
-export interface KnowledgeBaseArticle {
-  id: string;
-  title: string;
-  content: string;
-  category: string;
-  tags: string[];
-  author: string;
-  createdAt: string;
-  updatedAt: string;
-  status: 'draft' | 'published' | 'archived';
-  views: number;
-  rating: number;
-  ratingCount: number;
-  isPublic: boolean;
-  relatedArticles: string[];
-}
-
-export interface KnowledgeBaseCategory {
-  id: string;
-  name: string;
-  description?: string;
-  icon?: string;
-  parentId?: string;
-  articleCount: number;
-  order: number;
-}
