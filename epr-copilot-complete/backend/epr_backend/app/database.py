@@ -61,6 +61,7 @@ class Product(Base):
     organization_id = Column(String, ForeignKey("organizations.id"))
     name = Column(String(255), nullable=False)
     sku = Column(String(100))
+    sales_volume = Column(Numeric(15, 2), default=0.0)  # Sales volume for growth rate calculations
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     organization = relationship("Organization", back_populates="products")
@@ -119,6 +120,8 @@ class MaterialCategory(Base):
     level = Column(Integer)  # 1=Class, 2=Type, 3=Form (hierarchical structure)
     jurisdiction_id = Column(String, ForeignKey("jurisdictions.id"))
     recyclable = Column(Boolean, default=True)
+    recyclability_percentage = Column(Numeric(5, 2), default=0.0)  # 0-100% recyclability rate
+    carbon_factor = Column(Numeric(10, 6), default=0.0)  # Carbon factor per material for sustainability calculations
     contains_plastic = Column(Boolean, default=False)  # Important for CA CMC list
     disrupts_recycling = Column(Boolean, default=False)  # Important for CO eco-modulation
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

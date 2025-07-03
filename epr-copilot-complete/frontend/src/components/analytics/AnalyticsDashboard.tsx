@@ -6,21 +6,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AnalyticsOverview } from './AnalyticsOverview';
 import { OverviewTab } from './OverviewTab';
-import { ComplianceMetrics } from './ComplianceMetrics';
 import { CostAnalysis } from './CostAnalysis';
 import { MaterialBreakdownChart } from './MaterialBreakdownChart';
 import { SustainabilityInsights } from './SustainabilityInsights';
 import { ProjectionsTab } from './ProjectionsTab';
-import { getAnalyticsData } from '@/services/analyticsService';
+import { getAnalyticsData, getSustainabilityScore, getOptimizationPotential } from '@/services/analyticsService';
 import { Download, RefreshCw, Calendar, Filter, Share, BarChart3, TrendingUp } from 'lucide-react';
 
 export function AnalyticsDashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState('quarterly');
   const [activeTab, setActiveTab] = useState('overview');
   const [analyticsData, setAnalyticsData] = useState(null);
-  const [complianceScore, setComplianceScore] = useState(0);
-  const [sustainabilityScore, setSustainabilityScore] = useState(0);
-  const [optimizationPotential, setOptimizationPotential] = useState(0);
+  const [sustainabilityScore, setSustainabilityScore] = useState<{value: number | null, status: string, message?: string}>({value: 0, status: 'loading'});
+  const [optimizationPotential, setOptimizationPotential] = useState<{value: number | null, status: string, message?: string}>({value: 0, status: 'loading'});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -28,17 +26,21 @@ export function AnalyticsDashboard() {
       try {
         setIsLoading(true);
         
-        setComplianceScore(0);
-        setSustainabilityScore(0);
-        setOptimizationPotential(0);
-        setAnalyticsData(getAnalyticsData());
+        const [analyticsData, sustainabilityScore, optimizationPotential] = await Promise.all([
+          getAnalyticsData(),
+          getSustainabilityScore(),
+          getOptimizationPotential()
+        ]);
+        
+        setAnalyticsData(analyticsData);
+        setSustainabilityScore(sustainabilityScore);
+        setOptimizationPotential(optimizationPotential);
       } catch (error) {
         console.error('Failed to load analytics data:', error);
-        setComplianceScore(0);
-        setSustainabilityScore(0);
-        setOptimizationPotential(0);
-        setAnalyticsData(getAnalyticsData());
-      } finally {
+        setSustainabilityScore({value: 0, status: 'error'});
+        setOptimizationPotential({value: 0, status: 'error'});
+        setAnalyticsData(await getAnalyticsData());
+      }finally {
         setIsLoading(false);
       }
     };
@@ -59,15 +61,33 @@ export function AnalyticsDashboard() {
             Comprehensive insights into EPR compliance, sustainability impact, and cost optimization opportunities
           </p>
           <div className="flex items-center space-x-4 mt-2">
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-              <TrendingUp className="h-3 w-3 mr-1" />
-              {isLoading ? 'Loading...' : `${complianceScore}% Compliance Score`}
+            <Badge 
+              variant="outline" 
+              className={`${
+                sustainabilityScore.status === 'insufficient_data' 
+                  ? 'bg-gray-50 text-gray-500 border-gray-200' 
+                  : 'bg-blue-50 text-blue-700 border-blue-200'
+              }`}
+            >
+              {isLoading ? 'Loading...' : 
+                sustainabilityScore.status === 'insufficient_data' 
+                  ? 'Sustainability Score - Insufficient Data'
+                  : `${sustainabilityScore.value}/100 Sustainability Score`
+              }
             </Badge>
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-              {isLoading ? 'Loading...' : `${sustainabilityScore}/100 Sustainability Score`}
-            </Badge>
-            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-              {isLoading ? 'Loading...' : `$${optimizationPotential}k Optimization Potential`}
+            <Badge 
+              variant="outline" 
+              className={`${
+                optimizationPotential.status === 'insufficient_data' 
+                  ? 'bg-gray-50 text-gray-500 border-gray-200' 
+                  : 'bg-orange-50 text-orange-700 border-orange-200'
+              }`}
+            >
+              {isLoading ? 'Loading...' : 
+                optimizationPotential.status === 'insufficient_data' 
+                  ? 'Optimization Potential - Insufficient Data'
+                  : `$${Math.round((optimizationPotential.value || 0) / 1000)}k Optimization Potential`
+              }
             </Badge>
           </div>
         </div>
@@ -122,9 +142,8 @@ export function AnalyticsDashboard() {
 
       {/* Enhanced Analytics Tabs with new sections */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="compliance">Compliance</TabsTrigger>
           <TabsTrigger value="costs">Cost Analysis</TabsTrigger>
           <TabsTrigger value="materials">Materials</TabsTrigger>
           <TabsTrigger value="sustainability">Sustainability</TabsTrigger>
@@ -135,9 +154,6 @@ export function AnalyticsDashboard() {
           <OverviewTab analyticsData={analyticsData} />
         </TabsContent>
 
-        <TabsContent value="compliance">
-          <ComplianceMetrics />
-        </TabsContent>
 
         <TabsContent value="costs">
           <CostAnalysis />
