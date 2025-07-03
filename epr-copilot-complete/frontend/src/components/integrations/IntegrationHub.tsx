@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -12,12 +12,40 @@ import { WebhookManager } from './WebhookManager';
 export const IntegrationHub = () => {
   const [activeTab, setActiveTab] = useState('ecommerce');
 
-  const integrationStats = {
-    ecommerce: { connected: 3, total: 6 },
-    supplyChain: { connected: 5, total: 8 },
-    apis: { active: 12, total: 15 },
-    webhooks: { active: 8, total: 10 }
-  };
+  const [integrationStats, setIntegrationStats] = useState({
+    ecommerce: { connected: 0, total: 0 },
+    supplyChain: { connected: 0, total: 0 },
+    apis: { active: 0, total: 0 },
+    webhooks: { active: 0, total: 0 }
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadIntegrationStats = async () => {
+      try {
+        setIsLoading(true);
+        
+        setIntegrationStats({
+          ecommerce: { connected: 0, total: 0 },
+          supplyChain: { connected: 0, total: 0 },
+          apis: { active: 0, total: 0 },
+          webhooks: { active: 0, total: 0 }
+        });
+      } catch (error) {
+        console.error('Failed to load integration stats:', error);
+        setIntegrationStats({
+          ecommerce: { connected: 0, total: 0 },
+          supplyChain: { connected: 0, total: 0 },
+          apis: { active: 0, total: 0 },
+          webhooks: { active: 0, total: 0 }
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadIntegrationStats();
+  }, []);
 
   return (
     <div className="p-6 space-y-6">
@@ -35,7 +63,9 @@ export const IntegrationHub = () => {
             <CardTitle className="text-sm font-medium">E-commerce</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{integrationStats.ecommerce.connected}</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {isLoading ? '...' : integrationStats.ecommerce.connected}
+            </div>
             <p className="text-xs text-gray-500">of {integrationStats.ecommerce.total} connected</p>
           </CardContent>
         </Card>
@@ -45,7 +75,9 @@ export const IntegrationHub = () => {
             <CardTitle className="text-sm font-medium">Supply Chain</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{integrationStats.supplyChain.connected}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {isLoading ? '...' : integrationStats.supplyChain.connected}
+            </div>
             <p className="text-xs text-gray-500">of {integrationStats.supplyChain.total} connected</p>
           </CardContent>
         </Card>
@@ -55,7 +87,9 @@ export const IntegrationHub = () => {
             <CardTitle className="text-sm font-medium">Custom APIs</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{integrationStats.apis.active}</div>
+            <div className="text-2xl font-bold text-purple-600">
+              {isLoading ? '...' : integrationStats.apis.active}
+            </div>
             <p className="text-xs text-gray-500">of {integrationStats.apis.total} active</p>
           </CardContent>
         </Card>
@@ -65,7 +99,9 @@ export const IntegrationHub = () => {
             <CardTitle className="text-sm font-medium">Webhooks</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{integrationStats.webhooks.active}</div>
+            <div className="text-2xl font-bold text-orange-600">
+              {isLoading ? '...' : integrationStats.webhooks.active}
+            </div>
             <p className="text-xs text-gray-500">of {integrationStats.webhooks.total} active</p>
           </CardContent>
         </Card>

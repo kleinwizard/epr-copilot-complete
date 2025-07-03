@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -14,45 +14,31 @@ import {
 } from 'lucide-react';
 import { FeeCalculator } from './FeeCalculator';
 
-// Mock data for demonstration
-const upcomingDeadlines = [
-  {
-    quarter: 'Q4 2024',
-    dueDate: '2025-01-30',
-    estimatedFee: 19500,
-    status: 'pending'
-  },
-  {
-    quarter: 'Q1 2025',
-    dueDate: '2025-04-30',
-    estimatedFee: 21200,
-    status: 'draft'
-  }
-];
-
-const feeHistory = [
-  {
-    quarter: 'Q3 2024',
-    submittedDate: '2024-10-25',
-    fee: 18900,
-    status: 'paid'
-  },
-  {
-    quarter: 'Q2 2024',
-    submittedDate: '2024-07-28',
-    fee: 15200,
-    status: 'paid'
-  },
-  {
-    quarter: 'Q1 2024',
-    submittedDate: '2024-04-29',
-    fee: 14200,
-    status: 'paid'
-  }
-];
 
 export function FeeManagement() {
   const [selectedTab, setSelectedTab] = useState('calculator');
+  const [upcomingDeadlines, setUpcomingDeadlines] = useState([]);
+  const [feeHistory, setFeeHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadFeeData = async () => {
+      try {
+        setIsLoading(true);
+        
+        setUpcomingDeadlines([]);
+        setFeeHistory([]);
+      } catch (error) {
+        console.error('Failed to load fee data:', error);
+        setUpcomingDeadlines([]);
+        setFeeHistory([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadFeeData();
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -69,22 +55,30 @@ export function FeeManagement() {
 
   const totalPaidThisYear = feeHistory.reduce((sum, fee) => sum + fee.fee, 0);
   const nextDeadline = upcomingDeadlines[0];
-  const daysUntilDeadline = Math.ceil((new Date(nextDeadline.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+  const daysUntilDeadline = nextDeadline ? Math.ceil((new Date(nextDeadline.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
   return (
     <div className="space-y-6">
       {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2 mb-2">
               <Calendar className="h-4 w-4 text-orange-600" />
               <span className="text-sm font-medium">Next Deadline</span>
             </div>
-            <div className="text-2xl font-bold text-orange-600">{daysUntilDeadline} days</div>
-            <p className="text-sm text-muted-foreground">
-              {nextDeadline.quarter} • ${nextDeadline.estimatedFee.toLocaleString()}
-            </p>
+            {isLoading ? (
+              <div className="text-2xl font-bold text-gray-400">Loading...</div>
+            ) : nextDeadline ? (
+              <>
+                <div className="text-2xl font-bold text-orange-600">{daysUntilDeadline} days</div>
+                <p className="text-sm text-muted-foreground">
+                  {nextDeadline.quarter} • ${nextDeadline.estimatedFee.toLocaleString()}
+                </p>
+              </>
+            ) : (
+              <div className="text-2xl font-bold text-gray-400">No deadlines</div>
+            )}
           </CardContent>
         </Card>
 
@@ -100,17 +94,6 @@ export function FeeManagement() {
             <p className="text-sm text-muted-foreground">
               {feeHistory.length} quarters submitted
             </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2 mb-2">
-              <FileText className="h-4 w-4 text-green-600" />
-              <span className="text-sm font-medium">Compliance Status</span>
-            </div>
-            <div className="text-2xl font-bold text-green-600">94%</div>
-            <Badge className="mt-1 bg-green-100 text-green-800">Up to date</Badge>
           </CardContent>
         </Card>
       </div>
@@ -137,7 +120,17 @@ export function FeeManagement() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {upcomingDeadlines.map((deadline, index) => (
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="text-gray-500 mt-2">Loading deadlines...</p>
+                  </div>
+                ) : upcomingDeadlines.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No upcoming deadlines</p>
+                  </div>
+                ) : (
+                  upcomingDeadlines.map((deadline, index) => (
                   <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center justify-center w-10 h-10 bg-orange-100 rounded-full">
@@ -163,10 +156,11 @@ export function FeeManagement() {
                       </Button>
                     </div>
                   </div>
-                ))}
+                  ))
+                )}
               </div>
 
-              {daysUntilDeadline <= 30 && (
+              {nextDeadline && daysUntilDeadline <= 30 && (
                 <div className="mt-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
                   <div className="flex items-start space-x-2">
                     <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5" />
@@ -202,7 +196,17 @@ export function FeeManagement() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {feeHistory.map((payment, index) => (
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="text-gray-500 mt-2">Loading payment history...</p>
+                  </div>
+                ) : feeHistory.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No payment history available</p>
+                  </div>
+                ) : (
+                  feeHistory.map((payment, index) => (
                   <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full">
@@ -227,7 +231,8 @@ export function FeeManagement() {
                       </Button>
                     </div>
                   </div>
-                ))}
+                  ))
+                )}
               </div>
 
               <div className="mt-6 p-4 bg-blue-50 rounded-lg">

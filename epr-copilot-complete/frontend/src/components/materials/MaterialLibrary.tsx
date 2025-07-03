@@ -100,7 +100,6 @@ export function MaterialLibrary() {
   const totalMaterials = materials.length;
   const compliantMaterials = materials.filter(m => m.complianceStatus === "Compliant").length;
   const recyclableMaterials = materials.filter(m => m.recyclable).length;
-  const avgSustainabilityScore = materials.reduce((sum, m) => sum + m.sustainabilityScore, 0) / materials.length;
 
   const handleViewDetails = (material: Material) => {
     setShowDetails(material);
@@ -166,7 +165,6 @@ export function MaterialLibrary() {
         totalMaterials={totalMaterials}
         compliantMaterials={compliantMaterials}
         recyclableMaterials={recyclableMaterials}
-        avgSustainabilityScore={avgSustainabilityScore}
       />
 
       <Card>
