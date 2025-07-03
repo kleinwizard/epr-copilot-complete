@@ -24,23 +24,7 @@ export function HelpPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Search className="h-5 w-5" />
-              <span>Knowledge Base</span>
-            </CardTitle>
-            <CardDescription>
-              Search our comprehensive knowledge base for answers
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button className="w-full">
-              <BookOpen className="h-4 w-4 mr-2" />
-              Browse Articles
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Knowledge Base card removed */}
 
         <Card>
           <CardHeader>

@@ -3,6 +3,11 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CalendarDays, ChevronLeft, ChevronRight, Plus, Filter, Bell } from 'lucide-react';
 import { CalendarGrid } from './CalendarGrid';
 import { EventsList } from './EventsList';
@@ -18,6 +23,15 @@ export function ComplianceCalendar() {
     priority: 'all',
     status: 'all',
     jurisdiction: 'all'
+  });
+  const [showAddEventDialog, setShowAddEventDialog] = useState(false);
+  const [newEvent, setNewEvent] = useState({
+    title: '',
+    description: '',
+    date: '',
+    type: '',
+    priority: 'medium',
+    jurisdiction: ''
   });
 
   const currentMonth = currentDate.getMonth();
@@ -40,6 +54,27 @@ export function ComplianceCalendar() {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
+  const handleAddEvent = () => {
+    if (!newEvent.title || !newEvent.date || !newEvent.type) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    console.log('Adding new event:', newEvent);
+    
+    setShowAddEventDialog(false);
+    setNewEvent({
+      title: '',
+      description: '',
+      date: '',
+      type: '',
+      priority: 'medium',
+      jurisdiction: ''
+    });
+    
+    alert(`Event "${newEvent.title}" has been added successfully!`);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -56,13 +91,100 @@ export function ComplianceCalendar() {
             <Bell className="h-4 w-4 mr-2" />
             Add Notification
           </Button>
-          <Button size="sm" onClick={() => {
-            console.log('Add Event clicked');
-            alert('Add Event functionality will be implemented');
-          }}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Event
-          </Button>
+          <Dialog open={showAddEventDialog} onOpenChange={setShowAddEventDialog}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Event
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Add New Compliance Event</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Event Title *</Label>
+                  <Input
+                    id="title"
+                    placeholder="Enter event title"
+                    value={newEvent.title}
+                    onChange={(e) => setNewEvent(prev => ({ ...prev, title: e.target.value }))}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Enter event description"
+                    value={newEvent.description}
+                    onChange={(e) => setNewEvent(prev => ({ ...prev, description: e.target.value }))}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="date">Date *</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={newEvent.date}
+                    onChange={(e) => setNewEvent(prev => ({ ...prev, date: e.target.value }))}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="type">Event Type *</Label>
+                  <Select value={newEvent.type} onValueChange={(value) => setNewEvent(prev => ({ ...prev, type: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select event type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="deadline">Deadline</SelectItem>
+                      <SelectItem value="submission">Submission</SelectItem>
+                      <SelectItem value="meeting">Meeting</SelectItem>
+                      <SelectItem value="review">Review</SelectItem>
+                      <SelectItem value="audit">Audit</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="priority">Priority</Label>
+                  <Select value={newEvent.priority} onValueChange={(value) => setNewEvent(prev => ({ ...prev, priority: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="critical">Critical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="jurisdiction">Jurisdiction</Label>
+                  <Input
+                    id="jurisdiction"
+                    placeholder="Enter jurisdiction (e.g., Oregon, California)"
+                    value={newEvent.jurisdiction}
+                    onChange={(e) => setNewEvent(prev => ({ ...prev, jurisdiction: e.target.value }))}
+                  />
+                </div>
+                
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button variant="outline" onClick={() => setShowAddEventDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleAddEvent}>
+                    Add Event
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 

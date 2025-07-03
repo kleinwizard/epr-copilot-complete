@@ -53,6 +53,60 @@ export function FeeManagement() {
     }
   };
 
+  const exportIndividualReport = (payment: any) => {
+    const reportData = {
+      quarter: payment.quarter,
+      submittedDate: payment.submittedDate,
+      fee: payment.fee,
+      status: payment.status,
+      exportDate: new Date().toISOString()
+    };
+
+    const csvContent = [
+      'Quarter,Submitted Date,Fee,Status,Export Date',
+      `${reportData.quarter},${new Date(reportData.submittedDate).toLocaleDateString()},${reportData.fee},${reportData.status},${new Date(reportData.exportDate).toLocaleDateString()}`
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `epr-report-${payment.quarter.replace(/\s+/g, '-').toLowerCase()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportPaymentHistory = () => {
+    if (feeHistory.length === 0) {
+      alert('No payment history available to export');
+      return;
+    }
+
+    const headers = ['Quarter', 'Submitted Date', 'Fee', 'Status'];
+    const csvRows = [
+      headers.join(','),
+      ...feeHistory.map(payment => [
+        payment.quarter,
+        new Date(payment.submittedDate).toLocaleDateString(),
+        payment.fee,
+        payment.status
+      ].join(','))
+    ];
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `epr-payment-history-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const totalPaidThisYear = feeHistory.reduce((sum, fee) => sum + fee.fee, 0);
   const nextDeadline = upcomingDeadlines[0];
   const daysUntilDeadline = nextDeadline ? Math.ceil((new Date(nextDeadline.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0;
@@ -188,7 +242,7 @@ export function FeeManagement() {
                     View your past EPR fee submissions and payments
                   </CardDescription>
                 </div>
-                <Button variant="outline">
+                <Button variant="outline" onClick={exportPaymentHistory}>
                   <Download className="h-4 w-4 mr-2" />
                   Export History
                 </Button>
@@ -226,7 +280,7 @@ export function FeeManagement() {
                       <Badge className={getStatusColor(payment.status)}>
                         {payment.status}
                       </Badge>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => exportIndividualReport(payment)}>
                         <Download className="h-4 w-4" />
                       </Button>
                     </div>

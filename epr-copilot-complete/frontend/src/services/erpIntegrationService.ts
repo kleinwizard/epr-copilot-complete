@@ -36,64 +36,9 @@ export interface SyncResult {
   duration: number;
 }
 
-// Mock ERP systems
-const mockERPSystems: ERPSystem[] = [
-  {
-    id: 'sap-001',
-    name: 'SAP ERP Central Component',
-    type: 'sap',
-    status: 'connected',
-    lastSync: '2024-06-24T10:30:00Z',
-    syncFrequency: 'daily',
-    dataTypes: ['products', 'materials', 'packaging', 'suppliers'],
-    apiEndpoint: 'https://api.sap.company.com/v1',
-    credentials: {
-      encrypted: true,
-      lastUpdated: '2024-06-20T00:00:00Z'
-    }
-  },
-  {
-    id: 'oracle-001',
-    name: 'Oracle Supply Chain Management',
-    type: 'oracle',
-    status: 'disconnected',
-    syncFrequency: 'hourly',
-    dataTypes: ['inventory', 'suppliers', 'materials'],
-    apiEndpoint: 'https://oracle.company.com/api'
-  },
-  {
-    id: 'ms-001',
-    name: 'Microsoft Dynamics 365',
-    type: 'microsoft',
-    status: 'pending',
-    syncFrequency: 'real-time',
-    dataTypes: ['products', 'packaging', 'sales']
-  }
-];
+const mockERPSystems: ERPSystem[] = [];
 
-const mockSyncHistory: SyncResult[] = [
-  {
-    id: 'sync-001',
-    erpSystemId: 'sap-001',
-    timestamp: '2024-06-24T10:30:00Z',
-    status: 'success',
-    recordsProcessed: 1247,
-    recordsSuccessful: 1247,
-    recordsFailed: 0,
-    duration: 45
-  },
-  {
-    id: 'sync-002',
-    erpSystemId: 'sap-001',
-    timestamp: '2024-06-23T10:30:00Z',
-    status: 'partial',
-    recordsProcessed: 1245,
-    recordsSuccessful: 1240,
-    recordsFailed: 5,
-    errors: ['Invalid material code: MAT-001-X', 'Missing packaging weight for PRD-123'],
-    duration: 52
-  }
-];
+const mockSyncHistory: SyncResult[] = [];
 
 export const getERPSystems = (): ERPSystem[] => {
   return mockERPSystems;

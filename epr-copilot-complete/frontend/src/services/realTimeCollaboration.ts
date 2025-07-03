@@ -56,55 +56,9 @@ export interface VersionSnapshot {
   isAutoSave: boolean;
 }
 
-export const mockActiveUsers: CollaborationUser[] = [
-  {
-    id: 'user-1',
-    name: 'Sarah Johnson',
-    email: 'sarah@company.com',
-    avatar: 'SJ',
-    isOnline: true,
-    lastSeen: new Date().toISOString(),
-    currentLocation: {
-      section: 'products',
-      reportId: 'Q2-2024'
-    }
-  },
-  {
-    id: 'user-2',
-    name: 'Mike Chen',
-    email: 'mike@company.com',
-    avatar: 'MC',
-    isOnline: true,
-    lastSeen: new Date(Date.now() - 300000).toISOString(),
-    currentLocation: {
-      section: 'fees',
-      reportId: 'Q2-2024'
-    }
-  }
-];
+export const mockActiveUsers: CollaborationUser[] = [];
 
-export const mockComments: Comment[] = [
-  {
-    id: 'comment-1',
-    userId: 'user-1',
-    reportId: 'Q2-2024',
-    section: 'products',
-    field: 'materials',
-    content: 'The plastic weight seems high for this product. Can we verify?',
-    timestamp: new Date(Date.now() - 3600000).toISOString(),
-    resolved: false,
-    replies: [
-      {
-        id: 'reply-1',
-        userId: 'user-2',
-        content: 'I\'ll check with the packaging team and update accordingly.',
-        timestamp: new Date(Date.now() - 1800000).toISOString(),
-        mentions: ['user-1']
-      }
-    ],
-    mentions: ['user-2']
-  }
-];
+export const mockComments: Comment[] = [];
 
 export function subscribeToRealtimeEdits(
   reportId: string,
