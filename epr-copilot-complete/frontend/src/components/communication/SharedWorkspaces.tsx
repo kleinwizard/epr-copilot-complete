@@ -47,7 +47,41 @@ export const SharedWorkspaces = () => {
           <h2 className="text-2xl font-bold">Shared Workspaces</h2>
           <p className="text-gray-600">Collaborate with your team and external partners</p>
         </div>
-        <Button>
+        <Button onClick={async () => {
+          try {
+            const workspaceName = prompt('Enter workspace name:');
+            if (!workspaceName) return;
+            
+            const workspaceDescription = prompt('Enter workspace description (optional):') || '';
+            const workspaceType = prompt('Enter workspace type (compliance/project/vendor/department):') || 'project';
+            const isPrivate = confirm('Make this workspace private?');
+            
+            const newWorkspace = await workspaceService.createWorkspace({
+              name: workspaceName,
+              description: workspaceDescription,
+              type: workspaceType as any,
+              isPrivate,
+              members: [{
+                userId: 'current-user',
+                userName: 'Current User',
+                role: 'admin',
+                permissions: ['read', 'write', 'admin'],
+                joinedAt: new Date().toISOString()
+              }],
+              channels: [],
+              documents: [],
+              tags: [],
+              createdBy: 'current-user'
+            });
+            
+            if (newWorkspace) {
+              loadWorkspaces();
+            }
+          } catch (error) {
+            console.error('Failed to create workspace:', error);
+            alert('Failed to create workspace. Please try again.');
+          }
+        }}>
           <Plus className="h-4 w-4 mr-2" />
           New Workspace
         </Button>

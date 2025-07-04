@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,9 +8,29 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Building2, Mail, Phone, MapPin, Upload } from 'lucide-react';
+import { Building2, Mail, Phone, MapPin, Upload, FileText } from 'lucide-react';
+import { dataService, CompanyData } from '@/services/dataService';
 
 export function AccountSettings() {
+  const [companyData, setCompanyData] = useState<CompanyData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadCompanyData();
+  }, []);
+
+  const loadCompanyData = async () => {
+    try {
+      setIsLoading(true);
+      const data = await dataService.getCompanyInfo();
+      setCompanyData(data);
+    } catch (error) {
+      console.error('Failed to load company data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -83,35 +104,54 @@ export function AccountSettings() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Building2 className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="font-medium">EcoPackaging Corp</p>
-                <p className="text-sm text-muted-foreground">Primary Organization</p>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-sm text-muted-foreground">Loading company information...</div>
+            </div>
+          ) : companyData ? (
+            <>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Building2 className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">{companyData.legalName || companyData.dbaName || 'Company Name'}</p>
+                    <p className="text-sm text-muted-foreground">Primary Organization</p>
+                  </div>
+                </div>
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  {companyData.deqNumber ? 'Verified' : 'Pending'}
+                </Badge>
               </div>
-            </div>
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-              Verified
-            </Badge>
-          </div>
 
-          <Separator />
+              <Separator />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div className="flex items-center space-x-2">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <span>compliance@ecopackaging.com</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="flex items-center space-x-2">
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                  <span>{companyData.businessId || 'Business ID not provided'}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <span>{companyData.deqNumber || 'DEQ Number pending'}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <span>{companyData.address ? `${companyData.address}, ${companyData.city}, ${companyData.zipCode}` : 'Address not provided'}</span>
+                </div>
+                {companyData.description && (
+                  <div className="flex items-start space-x-2 md:col-span-2">
+                    <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <span className="text-xs">{companyData.description}</span>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-sm text-muted-foreground mb-4">No company information found</p>
+              <p className="text-xs text-muted-foreground">Complete your company setup to see information here</p>
             </div>
-            <div className="flex items-center space-x-2">
-              <Phone className="h-4 w-4 text-muted-foreground" />
-              <span>+1 (555) 987-6543</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <span>Portland, Oregon</span>
-            </div>
-          </div>
+          )}
 
           <Button variant="outline">Edit Company Details</Button>
         </CardContent>

@@ -44,19 +44,19 @@ export function OverviewTab({ analyticsData }: OverviewTabProps) {
           setOverviewMetrics(data);
         } else {
           setOverviewMetrics({
-            totalEprFees: 125000,
-            activeProducts: 42,
-            totalWeight: 8500,
-            recyclabilityRate: 78.5
+            totalEprFees: 0,
+            activeProducts: 0,
+            totalWeight: 0,
+            recyclabilityRate: 0
           });
         }
       } catch (error) {
         console.error('Failed to fetch overview metrics:', error);
         setOverviewMetrics({
-          totalEprFees: 125000,
-          activeProducts: 42,
-          totalWeight: 8500,
-          recyclabilityRate: 78.5
+          totalEprFees: 0,
+          activeProducts: 0,
+          totalWeight: 0,
+          recyclabilityRate: 0
         });
       } finally {
         setIsLoading(false);

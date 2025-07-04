@@ -102,7 +102,7 @@ const Index = () => {
     <div className="min-h-screen bg-gray-50 flex">
       <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} />
       <div className="flex-1 flex flex-col md:ml-64">
-        <Header currentPage={currentPage} />
+        <Header currentPage={currentPage} onPageChange={setCurrentPage} />
         <main className="flex-1 p-6 relative z-10">
           {renderCurrentPage()}
         </main>
