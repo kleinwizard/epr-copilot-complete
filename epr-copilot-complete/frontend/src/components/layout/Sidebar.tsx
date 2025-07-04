@@ -132,10 +132,7 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
       label: 'Support',
       icon: 'help-circle',
       items: [
-        { id: 'help', label: 'Help', icon: 'help-circle' },
-        { id: 'support-page', label: 'Support', icon: 'help-circle' },
-        { id: 'testimonials', label: 'Testimonials', icon: 'star' },
-        { id: 'guides', label: 'Guides', icon: 'book-open' }
+        { id: 'support-help', label: 'Support & Help', icon: 'help-circle' }
       ]
     },
   ];

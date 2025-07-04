@@ -870,36 +870,179 @@ class AnalyticsService:
             ]
     
     def _calculate_optimization_opportunities(self, organization_id: str) -> List[Dict[str, Any]]:
-        """Calculate optimization opportunities."""
+        """Calculate real optimization opportunities using material substitution algorithm."""
         try:
-            opportunities = [
-                {
-                    "title": "Switch to Recycled Plastic",
-                    "impact": "High",
-                    "effort": "Medium",
-                    "currentCost": 18500,
-                    "potentialSaving": 5200,
-                    "timeframe": "6 months"
-                },
-                {
-                    "title": "Optimize Packaging Weight",
-                    "impact": "Medium", 
-                    "effort": "Low",
-                    "currentCost": 8200,
-                    "potentialSaving": 2400,
-                    "timeframe": "3 months"
-                },
-                {
-                    "title": "Bulk Purchase Sustainable Materials",
-                    "impact": "Medium",
-                    "effort": "Medium",
-                    "currentCost": 12000,
-                    "potentialSaving": 1800,
-                    "timeframe": "4 months"
-                }
-            ]
+            opportunities = []
+            
+            products = self.db.query(Product).filter(
+                Product.organization_id == organization_id
+            ).all()
+            
+            for product in products:
+                # Calculate baseline EPR fees for this product
+                product_opportunities = self._analyze_product_optimization(product)
+                opportunities.extend(product_opportunities)
+            
+            opportunities.sort(key=lambda x: x.get('potentialSaving', 0), reverse=True)
+            
+            # Return top 10 opportunities
+            return opportunities[:10]
+            
+        except Exception as e:
+            print(f"Error calculating optimization opportunities: {str(e)}")
+            return []
+    
+    def _analyze_product_optimization(self, product: Product) -> List[Dict[str, Any]]:
+        """Analyze optimization opportunities for a single product."""
+        try:
+            opportunities = []
+            
+            # Calculate total product fee
+            total_product_fee = self._calculate_product_total_fee(product)
+            
+            if total_product_fee == 0:
+                return opportunities
+            
+            for component in product.packaging_components:
+                component_fee = self._calculate_component_fee(component)
+                
+                # Check if component contributes >20% of total fee (high-cost component)
+                if component_fee > (total_product_fee * Decimal('0.20')):
+                    alternatives = self._find_material_alternatives(component)
+                    
+                    for alternative in alternatives:
+                        potential_saving = self._calculate_substitution_savings(
+                            component, alternative, component_fee
+                        )
+                        
+                        if potential_saving > 0:
+                            opportunities.append({
+                                "title": f"Switch {product.name} {component.component_name} to {alternative['name']}",
+                                "productName": product.name,
+                                "productSku": product.sku,
+                                "componentName": component.component_name,
+                                "currentMaterial": component.material_category.name if component.material_category else "Unknown",
+                                "suggestedMaterial": alternative['name'],
+                                "impact": self._categorize_impact(potential_saving),
+                                "effort": self._estimate_effort(component, alternative),
+                                "currentCost": float(component_fee),
+                                "potentialSaving": float(potential_saving),
+                                "timeframe": self._estimate_timeframe(alternative),
+                                "projectedAnnualSavings": float(potential_saving * 4)  # Quarterly to annual
+                            })
             
             return opportunities
             
-        except Exception:
+        except Exception as e:
+            print(f"Error analyzing product optimization: {str(e)}")
             return []
+    
+    def _calculate_product_total_fee(self, product: Product) -> Decimal:
+        """Calculate total EPR fee for a product."""
+        try:
+            total_fee = Decimal('0')
+            
+            for component in product.packaging_components:
+                component_fee = self._calculate_component_fee(component)
+                total_fee += component_fee
+            
+            return total_fee
+            
+        except Exception:
+            return Decimal('0')
+    
+    def _calculate_component_fee(self, component: PackagingComponent) -> Decimal:
+        """Calculate EPR fee for a single packaging component."""
+        try:
+            if not component.material_category_id or not component.weight_per_unit:
+                return Decimal('0')
+            
+            fee_rate = self._get_material_fee_rate(component.material_category_id)
+            component_weight = component.weight_per_unit or Decimal('0')
+            
+            return fee_rate * component_weight
+            
+        except Exception:
+            return Decimal('0')
+    
+    def _find_material_alternatives(self, component: PackagingComponent) -> List[Dict[str, Any]]:
+        """Find alternative materials for a packaging component."""
+        try:
+            alternatives = []
+            
+            if not component.material_category:
+                return alternatives
+            
+            current_category = component.material_category
+            
+            alternative_categories = self.db.query(MaterialCategory).filter(
+                MaterialCategory.jurisdiction_id == current_category.jurisdiction_id,
+                MaterialCategory.id != current_category.id,
+                MaterialCategory.level == current_category.level  # Same level (class/type/form)
+            ).all()
+            
+            for alt_category in alternative_categories:
+                alt_fee_rate = self._get_material_fee_rate(alt_category.id)
+                current_fee_rate = self._get_material_fee_rate(current_category.id)
+                
+                # Consider alternatives with lower fee rates or better recyclability
+                if (alt_fee_rate < current_fee_rate or 
+                    (alt_category.recyclability_percentage or 0) > (current_category.recyclability_percentage or 0)):
+                    
+                    alternatives.append({
+                        'id': alt_category.id,
+                        'name': alt_category.name,
+                        'code': alt_category.code,
+                        'fee_rate': float(alt_fee_rate),
+                        'recyclability': float(alt_category.recyclability_percentage or 0),
+                        'recyclable': alt_category.recyclable
+                    })
+            
+            alternatives.sort(key=lambda x: x['fee_rate'])
+            
+            return alternatives[:5]  # Return top 5 alternatives
+            
+        except Exception as e:
+            print(f"Error finding material alternatives: {str(e)}")
+            return []
+    
+    def _calculate_substitution_savings(self, component: PackagingComponent, 
+                                      alternative: Dict[str, Any], current_fee: Decimal) -> Decimal:
+        """Calculate potential savings from material substitution."""
+        try:
+            if not component.weight_per_unit:
+                return Decimal('0')
+            
+            alternative_fee_rate = Decimal(str(alternative['fee_rate']))
+            component_weight = component.weight_per_unit
+            
+            alternative_fee = alternative_fee_rate * component_weight
+            savings = current_fee - alternative_fee
+            
+            return max(Decimal('0'), savings)
+            
+        except Exception:
+            return Decimal('0')
+    
+    def _categorize_impact(self, savings: Decimal) -> str:
+        """Categorize the impact level based on savings amount."""
+        if savings >= 1000:
+            return "High"
+        elif savings >= 500:
+            return "Medium"
+        else:
+            return "Low"
+    
+    def _estimate_effort(self, component: PackagingComponent, alternative: Dict[str, Any]) -> str:
+        """Estimate implementation effort for material substitution."""
+        if alternative.get('recyclable', False):
+            return "Medium"  # Sustainable materials may require more sourcing effort
+        else:
+            return "Low"
+    
+    def _estimate_timeframe(self, alternative: Dict[str, Any]) -> str:
+        """Estimate implementation timeframe for material substitution."""
+        if alternative.get('recyclable', False):
+            return "6 months"  # Sustainable materials may take longer to source
+        else:
+            return "3 months"
