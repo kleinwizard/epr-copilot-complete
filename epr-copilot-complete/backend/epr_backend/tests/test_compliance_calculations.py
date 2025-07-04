@@ -70,7 +70,7 @@ class TestComplianceCalculations:
         weight = Decimal('100.0000')
         
         for material_type, rate in materials:
-            fee = calculate_epr_fee(weight, rate, material_type=material_type)
+            fee = calculate_epr_fee(weight, rate, material_type=material_type, generate_audit=False)
             expected = weight * rate
             assert fee == expected
             assert isinstance(fee, Decimal)
@@ -80,12 +80,16 @@ class TestComplianceCalculations:
         large_weight = Decimal('10000.0000')  # 10 tons
         base_rate = Decimal('0.1000')
         
-        fee_with_discount = calculate_epr_fee(large_weight, base_rate, apply_volume_discount=True)
-        fee_without_discount = calculate_epr_fee(large_weight, base_rate, apply_volume_discount=False)
+        fee_with_discount_result = calculate_epr_fee(large_weight, base_rate, apply_volume_discount=True, generate_audit=False)
+        fee_without_discount_result = calculate_epr_fee(large_weight, base_rate, apply_volume_discount=False, generate_audit=False)
+        
+        assert isinstance(fee_with_discount_result, Decimal)
+        assert isinstance(fee_without_discount_result, Decimal)
+        
+        fee_with_discount = fee_with_discount_result
+        fee_without_discount = fee_without_discount_result
         
         assert fee_with_discount < fee_without_discount
-        assert isinstance(fee_with_discount, Decimal)
-        assert isinstance(fee_without_discount, Decimal)
         
         expected_discount = fee_without_discount * Decimal('0.05')
         expected_discounted_fee = fee_without_discount - expected_discount
@@ -96,7 +100,10 @@ class TestComplianceCalculations:
         weight = Decimal('100.0000')
         rate = Decimal('0.1250')
         
-        fee, audit_log = calculate_epr_fee(weight, rate, generate_audit=True)
+        result = calculate_epr_fee(weight, rate, generate_audit=True)
+        assert isinstance(result, tuple), "Expected tuple when generate_audit=True"
+        
+        fee, audit_log = result
         
         assert audit_log is not None
         assert 'weight' in audit_log
