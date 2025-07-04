@@ -5,7 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
-import { DollarSign, TrendingDown, TrendingUp, Calculator, Target, Lightbulb } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DollarSign, TrendingDown, TrendingUp, Calculator, Target, Lightbulb, Loader2 } from 'lucide-react';
 import { MetricWithInfo } from './MetricWithInfo';
 
 const chartConfig = {
@@ -28,8 +30,11 @@ export function CostAnalysis() {
   });
   
   const [costTrend, setCostTrend] = useState([]);
-  const [costBreakdown, setCostBreakdown] = useState([]);
+  const [isOptimizationModalOpen, setIsOptimizationModalOpen] = useState(false);
   const [optimizationOpportunities, setOptimizationOpportunities] = useState([]);
+  const [isLoadingOpportunities, setIsLoadingOpportunities] = useState(false);
+  const [costBreakdown, setCostBreakdown] = useState([]);
+  const [optimizationData, setOptimizationData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -94,6 +99,37 @@ export function CostAnalysis() {
 
     loadCostAnalysisData();
   }, []);
+
+  const loadOptimizationOpportunities = async () => {
+    setIsLoadingOpportunities(true);
+    try {
+      const response = await fetch('/api/analytics/cost-optimization', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch optimization opportunities');
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setOptimizationOpportunities(result.opportunities || []);
+      }
+    } catch (error) {
+      console.error('Error loading optimization opportunities:', error);
+      setOptimizationOpportunities([]);
+    } finally {
+      setIsLoadingOpportunities(false);
+    }
+  };
+
+  const handleOptimizationModalOpen = () => {
+    setIsOptimizationModalOpen(true);
+    loadOptimizationOpportunities();
+  };
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -355,24 +391,110 @@ export function CostAnalysis() {
             )}
           </div>
           
-          <div className="mt-6 p-4 bg-yellow-50 rounded-lg">
-            <h4 className="font-medium text-yellow-900 mb-2">Quick Wins</h4>
-            <ul className="text-sm text-yellow-700 space-y-1">
-              <li>• Implement packaging weight optimization (3-month payback)</li>
-              <li>• Negotiate volume discounts with current suppliers</li>
-              <li>• Review and update material specifications quarterly</li>
-              <li>• Consider bulk purchasing agreements for sustainable materials</li>
-            </ul>
-          </div>
-          
-          <div className="flex justify-between mt-4">
+          <div className="flex justify-between mt-6">
             <Button variant="outline" size="sm">
               <TrendingUp className="h-4 w-4 mr-2" />
               Cost Modeling Tool
             </Button>
-            <Button size="sm">
-              Start Optimization Project
-            </Button>
+            
+            <Dialog open={isOptimizationModalOpen} onOpenChange={setIsOptimizationModalOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" onClick={handleOptimizationModalOpen}>
+                  Start Optimization Project
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Cost Optimization Opportunities</DialogTitle>
+                  <DialogDescription>
+                    Review material substitution opportunities sorted by highest projected savings. 
+                    Model changes to see their impact across your entire compliance profile.
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="py-4">
+                  {isLoadingOpportunities ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                      <span>Analyzing optimization opportunities...</span>
+                    </div>
+                  ) : optimizationOpportunities.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No optimization opportunities found.</p>
+                      <p className="text-sm">This may be because you already have optimal materials or need more product data.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">
+                          Found {optimizationOpportunities.length} optimization opportunities
+                        </p>
+                        <Badge variant="secondary">
+                          Total Potential Annual Savings: ${optimizationOpportunities.reduce((sum, opp) => sum + (opp.projectedAnnualSavings || 0), 0).toLocaleString()}
+                        </Badge>
+                      </div>
+                      
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Product Name/SKU</TableHead>
+                            <TableHead>High-Cost Component</TableHead>
+                            <TableHead>Current Material</TableHead>
+                            <TableHead>Suggested Alternative</TableHead>
+                            <TableHead>Impact</TableHead>
+                            <TableHead>Effort</TableHead>
+                            <TableHead>Timeframe</TableHead>
+                            <TableHead className="text-right">Projected Annual Savings</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {optimizationOpportunities.map((opportunity, index) => (
+                            <TableRow key={index}>
+                              <TableCell>
+                                <div>
+                                  <div className="font-medium">{opportunity.productName}</div>
+                                  <div className="text-sm text-muted-foreground">{opportunity.productSku}</div>
+                                </div>
+                              </TableCell>
+                              <TableCell>{opportunity.componentName}</TableCell>
+                              <TableCell>{opportunity.currentMaterial}</TableCell>
+                              <TableCell>{opportunity.suggestedMaterial}</TableCell>
+                              <TableCell>
+                                <Badge variant={
+                                  opportunity.impact === 'High' ? 'destructive' :
+                                  opportunity.impact === 'Medium' ? 'default' : 'secondary'
+                                }>
+                                  {opportunity.impact}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">
+                                  {opportunity.effort}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{opportunity.timeframe}</TableCell>
+                              <TableCell className="text-right font-medium">
+                                ${opportunity.projectedAnnualSavings?.toLocaleString() || '0'}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </div>
+                
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsOptimizationModalOpen(false)}>
+                    Close
+                  </Button>
+                  <Button disabled={optimizationOpportunities.length === 0}>
+                    Export Analysis
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </CardContent>
       </Card>
