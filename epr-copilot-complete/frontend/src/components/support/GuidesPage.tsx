@@ -14,62 +14,102 @@ import {
 } from 'lucide-react';
 
 export function GuidesPage() {
-  const guides = [
+  const appGuides = [
     {
       id: 1,
-      title: "Getting Started with EPR Compliance",
-      description: "A comprehensive introduction to Extended Producer Responsibility and how to get started",
+      title: "Understanding the App's Workflow",
+      description: "Welcome to the EPR Compliance Hub! Here's how to get started and make the most of the platform.",
       type: "guide",
-      duration: "15 min read",
+      duration: "10 min read",
       difficulty: "Beginner",
-      topics: ["EPR Basics", "Setup", "First Steps"]
+      topics: ["Setup", "Workflow", "Getting Started"],
+      content: `1. **Setup Your Company:** Begin by adding your company profile(s) and any additional business entities under Company Setup.
+2. **Build Your Catalogs:** Use the "Material Catalog" and "Product Catalog" to input all your packaging materials and the products they are part of. You can do this one-by-one or use the "Bulk Import" feature for speed.
+3. **Add Sales Data:** Link sales data (units sold per jurisdiction) to your products. This is crucial for calculating your obligations.
+4. **Analyze Your Data:** Head to the "Analytics" page to see a visual dashboard of your total fees, material usage, and potential cost savings.
+5. **Generate Reports:** Use the "Reports" section to create and export official compliance reports required by state and provincial governments.
+6. **Manage Your Team:** In "Settings," you can invite team members and manage your API keys for integrations.`
     },
     {
       id: 2,
-      title: "Setting Up Your Product Catalog",
-      description: "Learn how to properly categorize and manage your products for compliance reporting",
-      type: "tutorial",
-      duration: "20 min read",
+      title: "Understanding Analytics",
+      description: "The Analytics dashboard is your command center for insights.",
+      type: "guide",
+      duration: "15 min read",
       difficulty: "Beginner",
-      topics: ["Product Management", "Categorization", "Data Entry"]
+      topics: ["Analytics", "Dashboard", "Insights"],
+      content: `* **Total EPR Obligation:** This is your total calculated fee liability across all jurisdictions for the selected time period.
+* **Fee by Material/Product:** These charts break down your costs so you can see which materials or products are the most expensive from a compliance perspective.
+* **Cost Optimization Opportunities:** This powerful tool (see separate guide) shows you how making small changes to your packaging can result in significant savings.
+* **Trend Lines:** Graphs are greyed out until you have at least 3 months of data. Once active, they show your progress over time on key metrics like cost and recycled content usage.`
     },
     {
       id: 3,
-      title: "Advanced Fee Calculations",
-      description: "Master complex fee calculations including volume discounts and multi-jurisdiction scenarios",
-      type: "guide",
-      duration: "30 min read",
-      difficulty: "Advanced",
-      topics: ["Fee Management", "Calculations", "Optimization"]
-    },
+      title: "How to Create a Report",
+      description: "Step-by-step guide to generating compliance reports",
+      type: "tutorial",
+      duration: "12 min read",
+      difficulty: "Beginner",
+      topics: ["Reports", "Compliance", "Export"],
+      content: `1. Navigate to "Reports" from the main menu.
+2. Click "New Report" and select the type of report you need (e.g., Compliance Report for California).
+3. Choose the reporting period.
+4. The system will generate the report using your catalog and sales data.
+5. You can view the report in the app or use the "Export Center" to download it as a PDF or CSV for submission.`
+    }
+  ];
+
+  const eprGuides = [
     {
       id: 4,
-      title: "Bulk Import Best Practices",
-      description: "Efficiently import large datasets while maintaining data quality and compliance",
-      type: "tutorial",
-      duration: "25 min read",
-      difficulty: "Intermediate",
-      topics: ["Data Import", "File Formats", "Validation"]
+      title: "Do You Qualify for EPR? A Quick Checklist",
+      description: "EPR laws typically apply to 'producers' (brand owners, first importers) who sell packaged goods into a jurisdiction.",
+      type: "guide",
+      duration: "8 min read",
+      difficulty: "Beginner",
+      topics: ["EPR Basics", "Qualification", "Compliance"],
+      content: `Check if you meet the criteria:
+* **Do you sell into EPR-regulated states/provinces?** (e.g., California, Oregon, Maine, Colorado, Maryland in the US).
+* **Does your company exceed the revenue threshold?** Most laws have a *de minimis* revenue threshold (e.g., over $1 million in annual gross revenue).
+* **Do you exceed the material threshold?** Some laws also have a minimum amount of packaging you must place on the market (e.g., over 1 ton annually).
+*If you answered YES to all three for a specific jurisdiction, you are likely obligated to comply with its EPR laws.*`
     },
     {
       id: 5,
-      title: "Compliance Reporting Workflows",
-      description: "Streamline your reporting process with automated workflows and templates",
+      title: "What is Extended Producer Responsibility (EPR)?",
+      description: "EPR is an environmental policy approach in which a producer's responsibility for a product is extended to the post-consumer stage.",
       type: "guide",
-      duration: "35 min read",
-      difficulty: "Intermediate",
-      topics: ["Reporting", "Automation", "Templates"]
+      duration: "12 min read",
+      difficulty: "Beginner",
+      topics: ["EPR Definition", "Policy", "Environment"],
+      content: `For packaging, this means that the companies who produce and sell packaged goods are financially responsible for the recycling and end-of-life management of that packaging. The fees they pay are used to fund municipal recycling systems, improve infrastructure, and educate consumers.`
     },
     {
       id: 6,
-      title: "API Integration Guide",
-      description: "Connect your existing systems with our platform using our comprehensive API",
-      type: "technical",
-      duration: "45 min read",
-      difficulty: "Advanced",
-      topics: ["API", "Integration", "Development"]
+      title: "Recent Law Changes",
+      description: "The EPR landscape is constantly evolving. Several new US states are considering packaging EPR legislation.",
+      type: "guide",
+      duration: "10 min read",
+      difficulty: "Intermediate",
+      topics: ["Law Updates", "Legislation", "Trends"],
+      content: `*(Last Updated: July 2025)*
+Key trends in new laws include a greater emphasis on eco-modulation (fees adjusted based on environmental impact), specific targets for recycled content, and the inclusion of "hard-to-recycle" materials. Check with your Producer Responsibility Organization (PRO) for the latest updates.`
+    },
+    {
+      id: 7,
+      title: "How Eco-Modulation Affects Your Fees",
+      description: "Eco-modulation is a core principle of modern EPR. It means your fees are not static; they are adjusted up or down based on the environmental characteristics of your packaging.",
+      type: "guide",
+      duration: "15 min read",
+      difficulty: "Intermediate",
+      topics: ["Eco-Modulation", "Fees", "Environmental Impact"],
+      content: `* **Factors that INCREASE fees (Penalties):** Using hard-to-recycle materials (like PVC), unnecessary plastic components, or problematic inks and labels.
+* **Factors that DECREASE fees (Credits):** Using high percentages of post-consumer recycled (PCR) content, designing for easy recyclability, or lightweighting your packaging.
+Our Cost Optimization tool is designed to help you leverage eco-modulation to your advantage.`
     }
   ];
+
+  const guides = [...appGuides, ...eprGuides];
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {

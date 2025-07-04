@@ -3,10 +3,13 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
-import { DollarSign, TrendingDown, TrendingUp, Calculator, Target, Lightbulb } from 'lucide-react';
+import { DollarSign, TrendingDown, TrendingUp, Calculator, Target, Lightbulb, ArrowRight, Zap } from 'lucide-react';
 import { MetricWithInfo } from './MetricWithInfo';
+import { useToast } from '@/hooks/use-toast';
 
 const chartConfig = {
   fees: { label: "Fees", color: "#ef4444" },
@@ -14,6 +17,21 @@ const chartConfig = {
   projected: { label: "Projected", color: "#3b82f6" }
 };
 
+
+interface MaterialAlternative {
+  id: string;
+  productName: string;
+  productSku: string;
+  highCostComponent: string;
+  currentMaterial: string;
+  suggestedAlternative: string;
+  currentCost: number;
+  projectedSavings: number;
+  annualSavings: number;
+  impact: 'High' | 'Medium' | 'Low';
+  effort: 'Low' | 'Medium' | 'High';
+  timeframe: string;
+}
 
 export function CostAnalysis() {
   const [costMetrics, setCostMetrics] = useState({
@@ -30,7 +48,11 @@ export function CostAnalysis() {
   const [costTrend, setCostTrend] = useState([]);
   const [costBreakdown, setCostBreakdown] = useState([]);
   const [optimizationOpportunities, setOptimizationOpportunities] = useState([]);
+  const [materialAlternatives, setMaterialAlternatives] = useState<MaterialAlternative[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isModelingToolOpen, setIsModelingToolOpen] = useState(false);
+  const [isLoadingAlternatives, setIsLoadingAlternatives] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const loadCostAnalysisData = async () => {
@@ -94,6 +116,73 @@ export function CostAnalysis() {
 
     loadCostAnalysisData();
   }, []);
+
+  const loadMaterialAlternatives = async () => {
+    setIsLoadingAlternatives(true);
+    try {
+      const response = await fetch('/api/analytics/cost-modeling-alternatives');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setMaterialAlternatives(data.data.alternatives || []);
+        }
+      } else {
+        setMaterialAlternatives([]);
+      }
+    } catch (error) {
+      console.error('Failed to load material alternatives:', error);
+      setMaterialAlternatives([]);
+      toast({
+        title: "Error",
+        description: "Failed to load cost modeling alternatives.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingAlternatives(false);
+    }
+  };
+
+  const handleStartOptimization = async (alternative: MaterialAlternative) => {
+    try {
+      const response = await fetch('/api/analytics/start-optimization', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productSku: alternative.productSku,
+          component: alternative.highCostComponent,
+          currentMaterial: alternative.currentMaterial,
+          suggestedMaterial: alternative.suggestedAlternative,
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Optimization Started",
+          description: `Started optimization analysis for ${alternative.productName}`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to start optimization analysis.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to start optimization:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start optimization analysis.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const openCostModelingTool = () => {
+    setIsModelingToolOpen(true);
+    loadMaterialAlternatives();
+  };
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -355,21 +444,139 @@ export function CostAnalysis() {
             )}
           </div>
           
-          <div className="mt-6 p-4 bg-yellow-50 rounded-lg">
-            <h4 className="font-medium text-yellow-900 mb-2">Quick Wins</h4>
-            <ul className="text-sm text-yellow-700 space-y-1">
-              <li>• Implement packaging weight optimization (3-month payback)</li>
-              <li>• Negotiate volume discounts with current suppliers</li>
-              <li>• Review and update material specifications quarterly</li>
-              <li>• Consider bulk purchasing agreements for sustainable materials</li>
-            </ul>
-          </div>
-          
           <div className="flex justify-between mt-4">
-            <Button variant="outline" size="sm">
-              <TrendingUp className="h-4 w-4 mr-2" />
-              Cost Modeling Tool
-            </Button>
+            <Dialog open={isModelingToolOpen} onOpenChange={setIsModelingToolOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" onClick={openCostModelingTool}>
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Cost Modeling Tool
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center space-x-2">
+                    <Calculator className="h-5 w-5" />
+                    <span>Cost Modeling Tool</span>
+                  </DialogTitle>
+                  <DialogDescription>
+                    Analyze your product catalog and identify cost-saving opportunities through material substitutions
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card>
+                      <CardContent className="p-4 text-center">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {materialAlternatives.length}
+                        </div>
+                        <p className="text-sm text-muted-foreground">Opportunities Found</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4 text-center">
+                        <div className="text-2xl font-bold text-green-600">
+                          ${materialAlternatives.reduce((sum, alt) => sum + alt.annualSavings, 0).toLocaleString()}
+                        </div>
+                        <p className="text-sm text-muted-foreground">Total Potential Savings</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4 text-center">
+                        <div className="text-2xl font-bold text-purple-600">
+                          {materialAlternatives.filter(alt => alt.impact === 'High').length}
+                        </div>
+                        <p className="text-sm text-muted-foreground">High-Impact Changes</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Cost Optimization Opportunities</CardTitle>
+                      <CardDescription>
+                        Material substitutions ranked by projected annual savings
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {isLoadingAlternatives ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                          <p className="text-gray-500 mt-2">Analyzing your product catalog...</p>
+                        </div>
+                      ) : materialAlternatives.length === 0 ? (
+                        <div className="text-center py-8">
+                          <p className="text-gray-500">No optimization opportunities found</p>
+                        </div>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Product Name/SKU</TableHead>
+                              <TableHead>High-Cost Component</TableHead>
+                              <TableHead>Current Material</TableHead>
+                              <TableHead>Suggested Alternative</TableHead>
+                              <TableHead>Projected Annual Savings</TableHead>
+                              <TableHead>Impact</TableHead>
+                              <TableHead>Action</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {materialAlternatives
+                              .sort((a, b) => b.annualSavings - a.annualSavings)
+                              .map((alternative) => (
+                                <TableRow key={alternative.id}>
+                                  <TableCell>
+                                    <div>
+                                      <div className="font-medium">{alternative.productName}</div>
+                                      <div className="text-sm text-muted-foreground">{alternative.productSku}</div>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>{alternative.highCostComponent}</TableCell>
+                                  <TableCell>{alternative.currentMaterial}</TableCell>
+                                  <TableCell className="font-medium text-green-600">
+                                    {alternative.suggestedAlternative}
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="font-bold text-green-600">
+                                      ${alternative.annualSavings.toLocaleString()}
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">
+                                      {alternative.timeframe}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center space-x-2">
+                                      <Badge 
+                                        variant={alternative.impact === 'High' ? 'default' : alternative.impact === 'Medium' ? 'secondary' : 'outline'}
+                                      >
+                                        {alternative.impact}
+                                      </Badge>
+                                      <Badge variant="outline" className="text-xs">
+                                        {alternative.effort} Effort
+                                      </Badge>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Button 
+                                      size="sm" 
+                                      onClick={() => handleStartOptimization(alternative)}
+                                      className="flex items-center space-x-1"
+                                    >
+                                      <Zap className="h-3 w-3" />
+                                      <span>Start Optimization</span>
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </DialogContent>
+            </Dialog>
             <Button size="sm">
               Start Optimization Project
             </Button>

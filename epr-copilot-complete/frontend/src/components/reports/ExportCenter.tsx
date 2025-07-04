@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/services/apiService';
+import { pdfExportService } from '@/services/pdfExportService';
+import { csvExportService } from '@/services/csvExportService';
 
 interface ScheduledExport {
   id: string;
@@ -100,15 +102,6 @@ export function ExportCenter() {
     setExportProgress(0);
 
     try {
-      const exportConfig = {
-        format: selectedFormat,
-        sections: selectedSections,
-        dateRange: selectedDateRange
-      };
-
-      // Start export process
-      const exportJob = await apiService.post('/api/exports/generate', exportConfig);
-      
       const pollProgress = async () => {
         for (let i = 0; i <= 100; i += 10) {
           await new Promise(resolve => setTimeout(resolve, 300));
@@ -118,11 +111,80 @@ export function ExportCenter() {
 
       await pollProgress();
 
-      const blob = await apiService.get(`/api/exports/download/${exportJob.id}`);
-      const url = window.URL.createObjectURL(new Blob([blob]));
+      const mockCompanyInfo = {
+        name: "Sample Company Inc.",
+        jurisdiction: "California (SB 54)",
+        reportingPeriod: selectedDateRange === 'q3-2024' ? 'Jul 1, 2024 - Sep 30, 2024' : 'Jan 1, 2024 - Dec 31, 2024'
+      };
+
+      let blob: Blob;
+      let filename: string;
+
+      if (selectedFormat === 'pdf') {
+        const complianceData = {
+          company: mockCompanyInfo,
+          summary: {
+            totalPackagingWeight: 12500,
+            baseFee: 6875.00,
+            ecoModulationAdjustments: -275.00,
+            totalFeeOwed: 6600.00
+          },
+          materialBreakdown: [
+            { materialClass: 'Plastic', materialType: 'PET', weight: 2500, feeRate: 0.55, feeSubtotal: 1375.00 },
+            { materialClass: 'Plastic', materialType: 'HDPE', weight: 1800, feeRate: 0.52, feeSubtotal: 936.00 },
+            { materialClass: 'Paper', materialType: 'Cardboard', weight: 8200, feeRate: 0.35, feeSubtotal: 2870.00 }
+          ]
+        };
+        
+        blob = await pdfExportService.generateComplianceReport(complianceData);
+        filename = `compliance_report_${Date.now()}.pdf`;
+      } else if (selectedFormat === 'csv') {
+        const mockProducts = [
+          {
+            product_id: 'SKU-001',
+            product_name: '16oz Water Bottle',
+            component_name: 'Bottle',
+            component_weight_grams: 25,
+            material_type: 'PET',
+            material_subtype: 'Clear',
+            color: 'Clear',
+            recyclable: true,
+            post_consumer_recycled_content_percent: 25,
+            bio_based_content_percent: 0,
+            compostable: false,
+            reusable: true,
+            units_sold_california: 10000,
+            units_sold_oregon: 5000,
+            units_sold_maine: 2000,
+            units_sold_colorado: 3000,
+            units_sold_maryland: 1500
+          }
+        ];
+        
+        blob = csvExportService.generateFullDataAudit(mockProducts, mockCompanyInfo.name);
+        filename = `data_audit_${mockCompanyInfo.name.replace(/\s+/g, '_').toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`;
+      } else {
+        const mockProducts = [
+          {
+            id: 'SKU-001',
+            name: '16oz Water Bottle',
+            category: 'Beverages',
+            totalWeight: 25,
+            materials: [{ recyclable: true }],
+            averagePCRContent: 25,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        ];
+        
+        blob = csvExportService.generateProductCatalogExport(mockProducts);
+        filename = `product_catalog_export_${Date.now()}.xlsx`;
+      }
+
+      const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `export_${selectedFormat}_${Date.now()}.${selectedFormat === 'pdf' ? 'pdf' : selectedFormat === 'excel' ? 'xlsx' : 'csv'}`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -135,6 +197,7 @@ export function ExportCenter() {
 
       loadExportData(); // Refresh history
     } catch (error) {
+      console.error('Export error:', error);
       toast({
         title: "Export Failed",
         description: "Failed to export report. Please try again.",
