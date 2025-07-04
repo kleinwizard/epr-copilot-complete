@@ -345,17 +345,6 @@ export function ProductCatalog() {
               <CardTitle>Product Catalog</CardTitle>
               <CardDescription>Advanced product management with version control and material substitution</CardDescription>
             </div>
-            <div className="flex space-x-2">
-              <VersionControl
-                productId={0}
-                currentVersion={{}}
-                onRevert={(version) => handleVersionRevert(0, version)}
-              />
-              <MaterialSubstitution
-                currentMaterial={{ type: 'Plastic (PET)', weight: 100, recyclable: true, eprRate: 0.004 }}
-                onSelectAlternative={(alt) => handleMaterialSubstitution(0, 0, alt)}
-              />
-            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -367,7 +356,6 @@ export function ProductCatalog() {
             selectedStatus={selectedStatus}
             setSelectedStatus={setSelectedStatus}
             onAddProduct={handleAddProduct}
-            onUseTemplate={handleUseTemplate}
             onImportCSV={handleImportCSV}
             onExportProducts={handleExportProducts}
           />

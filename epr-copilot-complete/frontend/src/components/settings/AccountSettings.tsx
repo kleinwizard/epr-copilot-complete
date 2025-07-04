@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,12 +8,53 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Building2, Mail, Phone, MapPin, Upload, FileText } from 'lucide-react';
-import { dataService, CompanyData } from '@/services/dataService';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Building2, Mail, Phone, MapPin, Upload, FileText, Crop } from 'lucide-react';
+import { apiService } from '@/services/apiService';
+import { useToast } from '@/hooks/use-toast';
+
+interface UserProfile {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  title: string;
+  bio: string;
+  avatar?: string;
+}
+
+interface CompanyData {
+  legalName: string;
+  dbaName: string;
+  businessId: string;
+  deqNumber: string;
+  address: string;
+  city: string;
+  zipCode: string;
+  description: string;
+}
 
 export function AccountSettings() {
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile>({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    title: '',
+    bio: '',
+    avatar: ''
+  });
+  const [preferences, setPreferences] = useState({
+    timezone: 'Pacific Time (PT)',
+    language: 'English (US)'
+  });
   const [isLoading, setIsLoading] = useState(true);
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     loadCompanyData();
@@ -22,10 +63,103 @@ export function AccountSettings() {
   const loadCompanyData = async () => {
     try {
       setIsLoading(true);
-      const data = await dataService.getCompanyInfo();
-      setCompanyData(data);
+      const [companyInfo, profileInfo, userPrefs] = await Promise.all([
+        apiService.getCompanyInfo(),
+        apiService.get('/api/user/profile'),
+        apiService.get('/api/user/preferences')
+      ]);
+      
+      setCompanyData(companyInfo);
+      if (profileInfo) {
+        setUserProfile(profileInfo);
+      }
+      if (userPrefs) {
+        setPreferences(userPrefs);
+      }
     } catch (error) {
-      console.error('Failed to load company data:', error);
+      console.error('Failed to load data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setSelectedImage(e.target?.result as string);
+      setIsCropModalOpen(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveProfile = async () => {
+    setIsLoading(true);
+    try {
+      await apiService.put('/api/user/profile', userProfile);
+      toast({
+        title: "Profile Updated",
+        description: "Your profile information has been successfully updated.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSavePreferences = async () => {
+    setIsLoading(true);
+    try {
+      await apiService.put('/api/user/preferences', preferences);
+      toast({
+        title: "Preferences Saved",
+        description: "Your preferences have been successfully updated.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save preferences. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCropAndSave = async () => {
+    if (!selectedImage) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch(selectedImage);
+      const blob = await response.blob();
+      const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
+      
+      const result = await apiService.uploadFile('/api/user/avatar', file);
+      
+      if (result.success) {
+        setUserProfile(prev => ({ ...prev, avatar: result.avatarUrl }));
+        setIsCropModalOpen(false);
+        setSelectedImage(null);
+        
+        toast({
+          title: "Photo Updated",
+          description: "Your profile photo has been successfully updated.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to upload photo. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -43,11 +177,22 @@ export function AccountSettings() {
         <CardContent className="space-y-6">
           <div className="flex items-center space-x-4">
             <Avatar className="h-20 w-20">
-              <AvatarImage src="" />
-              <AvatarFallback className="text-lg">JD</AvatarFallback>
+              <AvatarImage src={userProfile.avatar} />
+              <AvatarFallback className="text-lg">
+                {userProfile.firstName && userProfile.lastName 
+                  ? `${userProfile.firstName[0]}${userProfile.lastName[0]}` 
+                  : 'U'}
+              </AvatarFallback>
             </Avatar>
             <div className="space-y-2">
-              <Button variant="outline" size="sm">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+              <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
                 <Upload className="h-4 w-4 mr-2" />
                 Upload Photo
               </Button>
@@ -57,30 +202,82 @@ export function AccountSettings() {
             </div>
           </div>
 
+          <Dialog open={isCropModalOpen} onOpenChange={setIsCropModalOpen}>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Crop Profile Photo</DialogTitle>
+                <DialogDescription>
+                  Adjust your photo and click save to update your profile picture.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex justify-center py-4">
+                {selectedImage && (
+                  <div className="relative">
+                    <img 
+                      src={selectedImage} 
+                      alt="Preview" 
+                      className="max-w-full max-h-64 rounded-lg"
+                    />
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsCropModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleCropAndSave} disabled={isLoading}>
+                  {isLoading ? 'Saving...' : 'Save Photo'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name</Label>
-              <Input id="firstName" defaultValue="John" />
+              <Input 
+                id="firstName" 
+                value={userProfile.firstName}
+                onChange={(e) => setUserProfile(prev => ({ ...prev, firstName: e.target.value }))}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="lastName">Last Name</Label>
-              <Input id="lastName" defaultValue="Doe" />
+              <Input 
+                id="lastName"
+                value={userProfile.lastName}
+                onChange={(e) => setUserProfile(prev => ({ ...prev, lastName: e.target.value }))}
+              />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="email">Email Address</Label>
-            <Input id="email" type="email" defaultValue="john.doe@company.com" />
+            <Input 
+              id="email" 
+              type="email" 
+              value={userProfile.email}
+              onChange={(e) => setUserProfile(prev => ({ ...prev, email: e.target.value }))}
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="phone">Phone Number</Label>
-            <Input id="phone" type="tel" defaultValue="+1 (555) 123-4567" />
+            <Input 
+              id="phone" 
+              type="tel" 
+              value={userProfile.phone}
+              onChange={(e) => setUserProfile(prev => ({ ...prev, phone: e.target.value }))}
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="title">Job Title</Label>
-            <Input id="title" defaultValue="Sustainability Manager" />
+            <Input 
+              id="title" 
+              value={userProfile.title}
+              onChange={(e) => setUserProfile(prev => ({ ...prev, title: e.target.value }))}
+            />
           </div>
 
           <div className="space-y-2">
@@ -88,11 +285,14 @@ export function AccountSettings() {
             <Textarea 
               id="bio" 
               placeholder="Tell us about yourself..."
-              defaultValue="Experienced sustainability professional focused on packaging compliance and environmental impact reduction."
+              value={userProfile.bio}
+              onChange={(e) => setUserProfile(prev => ({ ...prev, bio: e.target.value }))}
             />
           </div>
 
-          <Button>Save Changes</Button>
+          <Button onClick={handleSaveProfile} disabled={isLoading}>
+            {isLoading ? 'Saving...' : 'Save Changes'}
+          </Button>
         </CardContent>
       </Card>
 
@@ -167,25 +367,37 @@ export function AccountSettings() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="timezone">Timezone</Label>
-            <select className="w-full h-10 px-3 py-2 text-sm bg-background border border-input rounded-md">
-              <option>Pacific Time (PT)</option>
-              <option>Mountain Time (MT)</option>
-              <option>Central Time (CT)</option>
-              <option>Eastern Time (ET)</option>
-            </select>
+            <Select value={preferences.timezone} onValueChange={(value) => setPreferences(prev => ({ ...prev, timezone: value }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select timezone" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Pacific Time (PT)">Pacific Time (PT)</SelectItem>
+                <SelectItem value="Mountain Time (MT)">Mountain Time (MT)</SelectItem>
+                <SelectItem value="Central Time (CT)">Central Time (CT)</SelectItem>
+                <SelectItem value="Eastern Time (ET)">Eastern Time (ET)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="language">Language</Label>
-            <select className="w-full h-10 px-3 py-2 text-sm bg-background border border-input rounded-md">
-              <option>English (US)</option>
-              <option>English (UK)</option>
-              <option>Spanish</option>
-              <option>French</option>
-            </select>
+            <Select value={preferences.language} onValueChange={(value) => setPreferences(prev => ({ ...prev, language: value }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="English (US)">English (US)</SelectItem>
+                <SelectItem value="English (UK)">English (UK)</SelectItem>
+                <SelectItem value="Spanish">Spanish</SelectItem>
+                <SelectItem value="French">French</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          <Button>Save Preferences</Button>
+          <Button onClick={handleSavePreferences} disabled={isLoading}>
+            {isLoading ? 'Saving...' : 'Save Preferences'}
+          </Button>
         </CardContent>
       </Card>
     </div>

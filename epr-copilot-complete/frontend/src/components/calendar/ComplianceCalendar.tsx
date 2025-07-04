@@ -14,6 +14,7 @@ import { EventsList } from './EventsList';
 import { CalendarStats } from './CalendarStats';
 import { EventFilters } from './EventFilters';
 import { getCalendarEvents, getUpcomingEvents, type ComplianceEvent } from '@/services/calendarService';
+import { useToast } from '@/hooks/use-toast';
 
 export function ComplianceCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -25,6 +26,7 @@ export function ComplianceCalendar() {
     jurisdiction: 'all'
   });
   const [showAddEventDialog, setShowAddEventDialog] = useState(false);
+  const [showAddNotificationDialog, setShowAddNotificationDialog] = useState(false);
   const [newEvent, setNewEvent] = useState({
     title: '',
     description: '',
@@ -33,6 +35,15 @@ export function ComplianceCalendar() {
     priority: 'medium',
     jurisdiction: ''
   });
+  const [newNotification, setNewNotification] = useState({
+    title: '',
+    message: '',
+    type: 'reminder',
+    triggerDate: '',
+    eventId: '',
+    recipients: 'all'
+  });
+  const { toast } = useToast();
 
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
@@ -56,7 +67,11 @@ export function ComplianceCalendar() {
 
   const handleAddEvent = () => {
     if (!newEvent.title || !newEvent.date || !newEvent.type) {
-      alert('Please fill in all required fields');
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -72,7 +87,38 @@ export function ComplianceCalendar() {
       jurisdiction: ''
     });
     
-    alert(`Event "${newEvent.title}" has been added successfully!`);
+    toast({
+      title: "Event Added",
+      description: `Event "${newEvent.title}" has been added successfully!`,
+    });
+  };
+
+  const handleAddNotification = () => {
+    if (!newNotification.title || !newNotification.triggerDate || !newNotification.message) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log('Adding new notification:', newNotification);
+    
+    setShowAddNotificationDialog(false);
+    setNewNotification({
+      title: '',
+      message: '',
+      type: 'reminder',
+      triggerDate: '',
+      eventId: '',
+      recipients: 'all'
+    });
+    
+    toast({
+      title: "Notification Added",
+      description: `Notification "${newNotification.title}" has been scheduled successfully!`,
+    });
   };
 
   return (
@@ -87,10 +133,89 @@ export function ComplianceCalendar() {
         </div>
         
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={() => window.location.href = '/notifications'}>
-            <Bell className="h-4 w-4 mr-2" />
-            Add Notification
-          </Button>
+          <Dialog open={showAddNotificationDialog} onOpenChange={setShowAddNotificationDialog}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Bell className="h-4 w-4 mr-2" />
+                Add Notification
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Add New Notification</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="notif-title">Notification Title *</Label>
+                  <Input
+                    id="notif-title"
+                    placeholder="Enter notification title"
+                    value={newNotification.title}
+                    onChange={(e) => setNewNotification(prev => ({ ...prev, title: e.target.value }))}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="notif-message">Message *</Label>
+                  <Textarea
+                    id="notif-message"
+                    placeholder="Enter notification message"
+                    value={newNotification.message}
+                    onChange={(e) => setNewNotification(prev => ({ ...prev, message: e.target.value }))}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="notif-type">Notification Type</Label>
+                  <Select value={newNotification.type} onValueChange={(value) => setNewNotification(prev => ({ ...prev, type: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select notification type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="reminder">Reminder</SelectItem>
+                      <SelectItem value="deadline">Deadline Alert</SelectItem>
+                      <SelectItem value="update">Status Update</SelectItem>
+                      <SelectItem value="warning">Warning</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="notif-date">Trigger Date *</Label>
+                  <Input
+                    id="notif-date"
+                    type="datetime-local"
+                    value={newNotification.triggerDate}
+                    onChange={(e) => setNewNotification(prev => ({ ...prev, triggerDate: e.target.value }))}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="notif-recipients">Recipients</Label>
+                  <Select value={newNotification.recipients} onValueChange={(value) => setNewNotification(prev => ({ ...prev, recipients: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select recipients" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Team Members</SelectItem>
+                      <SelectItem value="admins">Admins Only</SelectItem>
+                      <SelectItem value="managers">Managers Only</SelectItem>
+                      <SelectItem value="me">Just Me</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button variant="outline" onClick={() => setShowAddNotificationDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleAddNotification}>
+                    Schedule Notification
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
           <Dialog open={showAddEventDialog} onOpenChange={setShowAddEventDialog}>
             <DialogTrigger asChild>
               <Button size="sm">

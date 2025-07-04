@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search, Upload, Download } from 'lucide-react';
-import { ProductTemplates } from './ProductTemplates';
 
 interface ProductControlsProps {
   searchTerm: string;
@@ -13,7 +12,6 @@ interface ProductControlsProps {
   selectedStatus: string;
   setSelectedStatus: (status: string) => void;
   onAddProduct: () => void;
-  onUseTemplate: (template: any) => void;
   onImportCSV?: () => void;
   onExportProducts?: () => void;
 }
@@ -26,7 +24,6 @@ export function ProductControls({
   selectedStatus,
   setSelectedStatus,
   onAddProduct,
-  onUseTemplate,
   onImportCSV,
   onExportProducts
 }: ProductControlsProps) {
@@ -72,7 +69,6 @@ export function ProductControls({
       </div>
       
       <div className="flex space-x-2 ml-4">
-        <ProductTemplates onUseTemplate={onUseTemplate} />
         <Button variant="outline" size="sm" onClick={onImportCSV}>
           <Upload className="h-4 w-4 mr-2" />
           Import CSV
