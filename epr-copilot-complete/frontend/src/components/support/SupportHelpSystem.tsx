@@ -6,7 +6,10 @@ import { ContextualHelp } from './ContextualHelp';
 import { HelpCenter } from './HelpCenter';
 import { TrainingSystem } from './TrainingSystem';
 import { SupportChannels } from './SupportChannels';
-import { HelpCircle, BookOpen, MessageSquare, GraduationCap } from 'lucide-react';
+import { GuidesPage } from './GuidesPage';
+import { QAPage } from './QAPage';
+import { TestimonialsPage } from './TestimonialsPage';
+import { HelpCircle, BookOpen, MessageSquare, GraduationCap, Users, Phone } from 'lucide-react';
 
 export const SupportHelpSystem = () => {
   const [activeTab, setActiveTab] = useState('help-center');
@@ -84,15 +87,30 @@ export const SupportHelpSystem = () => {
 
       {/* Support & Help Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="help-center">Help Center</TabsTrigger>
+          <TabsTrigger value="guides">Guides</TabsTrigger>
+          <TabsTrigger value="qa">Q&A</TabsTrigger>
+          <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
           <TabsTrigger value="training">Training</TabsTrigger>
           <TabsTrigger value="contextual">Contextual Help</TabsTrigger>
-          <TabsTrigger value="support">Support Channels</TabsTrigger>
+          <TabsTrigger value="support">Contact Support</TabsTrigger>
         </TabsList>
 
         <TabsContent value="help-center" className="mt-6">
           <HelpCenter />
+        </TabsContent>
+
+        <TabsContent value="guides" className="mt-6">
+          <GuidesPage />
+        </TabsContent>
+
+        <TabsContent value="qa" className="mt-6">
+          <QAPage />
+        </TabsContent>
+
+        <TabsContent value="testimonials" className="mt-6">
+          <TestimonialsPage />
         </TabsContent>
 
         <TabsContent value="training" className="mt-6">
