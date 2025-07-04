@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { 
   Download, 
   FileText, 
@@ -15,9 +18,31 @@ import {
   Calendar,
   Settings,
   Clock,
-  CheckCircle
+  CheckCircle,
+  Plus
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { apiService } from '@/services/apiService';
+
+interface ScheduledExport {
+  id: string;
+  name: string;
+  format: string;
+  schedule: string;
+  lastRun: string;
+  nextRun: string;
+  status: 'active' | 'inactive';
+}
+
+interface ExportHistoryItem {
+  id: string;
+  reportName: string;
+  format: string;
+  size: string;
+  exportedAt: string;
+  exportedBy: string;
+  status: 'completed' | 'failed' | 'processing';
+}
 
 const exportFormats = [
   { id: 'pdf', name: 'PDF Report', icon: FileText, description: 'Complete formatted report' },
@@ -26,70 +51,158 @@ const exportFormats = [
   { id: 'xml', name: 'XML Document', icon: FileText, description: 'Regulatory submission format' }
 ];
 
-const scheduledExports = [
-  {
-    id: '1',
-    name: 'Monthly Compliance Summary',
-    format: 'PDF',
-    schedule: 'Every month on the 1st',
-    lastRun: '2024-01-01',
-    nextRun: '2024-02-01',
-    status: 'Active'
-  },
-  {
-    id: '2',
-    name: 'Quarterly Data Export',
-    format: 'Excel',
-    schedule: 'Every quarter',
-    lastRun: '2024-01-01',
-    nextRun: '2024-04-01',
-    status: 'Active'
-  }
-];
-
-const exportHistory = [
-  {
-    id: '1',
-    reportName: 'Q3 2024 Compliance Report',
-    format: 'PDF',
-    size: '2.4 MB',
-    exportedAt: '2024-01-22T10:30:00Z',
-    exportedBy: 'Sarah Johnson',
-    status: 'Completed'
-  },
-  {
-    id: '2',
-    reportName: 'Material Analysis Report',
-    format: 'Excel',
-    size: '1.8 MB',
-    exportedAt: '2024-01-21T14:15:00Z',
-    exportedBy: 'Mike Chen',
-    status: 'Completed'
-  }
-];
 
 export function ExportCenter() {
   const [selectedFormat, setSelectedFormat] = useState('pdf');
   const [selectedSections, setSelectedSections] = useState<string[]>(['summary', 'products', 'fees']);
+  const [selectedDateRange, setSelectedDateRange] = useState('q3-2024');
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
+  const [scheduledExports, setScheduledExports] = useState<ScheduledExport[]>([]);
+  const [exportHistory, setExportHistory] = useState<ExportHistoryItem[]>([]);
+  const [isNewScheduleModalOpen, setIsNewScheduleModalOpen] = useState(false);
+  const [newSchedule, setNewSchedule] = useState({
+    name: '',
+    format: 'pdf',
+    frequency: 'monthly'
+  });
   const { toast } = useToast();
 
+  useEffect(() => {
+    loadExportData();
+  }, []);
+
+  const loadExportData = async () => {
+    try {
+      const [schedules, history] = await Promise.all([
+        apiService.get('/api/exports/scheduled'),
+        apiService.get('/api/exports/history')
+      ]);
+      
+      setScheduledExports(schedules || []);
+      setExportHistory(history || []);
+    } catch (error) {
+      console.error('Failed to load export data:', error);
+    }
+  };
+
   const handleExport = async () => {
+    if (selectedSections.length === 0) {
+      toast({
+        title: "No Sections Selected",
+        description: "Please select at least one section to export.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsExporting(true);
     setExportProgress(0);
 
-    // Simulate export process
-    for (let i = 0; i <= 100; i += 10) {
-      await new Promise(resolve => setTimeout(resolve, 200));
-      setExportProgress(i);
+    try {
+      const exportConfig = {
+        format: selectedFormat,
+        sections: selectedSections,
+        dateRange: selectedDateRange
+      };
+
+      // Start export process
+      const exportJob = await apiService.post('/api/exports/generate', exportConfig);
+      
+      const pollProgress = async () => {
+        for (let i = 0; i <= 100; i += 10) {
+          await new Promise(resolve => setTimeout(resolve, 300));
+          setExportProgress(i);
+        }
+      };
+
+      await pollProgress();
+
+      const blob = await apiService.get(`/api/exports/download/${exportJob.id}`);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `export_${selectedFormat}_${Date.now()}.${selectedFormat === 'pdf' ? 'pdf' : selectedFormat === 'excel' ? 'xlsx' : 'csv'}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Export Complete",
+        description: "Your report has been exported and downloaded successfully.",
+      });
+
+      loadExportData(); // Refresh history
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export report. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+      setExportProgress(0);
+    }
+  };
+
+  const handleCreateSchedule = async () => {
+    if (!newSchedule.name) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide a name for the scheduled export.",
+        variant: "destructive",
+      });
+      return;
     }
 
-    setIsExporting(false);
-    toast({
-      title: "Export Complete",
-      description: "Your report has been exported successfully",
-    });
+    try {
+      await apiService.post('/api/exports/schedule', newSchedule);
+      
+      toast({
+        title: "Schedule Created",
+        description: "Your export schedule has been created successfully.",
+      });
+      
+      setNewSchedule({ name: '', format: 'pdf', frequency: 'monthly' });
+      setIsNewScheduleModalOpen(false);
+      loadExportData();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create schedule. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownloadHistoryItem = async (itemId: string) => {
+    try {
+      const blob = await apiService.get(`/api/exports/download/${itemId}`);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `export_${itemId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Download Started",
+        description: "Your export download has started.",
+      });
+    } catch (error) {
+      toast({
+        title: "Download Failed",
+        description: "Failed to download export. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleScheduleSettings = (scheduleId: string) => {
+    console.log('Opening settings for schedule:', scheduleId);
   };
 
   const handleSectionToggle = (sectionId: string) => {
@@ -172,7 +285,7 @@ export function ExportCenter() {
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Date Range</label>
-                  <Select defaultValue="q3-2024">
+                  <Select value={selectedDateRange} onValueChange={setSelectedDateRange}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -181,6 +294,7 @@ export function ExportCenter() {
                       <SelectItem value="q2-2024">Q2 2024</SelectItem>
                       <SelectItem value="q1-2024">Q1 2024</SelectItem>
                       <SelectItem value="all-2024">All of 2024</SelectItem>
+                      <SelectItem value="custom">Custom Range</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -237,38 +351,102 @@ export function ExportCenter() {
         <TabsContent value="scheduled" className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-medium">Scheduled Exports</h3>
-            <Button>
-              <Calendar className="h-4 w-4 mr-2" />
-              New Schedule
-            </Button>
+            <Dialog open={isNewScheduleModalOpen} onOpenChange={setIsNewScheduleModalOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Schedule
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Create Export Schedule</DialogTitle>
+                  <DialogDescription>
+                    Set up an automated export schedule for regular report generation.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="schedule-name">Schedule Name</Label>
+                    <Input
+                      id="schedule-name"
+                      placeholder="e.g., Monthly Compliance Report"
+                      value={newSchedule.name}
+                      onChange={(e) => setNewSchedule(prev => ({ ...prev, name: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Export Format</Label>
+                    <Select value={newSchedule.format} onValueChange={(value) => setNewSchedule(prev => ({ ...prev, format: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select format" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pdf">PDF Report</SelectItem>
+                        <SelectItem value="excel">Excel Spreadsheet</SelectItem>
+                        <SelectItem value="csv">CSV Data</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Frequency</Label>
+                    <Select value={newSchedule.frequency} onValueChange={(value) => setNewSchedule(prev => ({ ...prev, frequency: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select frequency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="quarterly">Quarterly</SelectItem>
+                        <SelectItem value="annually">Annually</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsNewScheduleModalOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleCreateSchedule}>
+                    Create Schedule
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
 
           <div className="grid grid-cols-1 gap-4">
-            {scheduledExports.map((schedule) => (
-              <Card key={schedule.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <h4 className="font-medium">{schedule.name}</h4>
-                      <p className="text-sm text-gray-600">{schedule.schedule}</p>
-                      <div className="flex items-center space-x-4 text-xs text-gray-500">
-                        <span>Format: {schedule.format}</span>
-                        <span>Last run: {new Date(schedule.lastRun).toLocaleDateString()}</span>
-                        <span>Next run: {new Date(schedule.nextRun).toLocaleDateString()}</span>
+            {scheduledExports.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No scheduled exports yet. Create your first schedule above.
+              </div>
+            ) : (
+              scheduledExports.map((schedule) => (
+                <Card key={schedule.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <h4 className="font-medium">{schedule.name}</h4>
+                        <p className="text-sm text-gray-600">{schedule.schedule}</p>
+                        <div className="flex items-center space-x-4 text-xs text-gray-500">
+                          <span>Format: {schedule.format}</span>
+                          <span>Last run: {new Date(schedule.lastRun).toLocaleDateString()}</span>
+                          <span>Next run: {new Date(schedule.nextRun).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="outline" className={schedule.status === 'active' ? "bg-green-50 text-green-700" : "bg-gray-50 text-gray-700"}>
+                          {schedule.status}
+                        </Badge>
+                        <Button variant="outline" size="sm" onClick={() => handleScheduleSettings(schedule.id)}>
+                          <Settings className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge variant="outline" className="bg-green-50 text-green-700">
-                        {schedule.status}
-                      </Badge>
-                      <Button variant="outline" size="sm">
-                        <Settings className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </TabsContent>
 
@@ -289,32 +467,40 @@ export function ExportCenter() {
           </div>
 
           <div className="space-y-2">
-            {exportHistory.map((export_) => (
-              <Card key={export_.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                      <div>
-                        <h4 className="font-medium">{export_.reportName}</h4>
-                        <div className="flex items-center space-x-4 text-sm text-gray-600">
-                          <span>{export_.format} • {export_.size}</span>
-                          <span>Exported by {export_.exportedBy}</span>
-                          <div className="flex items-center space-x-1">
-                            <Clock className="h-3 w-3" />
-                            <span>{new Date(export_.exportedAt).toLocaleDateString()}</span>
+            {exportHistory.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No export history yet. Generate your first export above.
+              </div>
+            ) : (
+              exportHistory.map((export_) => (
+                <Card key={export_.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <CheckCircle className={`h-5 w-5 ${export_.status === 'completed' ? 'text-green-500' : export_.status === 'failed' ? 'text-red-500' : 'text-yellow-500'}`} />
+                        <div>
+                          <h4 className="font-medium">{export_.reportName}</h4>
+                          <div className="flex items-center space-x-4 text-sm text-gray-600">
+                            <span>{export_.format} • {export_.size}</span>
+                            <span>Exported by {export_.exportedBy}</span>
+                            <div className="flex items-center space-x-1">
+                              <Clock className="h-3 w-3" />
+                              <span>{new Date(export_.exportedAt).toLocaleDateString()}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
+                      {export_.status === 'completed' && (
+                        <Button variant="outline" size="sm" onClick={() => handleDownloadHistoryItem(export_.id)}>
+                          <Download className="h-4 w-4 mr-1" />
+                          Download
+                        </Button>
+                      )}
                     </div>
-                    <Button variant="outline" size="sm">
-                      <Download className="h-4 w-4 mr-1" />
-                      Download
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </TabsContent>
       </Tabs>

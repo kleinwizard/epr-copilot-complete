@@ -109,14 +109,6 @@ export function AnalyticsDashboard() {
             Q4 2024
           </Badge>
           
-          <Button variant="outline" size="sm" className="hidden md:flex" onClick={() => {
-            console.log('Advanced Filters clicked');
-            alert('Advanced Filters panel will be implemented');
-          }}>
-            <Filter className="h-4 w-4 mr-2" />
-            <span className="hidden lg:inline">Advanced Filters</span>
-            <span className="lg:hidden">Filters</span>
-          </Button>
           
           <Button variant="outline" size="sm" onClick={() => {
             console.log('Refresh Data clicked');

@@ -18,6 +18,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { apiService } from '@/services/apiService';
 
 interface ProductVersion {
   id: string;
@@ -37,50 +38,41 @@ interface VersionControlProps {
   onRevert: (version: ProductVersion) => void;
 }
 
-const mockVersions: ProductVersion[] = [
-  {
-    id: '1',
-    version: '1.3',
-    changes: 'Updated material weights and added new recyclable components',
-    changedBy: 'John Doe',
-    timestamp: '2024-01-22T10:30:00Z',
-    status: 'approved',
-    approvedBy: 'Jane Smith',
-    approvalDate: '2024-01-22T14:15:00Z',
-    data: { weight: 500, materials: [] }
-  },
-  {
-    id: '2',
-    version: '1.2',
-    changes: 'Modified packaging material from LDPE to recyclable alternative',
-    changedBy: 'Jane Smith',
-    timestamp: '2024-01-20T15:45:00Z',
-    status: 'approved',
-    approvedBy: 'Admin',
-    approvalDate: '2024-01-20T16:00:00Z',
-    data: { weight: 480, materials: [] }
-  },
-  {
-    id: '3',
-    version: '1.1',
-    changes: 'Initial product data entry with basic packaging information',
-    changedBy: 'System',
-    timestamp: '2024-01-15T09:00:00Z',
-    status: 'approved',
-    approvedBy: 'Auto',
-    approvalDate: '2024-01-15T09:00:00Z',
-    data: { weight: 450, materials: [] }
-  }
-];
 
 export function VersionControl({ productId, currentVersion, onRevert }: VersionControlProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [versions] = useState<ProductVersion[]>(mockVersions);
+  const [versions, setVersions] = useState<ProductVersion[]>([]);
   const [selectedVersion, setSelectedVersion] = useState<ProductVersion | null>(null);
   const [showCompareDialog, setShowCompareDialog] = useState(false);
   const [pendingApproval, setPendingApproval] = useState(false);
   const [approvalComment, setApprovalComment] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  const loadVersionHistory = async () => {
+    if (!productId) return;
+    
+    setIsLoading(true);
+    try {
+      const versionData = await apiService.get(`/api/products/${productId}/versions`);
+      setVersions(versionData || []);
+    } catch (error) {
+      console.error('Failed to load version history:', error);
+      setVersions([]);
+      toast({
+        title: "Error",
+        description: "Failed to load version history.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOpenDialog = () => {
+    setIsOpen(true);
+    loadVersionHistory();
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -133,7 +125,7 @@ export function VersionControl({ productId, currentVersion, onRevert }: VersionC
 
   return (
     <>
-      <Button variant="outline" size="sm" onClick={() => setIsOpen(true)}>
+      <Button variant="outline" size="sm" onClick={handleOpenDialog}>
         <History className="h-4 w-4 mr-2" />
         Version History
       </Button>
@@ -154,8 +146,17 @@ export function VersionControl({ productId, currentVersion, onRevert }: VersionC
             </TabsList>
 
             <TabsContent value="history" className="space-y-4">
-              <div className="space-y-3">
-                {versions.map((version, index) => (
+              {isLoading ? (
+                <div className="flex items-center justify-center p-8">
+                  <div className="text-muted-foreground">Loading version history...</div>
+                </div>
+              ) : versions.length === 0 ? (
+                <div className="flex items-center justify-center p-8">
+                  <div className="text-muted-foreground">No version history available</div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {versions.map((version, index) => (
                   <Card key={version.id} className={`transition-all hover:shadow-md ${index === 0 ? 'ring-2 ring-blue-200' : ''}`}>
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
@@ -209,9 +210,10 @@ export function VersionControl({ productId, currentVersion, onRevert }: VersionC
                         </div>
                       )}
                     </CardContent>
-                  </Card>
-                ))}
-              </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="approval" className="space-y-4">

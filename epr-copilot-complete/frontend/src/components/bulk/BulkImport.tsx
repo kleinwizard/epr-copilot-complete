@@ -15,7 +15,8 @@ import {
   AlertCircle,
   X,
   Eye,
-  RefreshCw
+  RefreshCw,
+  FileText
 } from 'lucide-react';
 import { ImportPreview } from './ImportPreview';
 import { ImportHistory } from './ImportHistory';
@@ -123,6 +124,146 @@ export function BulkImport() {
           </Button>
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <FileText className="w-5 h-5" />
+            <span>Guide: How to Format Your Bulk Import CSV Files</span>
+          </CardTitle>
+          <CardDescription>
+            To ensure successful data imports, please format your CSV files precisely as described below. The first row of your file must be the header row with the exact column names specified.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-semibold text-lg mb-3">1. Product Catalog Bulk Import</h4>
+              <p className="text-sm text-muted-foreground mb-4">
+                Use this format to add or update multiple products in your catalog. Each row represents a single product component. If a product has three components (e.g., bottle, cap, label), it will require three rows.
+              </p>
+              
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h5 className="font-medium mb-2">Required Columns:</h5>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left p-2">Header Name</th>
+                        <th className="text-left p-2">Description</th>
+                        <th className="text-left p-2">Example</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-xs">
+                      <tr className="border-b">
+                        <td className="p-2 font-mono">product_id</td>
+                        <td className="p-2">Your unique identifier (SKU) for the product. This is used to group components together.</td>
+                        <td className="p-2">SKU-1025-A</td>
+                      </tr>
+                      <tr className="border-b">
+                        <td className="p-2 font-mono">product_name</td>
+                        <td className="p-2">The common name of the product.</td>
+                        <td className="p-2">16oz Natural Spring Water</td>
+                      </tr>
+                      <tr className="border-b">
+                        <td className="p-2 font-mono">component_name</td>
+                        <td className="p-2">The name of this specific component of the product.</td>
+                        <td className="p-2">Bottle, Cap, Label</td>
+                      </tr>
+                      <tr className="border-b">
+                        <td className="p-2 font-mono">material_type</td>
+                        <td className="p-2">The material this component is made from. Must match materials in your Material Catalog.</td>
+                        <td className="p-2">PET, HDPE, Paper</td>
+                      </tr>
+                      <tr className="border-b">
+                        <td className="p-2 font-mono">component_weight_grams</td>
+                        <td className="p-2">The weight of this component in grams. Numbers only, no units.</td>
+                        <td className="p-2">25.5</td>
+                      </tr>
+                      <tr className="border-b">
+                        <td className="p-2 font-mono">recyclable</td>
+                        <td className="p-2">Whether this component is recyclable in most municipal programs. Use "true" or "false".</td>
+                        <td className="p-2">true</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2 font-mono">pcr_content_percent</td>
+                        <td className="p-2">The percentage of post-consumer recycled content. Numbers only, 0-100.</td>
+                        <td className="p-2">25</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-lg mb-3">2. Material Catalog Bulk Import</h4>
+              <p className="text-sm text-muted-foreground mb-4">
+                Use this format to add or update materials in your catalog. Each row represents a single material type.
+              </p>
+              
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h5 className="font-medium mb-2">Required Columns:</h5>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left p-2">Header Name</th>
+                        <th className="text-left p-2">Description</th>
+                        <th className="text-left p-2">Example</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-xs">
+                      <tr className="border-b">
+                        <td className="p-2 font-mono">material_name</td>
+                        <td className="p-2">The name of the material.</td>
+                        <td className="p-2">PET Plastic</td>
+                      </tr>
+                      <tr className="border-b">
+                        <td className="p-2 font-mono">material_category</td>
+                        <td className="p-2">The broad category this material belongs to.</td>
+                        <td className="p-2">Plastic, Paper, Glass, Metal</td>
+                      </tr>
+                      <tr className="border-b">
+                        <td className="p-2 font-mono">material_subcategory</td>
+                        <td className="p-2">The specific subcategory or type.</td>
+                        <td className="p-2">Rigid Plastic, Flexible Film</td>
+                      </tr>
+                      <tr className="border-b">
+                        <td className="p-2 font-mono">recyclable</td>
+                        <td className="p-2">Whether this material is generally recyclable. Use "true" or "false".</td>
+                        <td className="p-2">true</td>
+                      </tr>
+                      <tr className="border-b">
+                        <td className="p-2 font-mono">epr_rate_usd_per_kg</td>
+                        <td className="p-2">The EPR fee rate in USD per kilogram. Numbers only.</td>
+                        <td className="p-2">0.0034</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2 font-mono">sustainability_score</td>
+                        <td className="p-2">A score from 0-100 indicating environmental impact (higher = better). Numbers only.</td>
+                        <td className="p-2">65</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h5 className="font-medium mb-2 text-blue-800">Important Notes:</h5>
+              <ul className="text-sm text-blue-700 space-y-1">
+                <li>• Column headers must match exactly (case-sensitive)</li>
+                <li>• Do not include extra spaces in column headers</li>
+                <li>• Numbers should not include units or currency symbols</li>
+                <li>• Boolean values must be exactly "true" or "false" (lowercase)</li>
+                <li>• Empty cells will be treated as null values</li>
+                <li>• Maximum file size: 10MB</li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
