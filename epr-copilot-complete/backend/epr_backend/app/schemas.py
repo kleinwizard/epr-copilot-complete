@@ -45,7 +45,7 @@ class ProductBase(BaseModel):
 
 
 class ProductCreate(ProductBase):
-    organization_id: str
+    pass
 
 
 class Product(ProductBase):

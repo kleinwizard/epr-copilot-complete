@@ -1,4 +1,5 @@
 import { CalculationUtils } from './calculationEngine';
+import { apiService } from './apiService';
 
 export interface CompanyData {
   legalName: string;
@@ -34,163 +35,99 @@ export interface Material {
   type: string;
   recyclable: boolean;
   eprRate: number;
+  densityRange: { min: number; max: number };
   sustainabilityScore: number;
-  complianceStatus: string;
+  alternatives: string[];
+  complianceStatus: 'Compliant' | 'Restricted' | 'Banned';
   lastUpdated: string;
   description: string;
+  carbonFootprint: number;
+  recyclingProcess: string;
+  endOfLife: string[];
 }
 
 class DataService {
-  private storageKey = 'epr_app_data';
+  async getCompanyInfo(): Promise<CompanyData | null> {
+    try {
+      return await apiService.getCompanyInfo();
+    } catch (error) {
+      console.error('Failed to get company info:', error);
+      return null;
+    }
+  }
 
-  private getData() {
-    const data = localStorage.getItem(this.storageKey);
-    return data ? JSON.parse(data) : {
-      company: null,
-      products: [],
-      materials: [],
-      analytics: {
+  async saveCompanyInfo(companyData: CompanyData): Promise<CompanyData> {
+    return await apiService.saveCompanyInfo(companyData);
+  }
+
+  async getProducts(): Promise<Product[]> {
+    try {
+      return await apiService.getProducts();
+    } catch (error) {
+      console.error('Failed to get products:', error);
+      return [];
+    }
+  }
+
+  async saveProduct(productData: Partial<Product>): Promise<Product> {
+    return await apiService.saveProduct(productData);
+  }
+
+  async updateProduct(id: number, productData: Partial<Product>): Promise<Product> {
+    return await apiService.updateProduct(id, productData);
+  }
+
+  async getMaterials(): Promise<Material[]> {
+    try {
+      return await apiService.getMaterials();
+    } catch (error) {
+      console.error('Failed to get materials:', error);
+      return [];
+    }
+  }
+
+  async saveMaterial(materialData: Partial<Material>): Promise<Material> {
+    return await apiService.saveMaterial(materialData);
+  }
+
+  async updateMaterial(id: number, materialData: Partial<Material>): Promise<Material> {
+    return await apiService.updateMaterial(id, materialData);
+  }
+
+  async getAnalytics() {
+    try {
+      return await apiService.getAnalytics();
+    } catch (error) {
+      console.error('Failed to get analytics:', error);
+      return {
         complianceScore: 0,
         daysToDeadline: 0,
         totalProducts: 0,
         totalFees: 0
-      }
-    };
-  }
-
-  private saveData(data: any) {
-    localStorage.setItem(this.storageKey, JSON.stringify(data));
-  }
-
-  async getCompanyInfo(): Promise<CompanyData | null> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const data = this.getData();
-    return data.company;
-  }
-
-  async saveCompanyInfo(companyData: CompanyData): Promise<CompanyData> {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const data = this.getData();
-    data.company = { ...companyData, lastUpdated: new Date().toISOString() };
-    this.saveData(data);
-    return data.company;
-  }
-
-  async getProducts(): Promise<Product[]> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const data = this.getData();
-    return data.products;
-  }
-
-  async saveProduct(productData: Partial<Product>): Promise<Product> {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const data = this.getData();
-    const newProduct = {
-      ...productData,
-      id: Date.now(),
-      lastUpdated: new Date().toISOString().split('T')[0]
-    } as Product;
-    data.products.push(newProduct);
-    data.analytics.totalProducts = data.products.length;
-    data.analytics.totalFees = CalculationUtils.roundToPrecision(
-      data.products.reduce((sum: number, p: Product) => sum + p.eprFee, 0), 2
-    );
-    this.saveData(data);
-    return newProduct;
-  }
-
-  async updateProduct(id: number, productData: Partial<Product>): Promise<Product> {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const data = this.getData();
-    const index = data.products.findIndex((p: Product) => p.id === id);
-    if (index === -1) throw new Error('Product not found');
-    
-    data.products[index] = { 
-      ...data.products[index], 
-      ...productData, 
-      lastUpdated: new Date().toISOString().split('T')[0] 
-    };
-    data.analytics.totalFees = CalculationUtils.roundToPrecision(
-      data.products.reduce((sum: number, p: Product) => sum + p.eprFee, 0), 2
-    );
-    this.saveData(data);
-    return data.products[index];
-  }
-
-  async getMaterials(): Promise<Material[]> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const data = this.getData();
-    return data.materials;
-  }
-
-  async saveMaterial(materialData: Partial<Material>): Promise<Material> {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const data = this.getData();
-    const newMaterial = {
-      ...materialData,
-      id: Date.now(),
-      lastUpdated: new Date().toISOString().split('T')[0]
-    } as Material;
-    data.materials.push(newMaterial);
-    this.saveData(data);
-    return newMaterial;
-  }
-
-  async updateMaterial(id: number, materialData: Partial<Material>): Promise<Material> {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const data = this.getData();
-    const index = data.materials.findIndex((m: Material) => m.id === id);
-    if (index === -1) throw new Error('Material not found');
-    
-    data.materials[index] = { 
-      ...data.materials[index], 
-      ...materialData, 
-      lastUpdated: new Date().toISOString().split('T')[0] 
-    };
-    this.saveData(data);
-    return data.materials[index];
-  }
-
-  async getAnalytics() {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const data = this.getData();
-    return {
-      ...data.analytics,
-      totalProducts: data.products.length,
-      totalFees: CalculationUtils.roundToPrecision(
-        data.products.reduce((sum: number, p: Product) => sum + p.eprFee, 0), 2
-      )
-    };
+      };
+    }
   }
 
   async getComplianceDueDates() {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return [
-      {
-        id: '1',
-        title: 'Q1 2024 Report Due',
-        date: '2024-04-15',
-        type: 'quarterly',
-        status: 'upcoming',
-        description: 'Quarterly packaging report submission deadline'
-      },
-      {
-        id: '2',
-        title: 'Annual Registration Renewal',
-        date: '2024-12-31',
-        type: 'annual',
-        status: 'upcoming',
-        description: 'Annual EPR program registration renewal'
-      }
-    ];
+    try {
+      return await apiService.getComplianceDueDates();
+    } catch (error) {
+      console.error('Failed to get compliance due dates:', error);
+      return [];
+    }
   }
 
   async uploadDocument(file: File): Promise<{ success: boolean; filename: string }> {
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    return {
-      success: true,
-      filename: file.name
-    };
+    try {
+      const result = await apiService.uploadFile('/api/documents/upload', file);
+      return {
+        success: true,
+        filename: result.filename || file.name
+      };
+    } catch (error) {
+      console.error('Failed to upload document:', error);
+      throw error;
+    }
   }
 }
 
