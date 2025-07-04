@@ -8,17 +8,64 @@ import { AlertTriangle, Bell, Calendar, TrendingUp, Users, CheckCircle } from 'l
 import { getUpcomingEvents } from '@/services/calendarService';
 import { getNotificationStats } from '@/services/notificationService';
 import { useToast } from '@/hooks/use-toast';
+import { complianceCalculationService, ComplianceCalculation } from '@/services/complianceCalculationService';
 
 export function AlertDashboard() {
   const [alertsCount, setAlertsCount] = useState({
-    critical: 2,
-    high: 5,
-    medium: 8,
-    total: 15
+    critical: 0,
+    high: 0,
+    medium: 0,
+    total: 0
   });
+  const [isLoadingAlerts, setIsLoadingAlerts] = useState(true);
   
-  const [complianceScore, setComplianceScore] = useState(94);
+  const [complianceCalculation, setComplianceCalculation] = useState<ComplianceCalculation | null>(null);
+  const [isLoadingCompliance, setIsLoadingCompliance] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    loadComplianceScore();
+    loadAlertCounts();
+  }, []);
+
+  const loadAlertCounts = async () => {
+    try {
+      setIsLoadingAlerts(true);
+      const alertStats = await getNotificationStats();
+      setAlertsCount({
+        critical: alertStats.byType?.deadline || 0,
+        high: alertStats.highPriority || 0,
+        medium: alertStats.unread - alertStats.highPriority || 0,
+        total: alertStats.total || 0
+      });
+    } catch (error) {
+      console.error('Failed to load alert counts:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load alert statistics.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingAlerts(false);
+    }
+  };
+
+  const loadComplianceScore = async () => {
+    try {
+      setIsLoadingCompliance(true);
+      const calculation = await complianceCalculationService.calculateComplianceScore();
+      setComplianceCalculation(calculation);
+    } catch (error) {
+      console.error('Failed to load compliance score:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load compliance score.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingCompliance(false);
+    }
+  };
 
   const upcomingEvents = getUpcomingEvents(7); // Next 7 days
   const criticalDeadlines = upcomingEvents.filter(event => 
@@ -46,6 +93,8 @@ export function AlertDashboard() {
     return 'bg-red-100';
   };
 
+  const complianceScore = complianceCalculation?.overallScore || 0;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -63,13 +112,17 @@ export function AlertDashboard() {
       </div>
 
       {/* Alert Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
               <AlertTriangle className="h-5 w-5 text-red-600" />
               <div>
-                <p className="text-2xl font-bold text-red-600">{alertsCount.critical}</p>
+                {isLoadingAlerts ? (
+                  <p className="text-2xl font-bold text-gray-400">--</p>
+                ) : (
+                  <p className="text-2xl font-bold text-red-600">{alertsCount.critical}</p>
+                )}
                 <p className="text-sm text-muted-foreground">Critical Alerts</p>
               </div>
             </div>
@@ -81,7 +134,11 @@ export function AlertDashboard() {
             <div className="flex items-center space-x-2">
               <Bell className="h-5 w-5 text-orange-600" />
               <div>
-                <p className="text-2xl font-bold text-orange-600">{alertsCount.high}</p>
+                {isLoadingAlerts ? (
+                  <p className="text-2xl font-bold text-gray-400">--</p>
+                ) : (
+                  <p className="text-2xl font-bold text-orange-600">{alertsCount.high}</p>
+                )}
                 <p className="text-sm text-muted-foreground">High Priority</p>
               </div>
             </div>
@@ -99,20 +156,6 @@ export function AlertDashboard() {
             </div>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <div>
-                <p className={`text-2xl font-bold ${getScoreColor(complianceScore)}`}>
-                  {complianceScore}%
-                </p>
-                <p className="text-sm text-muted-foreground">Compliance Score</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Compliance Score Detail */}
@@ -120,32 +163,68 @@ export function AlertDashboard() {
         <CardHeader>
           <CardTitle>Compliance Status</CardTitle>
           <CardDescription>
-            Current compliance score and trending
+            Current compliance score and breakdown by category
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Overall Compliance</span>
-              <Badge className={getScoreBg(complianceScore)}>
-                {complianceScore >= 95 ? 'Excellent' : complianceScore >= 90 ? 'Good' : 'Needs Attention'}
-              </Badge>
+              {isLoadingCompliance ? (
+                <Badge variant="outline">Loading...</Badge>
+              ) : (
+                <Badge className={getScoreBg(complianceScore)}>
+                  {complianceScore >= 95 ? 'Excellent' : complianceScore >= 90 ? 'Good' : 'Needs Attention'}
+                </Badge>
+              )}
             </div>
             <Progress value={complianceScore} className="h-2" />
-            <div className="grid grid-cols-3 gap-4 text-sm">
-              <div>
-                <p className="font-medium">Data Quality</p>
-                <p className="text-muted-foreground">98%</p>
+            {complianceCalculation && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <p className="font-medium">Company Profile</p>
+                  <p className="text-muted-foreground">
+                    {complianceCalculation.breakdown.companyProfile.complete ? 
+                      `${complianceCalculation.breakdown.companyProfile.weight}%` : '0%'}
+                  </p>
+                </div>
+                <div>
+                  <p className="font-medium">Materials Catalogued</p>
+                  <p className="text-muted-foreground">
+                    {complianceCalculation.breakdown.materials.count > 0 ? 
+                      `${complianceCalculation.breakdown.materials.weight}%` : '0%'}
+                  </p>
+                </div>
+                <div>
+                  <p className="font-medium">Products Catalogued</p>
+                  <p className="text-muted-foreground">
+                    {complianceCalculation.breakdown.products.count > 0 ? 
+                      `${complianceCalculation.breakdown.products.weight}%` : '0%'}
+                  </p>
+                </div>
+                <div>
+                  <p className="font-medium">Sales Data</p>
+                  <p className="text-muted-foreground">
+                    {complianceCalculation.breakdown.salesData.complete ? 
+                      `${complianceCalculation.breakdown.salesData.weight}%` : '0%'}
+                  </p>
+                </div>
+                <div>
+                  <p className="font-medium">Reports Generated</p>
+                  <p className="text-muted-foreground">
+                    {complianceCalculation.breakdown.reports.count > 0 ? 
+                      `${complianceCalculation.breakdown.reports.weight}%` : '0%'}
+                  </p>
+                </div>
+                <div>
+                  <p className="font-medium">Fees/PRO Membership</p>
+                  <p className="text-muted-foreground">
+                    {complianceCalculation.breakdown.fees.active ? 
+                      `${complianceCalculation.breakdown.fees.weight}%` : '0%'}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="font-medium">Timely Submissions</p>
-                <p className="text-muted-foreground">92%</p>
-              </div>
-              <div>
-                <p className="font-medium">Fee Compliance</p>
-                <p className="text-muted-foreground">96%</p>
-              </div>
-            </div>
+            )}
           </div>
         </CardContent>
       </Card>

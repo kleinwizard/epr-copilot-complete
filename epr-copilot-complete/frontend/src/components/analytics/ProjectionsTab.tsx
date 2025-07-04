@@ -151,32 +151,26 @@ export function ProjectionsTab() {
       </MetricWithInfo>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <MetricWithInfo
-          title="Recyclability Savings"
-          value={isLoading ? 'Loading...' : `-$${projectionMetrics.costOptimization.toLocaleString()}`}
-          explanation="This figure estimates how much you could save on your projected annual fees by increasing your overall recyclability rate by a target percentage. It models the fee reductions you would receive for using more sustainable materials."
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Cost Optimization</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600 mb-2">
-                {isLoading ? 'Loading...' : `-$${projectionMetrics.costOptimization.toLocaleString()}`}
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">Potential annual savings</p>
-              <ul className="text-sm space-y-2">
-                <li>• Increase recyclable materials by 5%</li>
-                <li>• Optimize packaging weights (-8%)</li>
-                <li>• Switch to lower EPR rate materials</li>
-                <li>• Implement automated compliance tracking</li>
-              </ul>
-              <Button size="sm" className="mt-3 w-full">
-                View Optimization Plan
-              </Button>
-            </CardContent>
-          </Card>
-        </MetricWithInfo>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Cost Optimization</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600 mb-2">
+              {isLoading ? 'Loading...' : `-$${projectionMetrics.costOptimization.toLocaleString()}`}
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">Potential annual savings</p>
+            <ul className="text-sm space-y-2">
+              <li>• Increase recyclable materials by 5%</li>
+              <li>• Optimize packaging weights (-8%)</li>
+              <li>• Switch to lower EPR rate materials</li>
+              <li>• Implement automated compliance tracking</li>
+            </ul>
+            <Button size="sm" className="mt-3 w-full">
+              View Optimization Plan
+            </Button>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

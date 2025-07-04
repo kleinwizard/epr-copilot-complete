@@ -122,6 +122,28 @@ export const SupportHelpSystem = () => {
                     <h3 className="text-lg font-semibold mb-4 text-blue-700">App Guides</h3>
                     <div className="space-y-6">
                       <div>
+                        <h4 className="font-medium text-gray-900 mb-2">Guide: First Steps - Login and Company Setup</h4>
+                        <p className="text-sm text-gray-700 mb-2">Welcome! Your first step to compliance is setting up your account correctly.</p>
+                        <ol className="text-sm text-gray-700 space-y-1 ml-4">
+                          <li>1. <strong>Login:</strong> Use the credentials you created to sign in. We recommend enabling Two-Factor Authentication (2FA) immediately under Settings → Security.</li>
+                          <li>2. <strong>Create Your Company Profile:</strong> Navigate to Company Setup. Fill in your company's legal name, address, and contact information.</li>
+                          <li>3. <strong>Add Business Entities:</strong> If you operate under multiple business names or subsidiaries, add each one under Multi-entity Setup.</li>
+                          <li>4. <strong>Upload Verification Documents:</strong> Go to Company Setup → Documents and upload the required documents to get your account verified. This is essential for unlocking full reporting features.</li>
+                        </ol>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-2">Guide: Understanding Fines and Penalties</h4>
+                        <p className="text-sm text-gray-700 mb-2">Failure to comply with EPR laws can result in significant financial penalties. While specific amounts vary by jurisdiction, they are generally structured to be more costly than compliance itself.</p>
+                        <ul className="text-sm text-gray-700 space-y-1 ml-4">
+                          <li>• <strong>Late Filing Fees:</strong> Most jurisdictions impose a daily or monthly penalty for failing to submit reports by the deadline.</li>
+                          <li>• <strong>Inaccurate Reporting:</strong> Submitting incorrect data, even by accident, can lead to fines. It is crucial to ensure your data is accurate.</li>
+                          <li>• <strong>Failure to Pay Fees:</strong> Non-payment of required EPR fees can result in penalties often calculated as a percentage of the unpaid amount, plus interest.</li>
+                          <li>• <strong>Enforcement:</strong> Penalties can range from thousands to tens of thousands of dollars per day of violation. Continuous non-compliance can lead to legal action and a prohibition on selling your products within that jurisdiction.</li>
+                        </ul>
+                      </div>
+
+                      <div>
                         <h4 className="font-medium text-gray-900 mb-2">Guide: Understanding the App's Workflow</h4>
                         <p className="text-sm text-gray-700 mb-2">Welcome to the EPR Compliance Hub! Here's how to get started and make the most of the platform.</p>
                         <ul className="text-sm text-gray-700 space-y-1 ml-4">
@@ -227,6 +249,11 @@ export const SupportHelpSystem = () => {
                             <p className="font-medium text-gray-800 mb-1">Q: Where do I find my API Key?</p>
                             <p className="text-sm text-gray-700">A: Navigate to Settings → API & Integrations. If you haven't created a key yet, you can generate a new one there. For security, we only show the key once upon creation. Be sure to copy it and store it in a safe place.</p>
                           </div>
+
+                          <div>
+                            <p className="font-medium text-gray-800 mb-1">Q: My CSV import keeps failing. What are the top 3 most common errors?</p>
+                            <p className="text-sm text-gray-700">A: 1. Incorrect Header Names (they must match the template exactly). 2. Missing product_id or material_id. 3. Using special characters or letters in a numbers-only field like component_weight_grams.</p>
+                          </div>
                         </div>
                       </div>
 
@@ -246,6 +273,16 @@ export const SupportHelpSystem = () => {
                           <div>
                             <p className="font-medium text-gray-800 mb-1">Q: What's the difference between SB 54 (California) and LD 1541 (Maine)?</p>
                             <p className="text-sm text-gray-700">A: While both are EPR laws, they have different structures. California's law is managed by a single PRO which sets and collects fees. Maine's law is a municipal reimbursement model, where the state determines costs and producers reimburse municipalities for their recycling programs. Our platform is designed to handle the reporting requirements for both models.</p>
+                          </div>
+
+                          <div>
+                            <p className="font-medium text-gray-800 mb-1">Q: What if I sell a product in a state that just passed a new EPR law?</p>
+                            <p className="text-sm text-gray-700">A: As new laws are passed, we will add the jurisdiction to our system. You will need to begin tracking your sales data for that state and associate it with your products. Typically, laws include a grace period before the first reports are due.</p>
+                          </div>
+
+                          <div>
+                            <p className="font-medium text-gray-800 mb-1">Q: How do I handle packaging for products sold in a multi-pack?</p>
+                            <p className="text-sm text-gray-700">A: The outer packaging of the multi-pack (e.g., the plastic wrap or paperboard box) should be entered as a separate product or component in your catalog, and its sales should be tracked accordingly. The packaging of the individual units inside must also be accounted for.</p>
                           </div>
                         </div>
                       </div>

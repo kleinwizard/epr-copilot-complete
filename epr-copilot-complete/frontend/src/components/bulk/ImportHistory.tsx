@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +11,8 @@ import {
   AlertCircle,
   Clock
 } from 'lucide-react';
+import { apiService } from '@/services/apiService';
+import { useToast } from '@/hooks/use-toast';
 
 interface ImportRecord {
   id: number;
@@ -22,40 +25,32 @@ interface ImportRecord {
   failedRecords: number;
 }
 
-const mockImportHistory: ImportRecord[] = [
-  {
-    id: 1,
-    fileName: 'products_batch_1.csv',
-    type: 'products',
-    date: '2024-01-22T10:30:00Z',
-    status: 'completed',
-    totalRecords: 150,
-    successfulRecords: 148,
-    failedRecords: 2
-  },
-  {
-    id: 2,
-    fileName: 'materials_update.csv',
-    type: 'materials',
-    date: '2024-01-21T14:15:00Z',
-    status: 'completed',
-    totalRecords: 45,
-    successfulRecords: 45,
-    failedRecords: 0
-  },
-  {
-    id: 3,
-    fileName: 'products_new_line.csv',
-    type: 'products',
-    date: '2024-01-20T09:45:00Z',
-    status: 'failed',
-    totalRecords: 75,
-    successfulRecords: 0,
-    failedRecords: 75
-  }
-];
-
 export function ImportHistory() {
+  const [importHistory, setImportHistory] = useState<ImportRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadImportHistory();
+  }, []);
+
+  const loadImportHistory = async () => {
+    try {
+      setIsLoading(true);
+      const data = await apiService.getImportHistory();
+      setImportHistory(data || []);
+    } catch (error) {
+      console.error('Failed to load import history:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load import history.",
+        variant: "destructive",
+      });
+      setImportHistory([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
@@ -82,9 +77,29 @@ export function ImportHistory() {
     }
   };
 
-  const downloadErrorReport = (importId: number) => {
-    // Simulate downloading error report
-    console.log(`Downloading error report for import ${importId}`);
+  const downloadErrorReport = async (importId: number) => {
+    try {
+      const response = await apiService.downloadErrorReport(importId);
+      const blob = new Blob([response], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `import_${importId}_errors.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Download Complete",
+        description: "Error report has been downloaded.",
+      });
+    } catch (error) {
+      console.error('Failed to download error report:', error);
+      toast({
+        title: "Error",
+        description: "Failed to download error report.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -100,8 +115,14 @@ export function ImportHistory() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {mockImportHistory.map((record) => (
+          {isLoading ? (
+            <div className="text-center py-8">
+              <Clock className="h-8 w-8 text-gray-400 mx-auto mb-4 animate-spin" />
+              <p className="text-gray-600">Loading import history...</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {importHistory.map((record) => (
               <div key={record.id} className="border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-3">
@@ -155,14 +176,15 @@ export function ImportHistory() {
               </div>
             ))}
 
-            {mockImportHistory.length === 0 && (
-              <div className="text-center py-8">
-                <FileSpreadsheet className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No imports yet</h3>
-                <p className="text-gray-600">Your import history will appear here once you start importing files.</p>
-              </div>
-            )}
-          </div>
+              {importHistory.length === 0 && (
+                <div className="text-center py-8">
+                  <FileSpreadsheet className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No imports yet</h3>
+                  <p className="text-gray-600">Your import history will appear here once you start importing files.</p>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

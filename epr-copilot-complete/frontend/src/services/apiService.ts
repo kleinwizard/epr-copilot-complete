@@ -1,8 +1,8 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api';
 
 class ApiService {
   private getAuthHeaders() {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('access_token');
     return {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` }),
@@ -53,7 +53,7 @@ class ApiService {
     const formData = new FormData();
     formData.append('file', file);
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('access_token');
     const headers: HeadersInit = {};
     if (token) {
       headers.Authorization = `Bearer ${token}`;
@@ -77,7 +77,7 @@ class ApiService {
   }
 
   async saveCompanyInfo(data: any) {
-    return this.post('/api/company', data);
+    return this.put('/api/company/profile', data);
   }
 
   async getProducts() {
@@ -198,6 +198,22 @@ class ApiService {
 
   async getProjections() {
     return this.get('/api/analytics/projections');
+  }
+
+  async getImportHistory() {
+    return this.get('/api/imports/history');
+  }
+
+  async downloadErrorReport(importId: number) {
+    return this.get(`/api/imports/${importId}/error-report`);
+  }
+
+  async calculateMaterialProperties(materialData: {
+    materialType: string;
+    category: string;
+    pcrContent: number;
+  }) {
+    return this.post('/api/materials/calculate-properties', materialData);
   }
 }
 

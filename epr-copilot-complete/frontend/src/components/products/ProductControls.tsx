@@ -30,13 +30,13 @@ export function ProductControls({
   return (
     <div className="flex items-center justify-between mb-6">
       <div className="flex flex-col sm:flex-row gap-4 flex-1">
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
             placeholder="Search products by name or SKU..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 w-full"
           />
         </div>
         

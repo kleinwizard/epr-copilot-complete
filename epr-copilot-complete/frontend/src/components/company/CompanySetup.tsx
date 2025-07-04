@@ -69,6 +69,10 @@ interface CompanyInfo {
 export function CompanySetup() {
   const [verificationStatus, setVerificationStatus] = useState('pending');
   const [isLoading, setIsLoading] = useState(false);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [oregonBusinessStatus, setOregonBusinessStatus] = useState('Incomplete');
+  const [deqRegistrationStatus, setDeqRegistrationStatus] = useState('Incomplete');
+  const [eprEligibilityStatus, setEprEligibilityStatus] = useState('Incomplete');
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
     legalName: '',
     dbaName: '',
@@ -115,6 +119,42 @@ export function CompanySetup() {
     loadCompanyData();
   }, []);
 
+  useEffect(() => {
+    calculateVerificationStatuses();
+  }, [companyInfo, documents, complianceProfiles]);
+
+  const calculateVerificationStatuses = () => {
+    const hasBusinessId = companyInfo.businessId && companyInfo.businessId.trim() !== '';
+    const hasBusinessDoc = documents.some(doc => 
+      doc.type === 'business_registration' || 
+      doc.name?.toLowerCase().includes('business') ||
+      doc.name?.toLowerCase().includes('registration') ||
+      doc.name?.toLowerCase().includes('incorporation')
+    );
+    setOregonBusinessStatus(hasBusinessId && hasBusinessDoc ? 'Complete' : 'Incomplete');
+
+    const hasDeqNumber = companyInfo.deqNumber && companyInfo.deqNumber.trim() !== '';
+    const hasJurisdictionalDoc = documents.some(doc => 
+      doc.type === 'jurisdictional_confirmation' ||
+      doc.name?.toLowerCase().includes('deq') ||
+      doc.name?.toLowerCase().includes('jurisdictional')
+    );
+    setDeqRegistrationStatus(hasDeqNumber && hasJurisdictionalDoc ? 'Complete' : 'Incomplete');
+
+    const hasRevenueDoc = documents.some(doc => 
+      doc.type === 'revenue_attestation' ||
+      doc.name?.toLowerCase().includes('revenue') ||
+      doc.name?.toLowerCase().includes('attestation')
+    );
+    const hasComplianceProfiles = complianceProfiles.length > 0;
+    setEprEligibilityStatus(hasRevenueDoc && hasComplianceProfiles ? 'Complete' : 'Incomplete');
+
+    const allComplete = oregonBusinessStatus === 'Complete' && 
+                       deqRegistrationStatus === 'Complete' && 
+                       eprEligibilityStatus === 'Complete';
+    setVerificationStatus(allComplete ? 'verified' : 'pending');
+  };
+
   const loadCompanyData = async () => {
     try {
       const [companyData, profiles, entities, docs] = await Promise.all([
@@ -125,13 +165,26 @@ export function CompanySetup() {
       ]);
       
       if (companyData) {
-        setCompanyInfo(companyData);
+        setCompanyInfo(prev => ({
+          ...prev,
+          ...companyData,
+          primaryContact: {
+            ...prev.primaryContact,
+            ...(companyData.primaryContact || {})
+          },
+          complianceOfficer: {
+            ...prev.complianceOfficer,
+            ...(companyData.complianceOfficer || {})
+          }
+        }));
       }
       setComplianceProfiles(profiles || []);
       setBusinessEntities(entities || []);
       setDocuments(docs || []);
+      setIsDataLoaded(true);
     } catch (error) {
       console.error('Failed to load company data:', error);
+      setIsDataLoaded(true);
     }
   };
 
@@ -271,6 +324,24 @@ export function CompanySetup() {
         : [...prev.roles, role]
     }));
   };
+
+  if (!isDataLoaded) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Company Setup</h1>
+            <p className="text-muted-foreground">
+              Loading company information...
+            </p>
+          </div>
+        </div>
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
@@ -302,27 +373,75 @@ export function CompanySetup() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-green-600" />
+            <div className={`flex items-center space-x-3 p-3 rounded-lg ${
+              oregonBusinessStatus === 'Complete' 
+                ? 'bg-green-50' 
+                : 'bg-gray-50'
+            }`}>
+              {oregonBusinessStatus === 'Complete' ? (
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              ) : (
+                <AlertCircle className="w-5 h-5 text-gray-600" />
+              )}
               <div>
-                <p className="font-medium text-green-900">Oregon Business Registry</p>
-                <p className="text-sm text-green-700">Verified</p>
+                <p className={`font-medium ${
+                  oregonBusinessStatus === 'Complete' 
+                    ? 'text-green-900' 
+                    : 'text-gray-900'
+                }`}>Oregon Business Registry</p>
+                <p className={`text-sm ${
+                  oregonBusinessStatus === 'Complete' 
+                    ? 'text-green-700' 
+                    : 'text-gray-700'
+                }`}>{oregonBusinessStatus}</p>
               </div>
             </div>
             
-            <div className="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg">
-              <AlertCircle className="w-5 h-5 text-yellow-600" />
+            <div className={`flex items-center space-x-3 p-3 rounded-lg ${
+              deqRegistrationStatus === 'Complete' 
+                ? 'bg-green-50' 
+                : 'bg-gray-50'
+            }`}>
+              {deqRegistrationStatus === 'Complete' ? (
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              ) : (
+                <AlertCircle className="w-5 h-5 text-gray-600" />
+              )}
               <div>
-                <p className="font-medium text-yellow-900">DEQ Registration</p>
-                <p className="text-sm text-yellow-700">Pending</p>
+                <p className={`font-medium ${
+                  deqRegistrationStatus === 'Complete' 
+                    ? 'text-green-900' 
+                    : 'text-gray-900'
+                }`}>DEQ Registration</p>
+                <p className={`text-sm ${
+                  deqRegistrationStatus === 'Complete' 
+                    ? 'text-green-700' 
+                    : 'text-gray-700'
+                }`}>{deqRegistrationStatus}</p>
               </div>
             </div>
             
-            <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-              <FileText className="w-5 h-5 text-blue-600" />
+            <div className={`flex items-center space-x-3 p-3 rounded-lg ${
+              eprEligibilityStatus === 'Complete' 
+                ? 'bg-green-50' 
+                : 'bg-gray-50'
+            }`}>
+              {eprEligibilityStatus === 'Complete' ? (
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              ) : (
+                <AlertCircle className="w-5 h-5 text-gray-600" />
+              )}
               <div>
-                <p className="font-medium text-blue-900">EPR Eligibility</p>
-                <p className="text-sm text-blue-700">Qualified</p>
+                <p className={`font-medium ${
+                  eprEligibilityStatus === 'Complete' 
+                    ? 'text-green-900' 
+                    : 'text-gray-900'
+                }`}>EPR Eligibility</p>
+                <p className={`text-sm ${
+                  eprEligibilityStatus === 'Complete' 
+                    ? 'text-green-700' 
+                    : 'text-gray-700'
+                }`}>{eprEligibilityStatus}</p>
               </div>
             </div>
           </div>
@@ -826,24 +945,57 @@ export function CompanySetup() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {documents.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No documents uploaded yet. Upload your required documents below.
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {documents.map((doc) => (
-                      <div key={doc.id} className="p-4 border rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium">{doc.name}</h4>
-                          <CheckCircle className="w-5 h-5 text-green-600" />
-                        </div>
-                        <p className="text-sm text-muted-foreground">Uploaded: {doc.filename}</p>
+              <div className="space-y-6">
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="font-semibold text-blue-900 mb-3">Required Documents for Verification:</h4>
+                  <p className="text-sm text-blue-800 mb-3">To achieve "Complete" verification status, please upload the following:</p>
+                  <ul className="space-y-2 text-sm text-blue-800">
+                    <li className="flex items-start space-x-2">
+                      <span className="font-medium">•</span>
+                      <div>
+                        <span className="font-medium">Business Registration Document:</span> A state-issued document such as your Articles of Incorporation or Business License.
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <span className="font-medium">•</span>
+                      <div>
+                        <span className="font-medium">Federal Tax ID Number (EIN):</span> A document confirming your company's EIN.
+                      </div>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <span className="font-medium">•</span>
+                      <div>
+                        <span className="font-medium">Jurisdictional Account Confirmation:</span> A screenshot or confirmation number from the relevant state agency portal (e.g., Oregon DEQ, CalRecycle).
+                      </div>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <span className="font-medium">•</span>
+                      <div>
+                        <span className="font-medium">Annual Revenue Attestation:</span> A signed document attesting that your company's gross annual revenue meets the threshold for EPR eligibility in the relevant jurisdictions.
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="space-y-4">
+                  {documents.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No documents uploaded yet. Upload your required documents below.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {documents.map((doc) => (
+                        <div key={doc.id} className="p-4 border rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-medium">{doc.name}</h4>
+                            <CheckCircle className="w-5 h-5 text-green-600" />
+                          </div>
+                          <p className="text-sm text-muted-foreground">Uploaded: {doc.filename}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-4 border-2 border-dashed rounded-lg">
