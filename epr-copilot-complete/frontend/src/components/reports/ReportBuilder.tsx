@@ -1,11 +1,13 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ArrowLeft, Eye } from 'lucide-react';
 import { ReportBuilderConfiguration } from './components/ReportBuilderConfiguration';
 import { ComponentLibrary } from './components/ComponentLibrary';
 import { DataFilters } from './components/DataFilters';
 import { ReportPreviewCanvas } from './components/ReportPreviewCanvas';
+import { useToast } from '@/hooks/use-toast';
 
 interface ReportBuilderProps {
   onBack: () => void;
@@ -24,6 +26,8 @@ export function ReportBuilder({ onBack, onSaveReport }: ReportBuilderProps) {
       regions: [] as string[]
     }
   });
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const { toast } = useToast();
 
   const addSection = (component: any) => {
     const newSection = {
@@ -49,13 +53,36 @@ export function ReportBuilder({ onBack, onSaveReport }: ReportBuilderProps) {
   };
 
   const handleSave = () => {
-    if (!reportConfig.name) return;
+    if (!reportConfig.name) {
+      toast({
+        title: "Report Name Required",
+        description: "Please enter a name for your report template.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     onSaveReport(reportConfig);
+    toast({
+      title: "Report Template Saved",
+      description: `"${reportConfig.name}" has been saved successfully.`,
+    });
+  };
+
+  const handlePreview = () => {
+    if (reportConfig.sections.length === 0) {
+      toast({
+        title: "No Sections Added",
+        description: "Add some components to your report before previewing.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsPreviewOpen(true);
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-tutorial="report-builder">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Button variant="ghost" onClick={onBack}>
@@ -69,7 +96,30 @@ export function ReportBuilder({ onBack, onSaveReport }: ReportBuilderProps) {
         </div>
 
         <div className="flex space-x-2">
-          <Button variant="outline">Preview</Button>
+          <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" onClick={handlePreview}>
+                <Eye className="h-4 w-4 mr-2" />
+                Preview
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Report Preview</DialogTitle>
+                <DialogDescription>
+                  Preview of "{reportConfig.name || 'Untitled Report'}" with current configuration
+                </DialogDescription>
+              </DialogHeader>
+              <div className="mt-4">
+                <ReportPreviewCanvas 
+                  sections={reportConfig.sections} 
+                  onRemoveSection={removeSection}
+                  reportConfig={reportConfig}
+                  isPreviewMode={true}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
           <Button onClick={handleSave} disabled={!reportConfig.name}>
             Save Report Template
           </Button>

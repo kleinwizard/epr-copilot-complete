@@ -42,6 +42,16 @@ class User(UserBase):
 class ProductBase(BaseModel):
     name: str
     sku: Optional[str] = None
+    category: Optional[str] = None
+    weight: Optional[float] = 0.0
+    status: Optional[str] = "Active"
+    description: Optional[str] = None
+    upc: Optional[str] = None
+    manufacturer: Optional[str] = None
+    epr_fee: Optional[float] = 0.0
+    designated_producer_id: Optional[str] = None
+    materials: Optional[List[dict]] = []
+    last_updated: Optional[str] = None
 
 
 class ProductCreate(ProductBase):
@@ -101,3 +111,21 @@ class FileUpload(BaseModel):
     url: str
     uploadedAt: str
     content_type: Optional[str] = None
+
+
+class SavedSearchBase(BaseModel):
+    name: str
+    criteria: dict
+
+
+class SavedSearchCreate(SavedSearchBase):
+    pass
+
+
+class SavedSearch(SavedSearchBase):
+    id: str
+    organization_id: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

@@ -62,7 +62,14 @@ class DataService {
 
   async getProducts(): Promise<Product[]> {
     try {
-      return await apiService.getProducts();
+      const products = await apiService.getProducts();
+      return (products || []).map(product => {
+        if (product.designated_producer_id !== undefined) {
+          product.designatedProducerId = product.designated_producer_id;
+          delete product.designated_producer_id;
+        }
+        return product;
+      });
     } catch (error) {
       console.error('Failed to get products:', error);
       return [];
@@ -70,11 +77,21 @@ class DataService {
   }
 
   async saveProduct(productData: Partial<Product>): Promise<Product> {
-    return await apiService.saveProduct(productData);
+    const response = await apiService.saveProduct(productData);
+    if (response.designated_producer_id !== undefined) {
+      response.designatedProducerId = response.designated_producer_id;
+      delete response.designated_producer_id;
+    }
+    return response;
   }
 
   async updateProduct(id: number, productData: Partial<Product>): Promise<Product> {
-    return await apiService.updateProduct(id, productData);
+    const response = await apiService.updateProduct(id, productData);
+    if (response.designated_producer_id !== undefined) {
+      response.designatedProducerId = response.designated_producer_id;
+      delete response.designated_producer_id;
+    }
+    return response;
   }
 
   async getMaterials(): Promise<Material[]> {
@@ -126,6 +143,35 @@ class DataService {
       };
     } catch (error) {
       console.error('Failed to upload document:', error);
+      throw error;
+    }
+  }
+
+  async getSavedSearches(): Promise<any[]> {
+    try {
+      const searches = await apiService.get('/api/saved-searches');
+      return searches || [];
+    } catch (error) {
+      console.error('Failed to get saved searches:', error);
+      return [];
+    }
+  }
+
+  async saveSearch(searchData: { name: string; criteria: any }): Promise<any> {
+    try {
+      const savedSearch = await apiService.post('/api/saved-searches', searchData);
+      return savedSearch;
+    } catch (error) {
+      console.error('Failed to save search:', error);
+      throw error;
+    }
+  }
+
+  async deleteSavedSearch(searchId: string): Promise<void> {
+    try {
+      await apiService.delete(`/api/saved-searches/${searchId}`);
+    } catch (error) {
+      console.error('Failed to delete saved search:', error);
       throw error;
     }
   }

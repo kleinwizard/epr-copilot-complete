@@ -1,6 +1,7 @@
 
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { APP_CONFIG } from '../../config/constants';
+import { tutorialService } from '../../services/tutorialService';
 
 interface User {
   id: string;
@@ -41,6 +42,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(user);
         localStorage.setItem('user', JSON.stringify(user));
         localStorage.setItem('access_token', 'dev-token-' + Date.now());
+        
+        setTimeout(() => {
+          tutorialService.checkAndStartTutorial();
+        }, 1500);
+        
         return;
       }
 
@@ -81,6 +87,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       setUser(user);
       localStorage.setItem('user', JSON.stringify(user));
+      
+      setTimeout(() => {
+        tutorialService.checkAndStartTutorial();
+      }, 1500);
     } catch (error) {
       throw new Error('Login failed');
     } finally {
@@ -104,6 +114,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(user);
         localStorage.setItem('user', JSON.stringify(user));
         localStorage.setItem('access_token', 'dev-token-' + Date.now());
+        
+        setTimeout(() => {
+          tutorialService.checkAndStartTutorial();
+        }, 1500);
+        
         return;
       }
 
@@ -148,6 +163,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       setUser(user);
       localStorage.setItem('user', JSON.stringify(user));
+      
+      setTimeout(() => {
+        tutorialService.checkAndStartTutorial();
+      }, 1500);
     } catch (error) {
       throw new Error('Registration failed');
     } finally {

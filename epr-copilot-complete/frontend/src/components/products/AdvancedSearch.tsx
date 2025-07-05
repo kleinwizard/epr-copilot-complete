@@ -1,12 +1,15 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Search, X, Save, History } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Search, X, Save, History, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { dataService } from '@/services/dataService';
 
 interface SearchCriteria {
   query: string;
@@ -46,20 +49,24 @@ export function AdvancedSearch({ onSearch, onClear }: AdvancedSearchProps) {
     lastUpdatedDays: 365
   });
   
-  const [savedSearches] = useState<SavedSearch[]>([
-    {
-      id: '1',
-      name: 'High Fee Products',
-      criteria: { ...criteria, feeMin: 1 },
-      createdAt: '2024-01-15'
-    },
-    {
-      id: '2',
-      name: 'Pending Review Items',
-      criteria: { ...criteria, status: 'Pending Review' },
-      createdAt: '2024-01-10'
+  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+  const [searchName, setSearchName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadSavedSearches();
+  }, []);
+
+  const loadSavedSearches = async () => {
+    try {
+      const searches = await dataService.getSavedSearches();
+      setSavedSearches(searches || []);
+    } catch (error) {
+      console.error('Failed to load saved searches:', error);
     }
-  ]);
+  };
 
   const handleSearch = () => {
     onSearch(criteria);
@@ -84,6 +91,66 @@ export function AdvancedSearch({ onSearch, onClear }: AdvancedSearchProps) {
   const loadSavedSearch = (search: SavedSearch) => {
     setCriteria(search.criteria);
     onSearch(search.criteria);
+    toast({
+      title: "Search Loaded",
+      description: `Applied saved search: ${search.name}`,
+    });
+  };
+
+  const handleSaveSearch = async () => {
+    if (!searchName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a name for your saved search.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const savedSearch = await dataService.saveSearch({
+        name: searchName.trim(),
+        criteria: criteria
+      });
+      
+      setSavedSearches([...savedSearches, savedSearch]);
+      setIsSaveDialogOpen(false);
+      setSearchName('');
+      
+      toast({
+        title: "Search Saved",
+        description: `Search "${searchName}" has been saved successfully.`,
+      });
+    } catch (error) {
+      console.error('Failed to save search:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save search. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteSearch = async (searchId: string) => {
+    try {
+      await dataService.deleteSavedSearch(searchId);
+      setSavedSearches(savedSearches.filter(s => s.id !== searchId));
+      
+      toast({
+        title: "Search Deleted",
+        description: "Saved search has been deleted successfully.",
+      });
+    } catch (error) {
+      console.error('Failed to delete search:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete search. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (!isOpen) {
@@ -177,26 +244,75 @@ export function AdvancedSearch({ onSearch, onClear }: AdvancedSearchProps) {
             <span>Saved Searches</span>
           </Label>
           <div className="flex flex-wrap gap-2">
-            {savedSearches.map((search) => (
-              <Badge 
-                key={search.id}
-                variant="outline" 
-                className="cursor-pointer hover:bg-blue-50"
-                onClick={() => loadSavedSearch(search)}
-              >
-                {search.name}
-              </Badge>
-            ))}
+            {savedSearches.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No saved searches yet. Save your first search below.</p>
+            ) : (
+              savedSearches.map((search) => (
+                <div key={search.id} className="flex items-center gap-1">
+                  <Badge 
+                    variant="outline" 
+                    className="cursor-pointer hover:bg-blue-50"
+                    onClick={() => loadSavedSearch(search)}
+                  >
+                    {search.name}
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 hover:bg-red-50"
+                    onClick={() => handleDeleteSearch(search.id)}
+                  >
+                    <Trash2 className="h-3 w-3 text-red-500" />
+                  </Button>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
         {/* Actions */}
         <div className="flex justify-between items-center pt-4 border-t">
           <div className="flex space-x-2">
-            <Button variant="outline" size="sm">
-              <Save className="h-4 w-4 mr-2" />
-              Save Search
-            </Button>
+            <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Search
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Save Search</DialogTitle>
+                  <DialogDescription>
+                    Give your search a name so you can easily find and reuse it later.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="search-name">Search Name</Label>
+                    <Input
+                      id="search-name"
+                      placeholder="e.g., High Fee Products, Pending Review Items"
+                      value={searchName}
+                      onChange={(e) => setSearchName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleSaveSearch();
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsSaveDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSaveSearch} disabled={isLoading}>
+                    {isLoading ? 'Saving...' : 'Save Search'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
           <div className="flex space-x-2">
             <Button variant="outline" onClick={handleClear}>
