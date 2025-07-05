@@ -61,6 +61,16 @@ class Product(Base):
     organization_id = Column(String, ForeignKey("organizations.id"))
     name = Column(String(255), nullable=False)
     sku = Column(String(100))
+    category = Column(String(100))
+    weight = Column(Numeric(10, 3), default=0.0)
+    status = Column(String(50), default="Active")
+    description = Column(Text)
+    upc = Column(String(50))
+    manufacturer = Column(String(255))
+    epr_fee = Column(Numeric(10, 4), default=0.0)
+    designated_producer_id = Column(String(100))
+    materials = Column(JSON)
+    last_updated = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     sales_volume = Column(Numeric(15, 2), default=0.0)  # Sales volume for growth rate calculations
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
@@ -251,6 +261,32 @@ class CommodityValue(Base):
 
     jurisdiction = relationship("Jurisdiction")
     material_category = relationship("MaterialCategory")
+
+
+class SavedSearch(Base):
+    __tablename__ = "saved_searches"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    organization_id = Column(String, ForeignKey("organizations.id"))
+    name = Column(String(255), nullable=False)
+    criteria = Column(JSON, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    organization = relationship("Organization")
+
+
+class FeeOptimizationGoal(Base):
+    __tablename__ = "fee_optimization_goals"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    organization_id = Column(String, ForeignKey("organizations.id"))
+    goal_type = Column(String(20), nullable=False)  # 'percentage' or 'amount'
+    target_value = Column(Numeric(15, 4), nullable=False)  # Target percentage or dollar amount
+    description = Column(String(500))  # Human-readable description of the goal
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    organization = relationship("Organization")
 
 
 def create_tables():

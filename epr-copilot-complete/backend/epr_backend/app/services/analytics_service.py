@@ -1046,3 +1046,323 @@ class AnalyticsService:
             return "6 months"  # Sustainable materials may take longer to source
         else:
             return "3 months"
+    
+    def _calculate_compliance_risk_analysis(self, organization_id: str) -> Dict[str, Any]:
+        """Calculate comprehensive compliance risk analysis."""
+        try:
+            risk_factors = []
+            risk_score = 0
+            
+            products = self.db.query(Product).filter(
+                Product.organization_id == organization_id
+            ).all()
+            
+            if not products:
+                return {
+                    "risk_score": 0,
+                    "risk_level": "Unknown",
+                    "risk_factors": [],
+                    "recommendations": []
+                }
+            
+            problematic_materials_weight = 0
+            total_weight = 0
+            
+            for product in products:
+                for component in product.packaging_components:
+                    component_weight = float(component.weight_per_unit or 0)
+                    total_weight += component_weight
+                    
+                    # Check if material is problematic (high fee rate or low recyclability)
+                    if component.material_category:
+                        fee_rate = self._get_material_fee_rate(component.material_category_id)
+                        recyclability = component.material_category.recyclability_percentage or 0
+                        
+                        # Consider high fee rate (>0.005) or low recyclability (<50%) as problematic
+                        if fee_rate > 0.005 or recyclability < 50:
+                            problematic_materials_weight += component_weight
+                            risk_factors.append({
+                                "type": "Problematic Material",
+                                "description": f"{product.name} uses {component.material_category.name} with high EPR fees or low recyclability",
+                                "impact": "Medium" if fee_rate > 0.005 else "Low",
+                                "weight": component_weight
+                            })
+            
+            # Calculate problematic materials penalty (0-40 points)
+            if total_weight > 0:
+                problematic_ratio = problematic_materials_weight / total_weight
+                problematic_penalty = min(40, problematic_ratio * 100)
+                risk_score += problematic_penalty
+            
+            unregistered_products = len([p for p in products if not p.sku or len(p.sku) < 3])  # Simple heuristic
+            jurisdiction_penalty = min(30, unregistered_products * 5)
+            risk_score += jurisdiction_penalty
+            
+            if unregistered_products > 0:
+                risk_factors.append({
+                    "type": "Registration Gap",
+                    "description": f"{unregistered_products} products may have incomplete registration information",
+                    "impact": "High" if unregistered_products > 5 else "Medium",
+                    "count": unregistered_products
+                })
+            
+            from datetime import datetime
+            current_month = datetime.now().month
+            months_to_quarter_end = 3 - (current_month % 3) if current_month % 3 != 0 else 0
+            deadline_penalty = max(0, 20 - (months_to_quarter_end * 5))
+            risk_score += deadline_penalty
+            
+            if deadline_penalty > 10:
+                risk_factors.append({
+                    "type": "Deadline Proximity",
+                    "description": f"Quarterly compliance deadline approaching in {months_to_quarter_end} months",
+                    "impact": "High" if deadline_penalty > 15 else "Medium",
+                    "months_remaining": months_to_quarter_end
+                })
+            
+            incomplete_products = len([p for p in products if not p.materials or len(p.materials) == 0])
+            data_penalty = min(10, incomplete_products * 2)
+            risk_score += data_penalty
+            
+            if incomplete_products > 0:
+                risk_factors.append({
+                    "type": "Data Completeness",
+                    "description": f"{incomplete_products} products have incomplete material data",
+                    "impact": "Low",
+                    "count": incomplete_products
+                })
+            
+            if risk_score >= 70:
+                risk_level = "High"
+            elif risk_score >= 40:
+                risk_level = "Medium"
+            elif risk_score >= 20:
+                risk_level = "Low"
+            else:
+                risk_level = "Very Low"
+            
+            recommendations = []
+            if problematic_penalty > 20:
+                recommendations.append("Consider switching to more sustainable packaging materials with lower EPR fees")
+            if jurisdiction_penalty > 15:
+                recommendations.append("Complete product registration in all target jurisdictions")
+            if deadline_penalty > 10:
+                recommendations.append("Prioritize compliance reporting to meet upcoming deadlines")
+            if data_penalty > 5:
+                recommendations.append("Complete material composition data for all products")
+            
+            if not recommendations:
+                recommendations.append("Maintain current compliance practices and monitor for changes")
+            
+            return {
+                "risk_score": round(risk_score, 1),
+                "risk_level": risk_level,
+                "risk_factors": risk_factors,
+                "recommendations": recommendations
+            }
+            
+        except Exception as e:
+            print(f"Error calculating compliance risk analysis: {str(e)}")
+            return {
+                "risk_score": 0,
+                "risk_level": "Unknown",
+                "risk_factors": [],
+                "recommendations": ["Unable to calculate risk analysis. Please ensure product data is complete."]
+            }
+    
+    def _calculate_growth_strategy_analysis(self, organization_id: str, target_jurisdiction: str) -> Dict[str, Any]:
+        """Calculate growth strategy analysis with market expansion costing."""
+        try:
+            products = self.db.query(Product).filter(
+                Product.organization_id == organization_id
+            ).all()
+            
+            if not products:
+                return {
+                    "expansion_cost": 0,
+                    "scenarios": [],
+                    "recommendations": []
+                }
+            
+            # Calculate current EPR fees
+            current_annual_fees = 0
+            for product in products:
+                product_fee = self._calculate_product_total_fee(product)
+                current_annual_fees += float(product_fee * 4)  # Quarterly to annual
+            
+            expansion_multiplier = {
+                "CA": 1.2,  # California - 20% higher fees
+                "OR": 1.0,  # Oregon - baseline
+                "WA": 1.1,  # Washington - 10% higher fees
+                "NY": 1.3,  # New York - 30% higher fees
+                "EU": 1.5,  # European Union - 50% higher fees
+            }.get(target_jurisdiction, 1.15)  # Default 15% increase
+            
+            expansion_cost = current_annual_fees * expansion_multiplier
+            
+            scenarios = [
+                {
+                    "name": "Conservative Growth",
+                    "description": f"Expand to {target_jurisdiction} with current product portfolio",
+                    "annual_cost": expansion_cost,
+                    "timeline": "6-12 months",
+                    "risk_level": "Low",
+                    "potential_revenue_increase": "15-25%"
+                },
+                {
+                    "name": "Optimized Expansion",
+                    "description": f"Expand to {target_jurisdiction} with sustainable packaging optimization",
+                    "annual_cost": expansion_cost * 0.85,  # 15% savings through optimization
+                    "timeline": "9-15 months",
+                    "risk_level": "Medium",
+                    "potential_revenue_increase": "20-35%"
+                },
+                {
+                    "name": "Aggressive Growth",
+                    "description": f"Rapid expansion to {target_jurisdiction} with full product line",
+                    "annual_cost": expansion_cost * 1.2,  # 20% higher due to rapid scaling
+                    "timeline": "3-6 months",
+                    "risk_level": "High",
+                    "potential_revenue_increase": "30-50%"
+                }
+            ]
+            
+            recommendations = []
+            
+            if expansion_cost > current_annual_fees * 1.3:
+                recommendations.append(f"Consider packaging optimization before expanding to {target_jurisdiction} to reduce EPR costs")
+            
+            recommendations.extend([
+                f"Research {target_jurisdiction}-specific EPR regulations and compliance requirements",
+                "Evaluate local packaging suppliers to reduce transportation costs and environmental impact",
+                "Consider phased expansion starting with best-performing products",
+                "Implement EPR cost tracking for accurate ROI measurement"
+            ])
+            
+            return {
+                "expansion_cost": round(expansion_cost, 2),
+                "scenarios": scenarios,
+                "recommendations": recommendations,
+                "current_annual_fees": round(current_annual_fees, 2),
+                "cost_increase_percentage": round(((expansion_cost - current_annual_fees) / current_annual_fees * 100), 1) if current_annual_fees > 0 else 0
+            }
+            
+        except Exception as e:
+            print(f"Error calculating growth strategy analysis: {str(e)}")
+            return {
+                "expansion_cost": 0,
+                "scenarios": [],
+                "recommendations": ["Unable to calculate growth strategy. Please ensure product data is complete."]
+            }
+    
+    def _get_fee_optimization_goal(self, organization_id: str) -> Dict[str, Any]:
+        """Get the current fee optimization goal for an organization."""
+        try:
+            from ..database import FeeOptimizationGoal
+            
+            goal = self.db.query(FeeOptimizationGoal).filter(
+                FeeOptimizationGoal.organization_id == organization_id
+            ).first()
+            
+            if not goal:
+                return None
+            
+            # Calculate current progress value
+            current_value = 0
+            if goal.goal_type == 'percentage':
+                current_value = self._calculate_current_savings_percentage(organization_id)
+            else:
+                current_value = self._calculate_current_annual_fees(organization_id)
+            
+            return {
+                "type": goal.goal_type,
+                "target": float(goal.target_value),
+                "value": current_value,
+                "description": goal.description,
+                "created_at": goal.created_at.isoformat() if goal.created_at else None,
+                "updated_at": goal.updated_at.isoformat() if goal.updated_at else None
+            }
+            
+        except Exception as e:
+            print(f"Error getting fee optimization goal: {str(e)}")
+            return None
+    
+    def _set_fee_optimization_goal(self, organization_id: str, goal_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Set or update the fee optimization goal for an organization."""
+        try:
+            from ..database import FeeOptimizationGoal
+            from datetime import datetime
+            
+            # Check if goal already exists
+            existing_goal = self.db.query(FeeOptimizationGoal).filter(
+                FeeOptimizationGoal.organization_id == organization_id
+            ).first()
+            
+            if existing_goal:
+                existing_goal.goal_type = goal_data['type']
+                existing_goal.target_value = goal_data['target']
+                existing_goal.description = goal_data['description']
+                existing_goal.updated_at = datetime.utcnow()
+                goal = existing_goal
+            else:
+                goal = FeeOptimizationGoal(
+                    organization_id=organization_id,
+                    goal_type=goal_data['type'],
+                    target_value=goal_data['target'],
+                    description=goal_data['description'],
+                    created_at=datetime.utcnow(),
+                    updated_at=datetime.utcnow()
+                )
+                self.db.add(goal)
+            
+            self.db.commit()
+            
+            # Calculate current progress value
+            current_value = 0
+            if goal.goal_type == 'percentage':
+                current_value = self._calculate_current_savings_percentage(organization_id)
+            else:
+                current_value = self._calculate_current_annual_fees(organization_id)
+            
+            return {
+                "goal": {
+                    "type": goal.goal_type,
+                    "target": float(goal.target_value),
+                    "value": current_value,
+                    "description": goal.description,
+                    "created_at": goal.created_at.isoformat() if goal.created_at else None,
+                    "updated_at": goal.updated_at.isoformat() if goal.updated_at else None
+                },
+                "current_value": current_value
+            }
+            
+        except Exception as e:
+            print(f"Error setting fee optimization goal: {str(e)}")
+            self.db.rollback()
+            raise e
+    
+    def _calculate_current_savings_percentage(self, organization_id: str) -> float:
+        """Calculate current savings as a percentage of total fees."""
+        try:
+            overview_metrics = self._calculate_overview_metrics(organization_id)
+            total_fees = overview_metrics.get('total_epr_fees', 0)
+            cost_savings = overview_metrics.get('cost_savings', 0)
+            
+            if total_fees > 0:
+                return (cost_savings / total_fees) * 100
+            return 0
+            
+        except Exception as e:
+            print(f"Error calculating current savings percentage: {str(e)}")
+            return 0
+    
+    def _calculate_current_annual_fees(self, organization_id: str) -> float:
+        """Calculate current annual fees."""
+        try:
+            overview_metrics = self._calculate_overview_metrics(organization_id)
+            quarterly_fees = overview_metrics.get('total_epr_fees', 0)
+            return quarterly_fees * 4  # Convert quarterly to annual
+            
+        except Exception as e:
+            print(f"Error calculating current annual fees: {str(e)}")
+            return 0

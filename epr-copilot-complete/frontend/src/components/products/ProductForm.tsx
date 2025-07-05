@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { 
   ArrowLeft, 
   Plus, 
@@ -15,7 +16,8 @@ import {
   Package, 
   Recycle,
   AlertTriangle,
-  Calculator
+  Calculator,
+  Info
 } from 'lucide-react';
 import { PackagingMaterials } from './PackagingMaterials';
 
@@ -71,6 +73,12 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [designatedProducers, setDesignatedProducers] = useState([
+    { id: 'default', name: 'Use Default (Brand Owner)' },
+    { id: 'org1', name: 'Alternative Producer 1' },
+    { id: 'org2', name: 'Alternative Producer 2' },
+    { id: 'org3', name: 'Alternative Producer 3' }
+  ]);
 
   const categories = [
     "Food & Beverage",
@@ -242,17 +250,35 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                   </div>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="designatedProducer">Designated Producer (California Override)</Label>
+                <div className="space-y-2" data-tutorial="designated-producer">
+                  <div className="flex items-center space-x-2">
+                    <Label htmlFor="designatedProducer">Designated Producer</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-4 w-4 p-0">
+                          <Info className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80">
+                        <div className="space-y-2">
+                          <h4 className="font-medium">Designated Producer</h4>
+                          <p className="text-sm text-muted-foreground">
+                            A 'Designated Producer' is the legal entity responsible for reporting and paying EPR fees for a specific product in a given jurisdiction. This is typically the brand owner. For imported goods, it may be the first importer. Assigning a producer is crucial for accurate reporting, especially if your account manages multiple business entities.
+                          </p>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                   <Select value={formData.designatedProducerId || 'default'} onValueChange={(value) => setFormData(prev => ({ ...prev, designatedProducerId: value === 'default' ? undefined : value }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Use Default (Brand Owner)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="default">Use Default (Brand Owner)</SelectItem>
-                      <SelectItem value="org1">Alternative Producer 1</SelectItem>
-                      <SelectItem value="org2">Alternative Producer 2</SelectItem>
-                      <SelectItem value="org3">Alternative Producer 3</SelectItem>
+                      {designatedProducers.map(producer => (
+                        <SelectItem key={producer.id} value={producer.id}>
+                          {producer.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <p className="text-sm text-muted-foreground">

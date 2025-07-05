@@ -29,8 +29,13 @@ async def create_product(
     db: Session = Depends(get_db)
 ):
     """Create a new product."""
+    product_data = product.dict()
+    
+    if 'designatedProducerId' in product_data:
+        product_data['designated_producer_id'] = product_data.pop('designatedProducerId')
+    
     db_product = Product(
-        **product.dict(),
+        **product_data,
         organization_id=current_user.organization_id
     )
     db.add(db_product)
@@ -70,8 +75,14 @@ async def update_product(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    for field, value in product_update.dict().items():
-        setattr(product, field, value)
+    product_data = product_update.dict()
+    
+    if 'designatedProducerId' in product_data:
+        product_data['designated_producer_id'] = product_data.pop('designatedProducerId')
+
+    for field, value in product_data.items():
+        if hasattr(product, field):
+            setattr(product, field, value)
 
     db.commit()
     db.refresh(product)

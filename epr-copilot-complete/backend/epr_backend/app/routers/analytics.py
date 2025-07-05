@@ -354,3 +354,190 @@ async def get_charts_data(
             status_code=500,
             detail=f"Failed to retrieve charts data: {str(e)}"
         )
+
+
+@router.get("/optimization-plan")
+async def get_optimization_plan(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Get detailed optimization plan with actionable opportunities.
+    
+    Returns ranked list of cost optimization opportunities based on material substitution analysis.
+    """
+    try:
+        analytics_service = AnalyticsService(db)
+        
+        has_sufficient_data = analytics_service._has_sufficient_historical_data(current_user.organization_id)
+        
+        if not has_sufficient_data:
+            return {
+                "success": True,
+                "opportunities": [],
+                "status": "insufficient_data",
+                "message": "More data required. This analysis will be available after 3 months of data is collected.",
+                "total_potential_savings": 0
+            }
+        
+        opportunities = analytics_service._calculate_optimization_opportunities(current_user.organization_id)
+        total_savings = sum(opp.get('potentialSaving', 0) for opp in opportunities)
+        
+        return {
+            "success": True,
+            "opportunities": opportunities,
+            "status": "success",
+            "total_potential_savings": total_savings,
+            "message": f"Found {len(opportunities)} optimization opportunities with potential annual savings of ${total_savings:,.2f}"
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate optimization plan: {str(e)}"
+        )
+
+
+@router.get("/risk-analysis")
+async def get_risk_analysis(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Get compliance risk analysis report.
+    
+    Calculates compliance risk score based on material composition and regulatory factors.
+    """
+    try:
+        analytics_service = AnalyticsService(db)
+        
+        has_sufficient_data = analytics_service._has_sufficient_historical_data(current_user.organization_id)
+        
+        if not has_sufficient_data:
+            return {
+                "success": True,
+                "risk_score": 0,
+                "risk_level": "Unknown",
+                "status": "insufficient_data",
+                "message": "More data required. Risk analysis will be available after 3 months of data is collected.",
+                "risk_factors": []
+            }
+        
+        risk_analysis = analytics_service._calculate_compliance_risk_analysis(current_user.organization_id)
+        
+        return {
+            "success": True,
+            "risk_score": risk_analysis["risk_score"],
+            "risk_level": risk_analysis["risk_level"],
+            "status": "success",
+            "risk_factors": risk_analysis["risk_factors"],
+            "recommendations": risk_analysis["recommendations"],
+            "message": f"Compliance risk level: {risk_analysis['risk_level']} (Score: {risk_analysis['risk_score']}/100)"
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate risk analysis: {str(e)}"
+        )
+
+
+@router.get("/growth-strategy")
+async def get_growth_strategy(
+    target_jurisdiction: str = Query("CA", description="Target jurisdiction for expansion analysis"),
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Get growth strategy analysis with market expansion costing.
+    
+    Provides predictive modeling for market expansion and EPR fee projections.
+    """
+    try:
+        analytics_service = AnalyticsService(db)
+        
+        has_sufficient_data = analytics_service._has_sufficient_historical_data(current_user.organization_id)
+        
+        if not has_sufficient_data:
+            return {
+                "success": True,
+                "expansion_cost": 0,
+                "status": "insufficient_data",
+                "message": "More data required. Growth strategy analysis will be available after 3 months of data is collected.",
+                "scenarios": []
+            }
+        
+        growth_analysis = analytics_service._calculate_growth_strategy_analysis(
+            current_user.organization_id, 
+            target_jurisdiction
+        )
+        
+        return {
+            "success": True,
+            "expansion_cost": growth_analysis["expansion_cost"],
+            "target_jurisdiction": target_jurisdiction,
+            "status": "success",
+            "scenarios": growth_analysis["scenarios"],
+            "recommendations": growth_analysis["recommendations"],
+            "message": f"Market expansion to {target_jurisdiction} estimated at ${growth_analysis['expansion_cost']:,.2f} annual EPR fees"
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate growth strategy: {str(e)}"
+        )
+
+
+@router.get("/fee-optimization-goal")
+async def get_fee_optimization_goal(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Get the current fee optimization goal for the organization.
+    """
+    try:
+        analytics_service = AnalyticsService(db)
+        goal = analytics_service._get_fee_optimization_goal(current_user.organization_id)
+        
+        return {
+            "success": True,
+            "goal": goal
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to retrieve fee optimization goal: {str(e)}"
+        )
+
+
+@router.post("/fee-optimization-goal")
+async def set_fee_optimization_goal(
+    goal_data: Dict[str, Any],
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Set or update the fee optimization goal for the organization.
+    """
+    try:
+        analytics_service = AnalyticsService(db)
+        result = analytics_service._set_fee_optimization_goal(
+            current_user.organization_id, 
+            goal_data
+        )
+        
+        return {
+            "success": True,
+            "goal": result["goal"],
+            "current_value": result["current_value"],
+            "message": "Fee optimization goal saved successfully"
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save fee optimization goal: {str(e)}"
+        )

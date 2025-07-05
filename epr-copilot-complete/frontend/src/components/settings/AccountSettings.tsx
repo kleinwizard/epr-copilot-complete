@@ -353,7 +353,9 @@ export function AccountSettings() {
             </div>
           )}
 
-          <Button variant="outline">Edit Company Details</Button>
+          <Button variant="outline" onClick={() => window.location.href = '/company-setup'}>
+            Edit Company Details
+          </Button>
         </CardContent>
       </Card>
 

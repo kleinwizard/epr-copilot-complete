@@ -157,12 +157,7 @@ export function CompanySetup() {
 
   const loadCompanyData = async () => {
     try {
-      const [companyData, profiles, entities, docs] = await Promise.all([
-        apiService.getCompanyInfo(),
-        apiService.get('/api/company/compliance-profiles'),
-        apiService.get('/api/company/entities'),
-        apiService.get('/api/company/documents')
-      ]);
+      const companyData = await apiService.getCompanyInfo();
       
       if (companyData) {
         setCompanyInfo(prev => ({
@@ -178,10 +173,27 @@ export function CompanySetup() {
           }
         }));
       }
-      setComplianceProfiles(profiles || []);
-      setBusinessEntities(entities || []);
-      setDocuments(docs || []);
+      
       setIsDataLoaded(true);
+      
+      const loadSecondaryData = async () => {
+        try {
+          const [profiles, entities, docs] = await Promise.all([
+            apiService.get('/api/company/compliance-profiles'),
+            apiService.get('/api/company/entities'),
+            apiService.get('/api/company/documents')
+          ]);
+          
+          setComplianceProfiles(profiles || []);
+          setBusinessEntities(entities || []);
+          setDocuments(docs || []);
+        } catch (error) {
+          console.error('Failed to load secondary company data:', error);
+        }
+      };
+      
+      setTimeout(loadSecondaryData, 100);
+      
     } catch (error) {
       console.error('Failed to load company data:', error);
       setIsDataLoaded(true);
@@ -458,7 +470,7 @@ export function CompanySetup() {
         </TabsList>
 
         <TabsContent value="basic" className="space-y-6">
-          <Card>
+          <Card data-tutorial="company-form">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Building2 className="w-5 h-5" />
@@ -937,7 +949,7 @@ export function CompanySetup() {
         </TabsContent>
 
         <TabsContent value="documents" className="space-y-6">
-          <Card>
+          <Card data-tutorial="documents-section">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <FileText className="w-5 h-5" />
