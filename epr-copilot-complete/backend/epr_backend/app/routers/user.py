@@ -101,20 +101,48 @@ async def update_user_profile(
         raise HTTPException(status_code=500, detail=f"Failed to update user profile: {str(e)}")
 
 @router.get("/preferences")
-async def get_user_preferences(db: Session = Depends(get_db)):
+async def get_user_preferences(
+    current_user: UserSchema = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Get user preferences"""
     try:
-        return {
-            "timezone": "Pacific Time (PT)",
-            "language": "English (US)"
-        }
+        profile = db.query(UserProfileTable).filter(UserProfileTable.user_id == current_user.id).first()
+        
+        if profile:
+            return {
+                "timezone": profile.timezone or "Pacific Time (PT)",
+                "language": profile.language or "English (US)"
+            }
+        else:
+            return {
+                "timezone": "Pacific Time (PT)",
+                "language": "English (US)"
+            }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get user preferences: {str(e)}")
 
 @router.put("/preferences")
-async def update_user_preferences(preferences: UserPreferences, db: Session = Depends(get_db)):
+async def update_user_preferences(
+    preferences: UserPreferences,
+    current_user: UserSchema = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Update user preferences"""
     try:
+        existing_profile = db.query(UserProfileTable).filter(UserProfileTable.user_id == current_user.id).first()
+        
+        if existing_profile:
+            existing_profile.timezone = preferences.timezone
+            existing_profile.language = preferences.language
+        else:
+            new_profile = UserProfileTable(
+                user_id=current_user.id,
+                timezone=preferences.timezone,
+                language=preferences.language
+            )
+            db.add(new_profile)
+        
         db.commit()
         return {"success": True, "message": "Preferences updated successfully"}
     except Exception as e:
