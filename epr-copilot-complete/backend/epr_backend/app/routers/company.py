@@ -1,10 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 from ..database import get_db, Organization, User
 from ..auth import get_current_user
 from ..schemas import User as UserSchema
+import json
+import uuid
+from datetime import datetime
 
 router = APIRouter(prefix="/api/company", tags=["company"])
 
@@ -26,6 +29,22 @@ class CompanyVerificationStatus(BaseModel):
     deq_registration: str = "Incomplete"
     epr_eligibility: str = "Incomplete"
     overall_status: str = "Pending Verification"
+
+class ComplianceProfileCreate(BaseModel):
+    jurisdiction: str
+    annualRevenue: float
+    annualTonnage: float
+
+class BusinessEntityCreate(BaseModel):
+    name: str
+    roles: List[str]
+    type: str = "subsidiary"
+
+class DocumentUpload(BaseModel):
+    name: str
+    type: str
+    size: int
+    upload_date: str
 
 @router.get("/profile")
 async def get_company_profile(
@@ -113,9 +132,69 @@ async def get_company_entities(
 ):
     """Get company entities"""
     try:
-        return []
+        organization = db.query(Organization).filter(
+            Organization.id == current_user.organization_id
+        ).first()
+        
+        if not organization:
+            return []
+            
+        business_entities = getattr(organization, 'business_entities', '[]')
+        if isinstance(business_entities, str):
+            try:
+                return json.loads(business_entities)
+            except:
+                return []
+        return business_entities or []
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get company entities: {str(e)}")
+
+@router.post("/entities")
+async def create_business_entity(
+    entity: BusinessEntityCreate,
+    current_user: UserSchema = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new business entity"""
+    try:
+        organization = db.query(Organization).filter(
+            Organization.id == current_user.organization_id
+        ).first()
+        
+        if not organization:
+            raise HTTPException(status_code=404, detail="Organization not found")
+        
+        existing_entities = getattr(organization, 'business_entities', '[]')
+        if isinstance(existing_entities, str):
+            try:
+                entities_list = json.loads(existing_entities)
+            except:
+                entities_list = []
+        else:
+            entities_list = existing_entities or []
+        
+        new_entity = {
+            "id": str(uuid.uuid4()),
+            "name": entity.name,
+            "roles": entity.roles,
+            "type": entity.type,
+            "created_at": datetime.now().isoformat()
+        }
+        
+        entities_list.append(new_entity)
+        
+        if not hasattr(organization, 'business_entities'):
+            setattr(organization, 'business_entities', json.dumps(entities_list))
+        else:
+            organization.business_entities = json.dumps(entities_list)
+        
+        db.commit()
+        db.refresh(organization)
+        
+        return new_entity
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create business entity: {str(e)}")
 
 @router.get("/compliance-profiles")
 async def get_compliance_profiles(
@@ -124,9 +203,69 @@ async def get_compliance_profiles(
 ):
     """Get compliance profiles"""
     try:
-        return []
+        organization = db.query(Organization).filter(
+            Organization.id == current_user.organization_id
+        ).first()
+        
+        if not organization:
+            return []
+            
+        compliance_profiles = getattr(organization, 'compliance_profiles', '[]')
+        if isinstance(compliance_profiles, str):
+            try:
+                return json.loads(compliance_profiles)
+            except:
+                return []
+        return compliance_profiles or []
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get compliance profiles: {str(e)}")
+
+@router.post("/compliance-profiles")
+async def create_compliance_profile(
+    profile: ComplianceProfileCreate,
+    current_user: UserSchema = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new compliance profile"""
+    try:
+        organization = db.query(Organization).filter(
+            Organization.id == current_user.organization_id
+        ).first()
+        
+        if not organization:
+            raise HTTPException(status_code=404, detail="Organization not found")
+        
+        existing_profiles = getattr(organization, 'compliance_profiles', '[]')
+        if isinstance(existing_profiles, str):
+            try:
+                profiles_list = json.loads(existing_profiles)
+            except:
+                profiles_list = []
+        else:
+            profiles_list = existing_profiles or []
+        
+        new_profile = {
+            "id": str(uuid.uuid4()),
+            "jurisdiction": profile.jurisdiction,
+            "annualRevenue": profile.annualRevenue,
+            "annualTonnage": profile.annualTonnage,
+            "created_at": datetime.now().isoformat()
+        }
+        
+        profiles_list.append(new_profile)
+        
+        if not hasattr(organization, 'compliance_profiles'):
+            setattr(organization, 'compliance_profiles', json.dumps(profiles_list))
+        else:
+            organization.compliance_profiles = json.dumps(profiles_list)
+        
+        db.commit()
+        db.refresh(organization)
+        
+        return new_profile
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create compliance profile: {str(e)}")
 
 @router.get("/documents")
 async def get_company_documents(
@@ -135,9 +274,76 @@ async def get_company_documents(
 ):
     """Get company documents"""
     try:
-        return []
+        organization = db.query(Organization).filter(
+            Organization.id == current_user.organization_id
+        ).first()
+        
+        if not organization:
+            return []
+            
+        documents = getattr(organization, 'documents', '[]')
+        if isinstance(documents, str):
+            try:
+                return json.loads(documents)
+            except:
+                return []
+        return documents or []
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get company documents: {str(e)}")
+
+@router.post("/documents")
+async def upload_company_document(
+    file: UploadFile = File(...),
+    current_user: UserSchema = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Upload a company document"""
+    try:
+        organization = db.query(Organization).filter(
+            Organization.id == current_user.organization_id
+        ).first()
+        
+        if not organization:
+            raise HTTPException(status_code=404, detail="Organization not found")
+        
+        existing_documents = getattr(organization, 'documents', '[]')
+        if isinstance(existing_documents, str):
+            try:
+                documents_list = json.loads(existing_documents)
+            except:
+                documents_list = []
+        else:
+            documents_list = existing_documents or []
+        
+        file_content = await file.read()
+        
+        new_document = {
+            "id": str(uuid.uuid4()),
+            "name": file.filename,
+            "type": file.content_type or "application/octet-stream",
+            "size": len(file_content),
+            "upload_date": datetime.now().isoformat(),
+            "filename": file.filename
+        }
+        
+        documents_list.append(new_document)
+        
+        if not hasattr(organization, 'documents'):
+            setattr(organization, 'documents', json.dumps(documents_list))
+        else:
+            organization.documents = json.dumps(documents_list)
+        
+        db.commit()
+        db.refresh(organization)
+        
+        return {
+            "success": True,
+            "document": new_document,
+            "filename": file.filename
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to upload document: {str(e)}")
 
 @router.get("")
 async def get_company_info(

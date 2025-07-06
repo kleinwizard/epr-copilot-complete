@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -6,8 +7,72 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Bell, Mail, MessageSquare, Calendar, AlertTriangle, FileText } from 'lucide-react';
+import { apiService } from '@/services/apiService';
+import { useToast } from '@/hooks/use-toast';
+
+interface NotificationSettings {
+  deadlineAlerts: boolean;
+  reportStatus: boolean;
+  feeChanges: boolean;
+  teamUpdates: boolean;
+  browserNotifications: boolean;
+  notificationFrequency: string;
+}
 
 export function NotificationSettings() {
+  const [settings, setSettings] = useState<NotificationSettings>({
+    deadlineAlerts: true,
+    reportStatus: true,
+    feeChanges: true,
+    teamUpdates: false,
+    browserNotifications: false,
+    notificationFrequency: 'Real-time'
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadNotificationSettings();
+  }, []);
+
+  const loadNotificationSettings = async () => {
+    try {
+      setIsLoading(true);
+      const response = await apiService.get('/api/user/notification-settings');
+      if (response) {
+        setSettings(response);
+      }
+    } catch (error) {
+      console.error('Failed to load notification settings:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const saveNotificationSettings = async () => {
+    try {
+      setIsSaving(true);
+      await apiService.put('/api/user/notification-settings', settings);
+      toast({
+        title: "Settings Saved",
+        description: "Your notification preferences have been updated.",
+      });
+    } catch (error) {
+      console.error('Failed to save notification settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save notification settings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const updateSetting = (key: keyof NotificationSettings, value: boolean | string) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+  };
   return (
     <div className="space-y-6">
       <Card>
@@ -29,7 +94,12 @@ export function NotificationSettings() {
                   </p>
                 </div>
               </div>
-              <Switch id="deadline-alerts" defaultChecked />
+              <Switch 
+                id="deadline-alerts" 
+                checked={settings.deadlineAlerts}
+                onCheckedChange={(checked) => updateSetting('deadlineAlerts', checked)}
+                disabled={isLoading}
+              />
             </div>
 
             <Separator />
@@ -44,7 +114,12 @@ export function NotificationSettings() {
                   </p>
                 </div>
               </div>
-              <Switch id="report-status" defaultChecked />
+              <Switch 
+                id="report-status" 
+                checked={settings.reportStatus}
+                onCheckedChange={(checked) => updateSetting('reportStatus', checked)}
+                disabled={isLoading}
+              />
             </div>
 
             <Separator />
@@ -59,7 +134,12 @@ export function NotificationSettings() {
                   </p>
                 </div>
               </div>
-              <Switch id="fee-changes" defaultChecked />
+              <Switch 
+                id="fee-changes" 
+                checked={settings.feeChanges}
+                onCheckedChange={(checked) => updateSetting('feeChanges', checked)}
+                disabled={isLoading}
+              />
             </div>
 
             <Separator />
@@ -74,7 +154,12 @@ export function NotificationSettings() {
                   </p>
                 </div>
               </div>
-              <Switch id="team-updates" />
+              <Switch 
+                id="team-updates" 
+                checked={settings.teamUpdates}
+                onCheckedChange={(checked) => updateSetting('teamUpdates', checked)}
+                disabled={isLoading}
+              />
             </div>
           </div>
         </CardContent>
@@ -98,19 +183,35 @@ export function NotificationSettings() {
                 </p>
               </div>
             </div>
-            <Switch id="browser-notifications" />
+            <Switch 
+              id="browser-notifications" 
+              checked={settings.browserNotifications}
+              onCheckedChange={(checked) => updateSetting('browserNotifications', checked)}
+              disabled={isLoading}
+            />
           </div>
 
           <Separator />
 
           <div className="flex items-center justify-between">
             <Label htmlFor="notification-frequency">Notification Frequency</Label>
-            <select className="w-48 h-10 px-3 py-2 text-sm bg-background border border-input rounded-md">
+            <select 
+              className="w-48 h-10 px-3 py-2 text-sm bg-background border border-input rounded-md"
+              value={settings.notificationFrequency}
+              onChange={(e) => updateSetting('notificationFrequency', e.target.value)}
+              disabled={isLoading}
+            >
               <option>Real-time</option>
               <option>Hourly digest</option>
               <option>Daily digest</option>
               <option>Weekly digest</option>
             </select>
+          </div>
+          
+          <div className="pt-4">
+            <Button onClick={saveNotificationSettings} disabled={isLoading || isSaving}>
+              {isSaving ? 'Saving...' : 'Save Notification Settings'}
+            </Button>
           </div>
         </CardContent>
       </Card>

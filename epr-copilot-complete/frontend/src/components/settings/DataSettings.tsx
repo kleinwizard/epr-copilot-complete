@@ -158,48 +158,6 @@ export function DataSettings() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Data Import</CardTitle>
-          <CardDescription>
-            Import data from external systems or previous platforms
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center space-y-3">
-            <Upload className="h-8 w-8 text-muted-foreground mx-auto" />
-            <div>
-              <p className="font-medium">Drop files here or click to browse</p>
-              <p className="text-sm text-muted-foreground">
-                Supports CSV, JSON, and Excel files
-              </p>
-            </div>
-            <Button variant="outline">Choose Files</Button>
-          </div>
-
-          <div className="space-y-3">
-            <h4 className="font-medium">Import Templates</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleExport('product-template', 'CSV')}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Product Template
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleExport('material-template', 'CSV')}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Material Template
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>

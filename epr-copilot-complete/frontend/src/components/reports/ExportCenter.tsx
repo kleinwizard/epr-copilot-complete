@@ -118,11 +118,22 @@ export function ExportCenter() {
 
       await pollProgress();
 
-      const blob = await apiService.get(`/api/exports/download/${exportJob.id}`);
-      const url = window.URL.createObjectURL(new Blob([blob]));
+      const response = await fetch(`/api/exports/download/${exportJob.id}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Download failed');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `export_${selectedFormat}_${Date.now()}.${selectedFormat === 'pdf' ? 'pdf' : selectedFormat === 'excel' ? 'xlsx' : 'csv'}`;
+      a.download = `export_${selectedFormat}_${Date.now()}.${selectedFormat === 'pdf' ? 'pdf' : selectedFormat === 'excel' ? 'xlsx' : 'json'}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);

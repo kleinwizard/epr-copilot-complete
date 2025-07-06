@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -39,28 +39,77 @@ import {
 } from 'lucide-react';
 import { getTeamInvitations, inviteTeamMember, TeamInvitation } from '@/services/teamService';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 export function TeamInvitations() {
-  const [invitations, setInvitations] = useState<TeamInvitation[]>(getTeamInvitations());
+  const [invitations, setInvitations] = useState<TeamInvitation[]>([]);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [inviteForm, setInviteForm] = useState({
     email: '',
     role: 'user' as const,
     department: ''
   });
+  const { toast } = useToast();
 
-  const handleSendInvitation = () => {
-    if (inviteForm.email && inviteForm.role && inviteForm.department) {
-      const newInvitation = inviteTeamMember({
+  useEffect(() => {
+    const loadInvitations = async () => {
+      setIsLoading(true);
+      try {
+        const data = await getTeamInvitations();
+        setInvitations(data);
+      } catch (error) {
+        console.error('Failed to load team invitations:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load team invitations",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadInvitations();
+  }, [toast]);
+
+  const handleSendInvitation = async () => {
+    if (!inviteForm.email || !inviteForm.role || !inviteForm.department) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const newInvitation = await inviteTeamMember({
         email: inviteForm.email,
         role: inviteForm.role,
         department: inviteForm.department,
-        invitedBy: 'John Doe' // Current user
+        invitedBy: 'Current User'
       });
       
       setInvitations([...invitations, newInvitation]);
       setInviteForm({ email: '', role: 'user', department: '' });
       setIsInviteDialogOpen(false);
+      
+      toast({
+        title: "Success",
+        description: `Invitation sent successfully to ${inviteForm.email}`,
+      });
+    } catch (error) {
+      console.error('Failed to send invitation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send invitation. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -151,9 +200,9 @@ export function TeamInvitations() {
                   <Button variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={handleSendInvitation}>
+                  <Button onClick={handleSendInvitation} disabled={isSending}>
                     <Send className="mr-2 h-4 w-4" />
-                    Send Invitation
+                    {isSending ? 'Sending...' : 'Send Invitation'}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -174,7 +223,21 @@ export function TeamInvitations() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {invitations.map((invitation) => (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                    Loading invitations...
+                  </TableCell>
+                </TableRow>
+              ) : invitations.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    No pending invitations
+                  </TableCell>
+                </TableRow>
+              ) : (
+                invitations.map((invitation) => (
                 <TableRow key={invitation.id}>
                   <TableCell>
                     <div className="flex items-center space-x-2">
@@ -213,7 +276,8 @@ export function TeamInvitations() {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
