@@ -48,16 +48,16 @@ async def get_team_members(
             return []
         
         mock_members = [
-            {
-                "id": "1",
-                "name": current_user.email.split('@')[0].replace('.', ' ').title(),
-                "email": current_user.email,
-                "role": "admin",
-                "department": "Management",
-                "status": "active",
-                "lastActive": datetime.now(timezone.utc).isoformat(),
-                "joinedDate": datetime.now(timezone.utc).isoformat()
-            }
+            TeamMember(
+                id="1",
+                name=current_user.email.split('@')[0].replace('.', ' ').title(),
+                email=current_user.email,
+                role="admin",
+                department="Management",
+                status="active",
+                lastActive=datetime.now(timezone.utc).isoformat(),
+                joinedDate=datetime.now(timezone.utc).isoformat()
+            )
         ]
         
         return mock_members
