@@ -5,6 +5,8 @@ from pydantic import BaseModel
 from ..database import get_db, Organization, User
 from ..auth import get_current_user
 from ..schemas import User as UserSchema
+from ..cache import cache_result
+from datetime import timedelta
 import json
 import uuid
 from datetime import datetime
@@ -344,6 +346,71 @@ async def upload_company_document(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to upload document: {str(e)}")
+
+@router.get("/setup-data")
+@cache_result(expiration=timedelta(minutes=5))
+async def get_company_setup_data(
+    current_user: UserSchema = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all company setup data in a single optimized call"""
+    try:
+        organization = db.query(Organization).filter(
+            Organization.id == current_user.organization_id
+        ).first()
+        
+        if not organization:
+            raise HTTPException(status_code=404, detail="Organization not found")
+        
+        company_data = {
+            "name": organization.name or "",
+            "legal_name": getattr(organization, 'legal_name', '') or "",
+            "business_id": getattr(organization, 'business_id', '') or "",
+            "deq_number": getattr(organization, 'deq_number', '') or "",
+            "naics_code": getattr(organization, 'naics_code', '') or "",
+            "entity_type": getattr(organization, 'entity_type', '') or "",
+            "description": getattr(organization, 'description', '') or "",
+            "street_address": getattr(organization, 'street_address', '') or "",
+            "city": getattr(organization, 'city', '') or "",
+            "state": getattr(organization, 'state', '') or "",
+            "zip_code": getattr(organization, 'zip_code', '') or ""
+        }
+        
+        compliance_profiles = getattr(organization, 'compliance_profiles', '[]')
+        if isinstance(compliance_profiles, str):
+            try:
+                profiles = json.loads(compliance_profiles)
+            except:
+                profiles = []
+        else:
+            profiles = compliance_profiles or []
+        
+        business_entities = getattr(organization, 'business_entities', '[]')
+        if isinstance(business_entities, str):
+            try:
+                entities = json.loads(business_entities)
+            except:
+                entities = []
+        else:
+            entities = business_entities or []
+        
+        documents = getattr(organization, 'documents', '[]')
+        if isinstance(documents, str):
+            try:
+                docs = json.loads(documents)
+            except:
+                docs = []
+        else:
+            docs = documents or []
+        
+        return {
+            "companyData": company_data,
+            "profiles": profiles,
+            "entities": entities,
+            "documents": docs
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get company setup data: {str(e)}")
 
 @router.get("")
 async def get_company_info(

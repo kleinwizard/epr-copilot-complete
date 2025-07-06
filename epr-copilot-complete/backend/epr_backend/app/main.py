@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from .database import create_tables
-from .routers import auth, products, materials, fees, reports, files, payments, epr_rates, notifications, background_jobs, admin, analytics, user, company, saved_searches, bulk, team
+from .routers import auth, products, materials, fees, reports, files, payments, epr_rates, notifications, background_jobs, admin, analytics, user, company, saved_searches, bulk, team, calendar
 from .routers.reports import exports_router
 from .services.scheduler import task_scheduler
 from .security import configure_security_middleware, limiter, enhanced_rate_limit_handler, check_ip_blocked
@@ -16,6 +16,7 @@ from .exceptions import (
     EPRException
 )
 from .validation_schemas import FeeCalculationValidationSchema
+from .config import get_settings
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -42,6 +43,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="EPR Co-Pilot Backend", version="1.0.0", lifespan=lifespan)
 
+settings = get_settings()
 configure_security_middleware(app)
 
 app.state.limiter = limiter
@@ -50,13 +52,12 @@ app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(EPRException, epr_exception_handler)
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 
-# Disable CORS. Do not remove this for full-stack development.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
-    allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+    allow_origins=settings.cors_origins,
+    allow_credentials=settings.cors_allow_credentials,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
 )
 
 app.include_router(auth.router)
@@ -76,6 +77,7 @@ app.include_router(company.router)
 app.include_router(saved_searches.router)
 app.include_router(bulk.router)
 app.include_router(team.router)
+app.include_router(calendar.router)
 app.include_router(exports_router)
 
 

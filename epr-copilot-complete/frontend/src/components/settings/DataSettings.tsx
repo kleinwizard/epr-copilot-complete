@@ -25,6 +25,17 @@ export function DataSettings() {
       try {
         setIsLoading(true);
         
+        const [teamResponse] = await Promise.all([
+          fetch('/api/team/members', {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+              'Content-Type': 'application/json',
+            },
+          })
+        ]);
+        
+        const teamMembers = teamResponse.ok ? await teamResponse.json() : [];
+        
         setStorageData({
           used: 0,
           total: 10,
@@ -32,7 +43,7 @@ export function DataSettings() {
           products: 0,
           materials: 0,
           reports: 0,
-          teamMembers: 0
+          teamMembers: teamMembers.length || 0
         });
       } catch (error) {
         console.error('Failed to load storage data:', error);
