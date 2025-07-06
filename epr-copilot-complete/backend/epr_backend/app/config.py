@@ -21,6 +21,18 @@ class Settings:
         
         self.environment = os.getenv("ENVIRONMENT", "development")
         self.debug = os.getenv("DEBUG", "false").lower() == "true"
+        
+        if self.environment == "production":
+            self.cors_origins = os.getenv("CORS_ORIGINS", "").split(",")
+            self.cors_allow_credentials = False
+        else:
+            self.cors_origins = [
+                "http://localhost:8080",
+                "http://127.0.0.1:8080",
+                "http://localhost:3000",
+                "http://127.0.0.1:3000"
+            ]
+            self.cors_allow_credentials = True
 
 
 def get_settings(_env_file: Optional[str] = None) -> Settings:
