@@ -41,8 +41,17 @@ const Index = () => {
 
   useEffect(() => {
     const handleTutorialPageChange = (event: CustomEvent) => {
-      const { page } = event.detail;
+      const { page, subPage, section } = event.detail;
       setCurrentPage(page);
+      
+      if (subPage || section) {
+        setTimeout(() => {
+          const nestedEvent = new CustomEvent('tutorialNestedNavigation', {
+            detail: { subPage, section }
+          });
+          window.dispatchEvent(nestedEvent);
+        }, 100);
+      }
     };
 
     window.addEventListener('tutorialPageChange', handleTutorialPageChange as EventListener);

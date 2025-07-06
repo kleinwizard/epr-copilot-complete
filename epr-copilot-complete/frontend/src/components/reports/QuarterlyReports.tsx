@@ -31,6 +31,26 @@ export function QuarterlyReports() {
     }
   }, []);
 
+  useEffect(() => {
+    const handleTutorialNestedNavigation = (event: CustomEvent) => {
+      const { subPage, section } = event.detail;
+      
+      if (subPage === 'reports') {
+        if (section === 'builder') {
+          setCurrentView('builder');
+        } else if (section === 'export') {
+          setCurrentView('export');
+        }
+      }
+    };
+
+    window.addEventListener('tutorialNestedNavigation', handleTutorialNestedNavigation as EventListener);
+    
+    return () => {
+      window.removeEventListener('tutorialNestedNavigation', handleTutorialNestedNavigation as EventListener);
+    };
+  }, []);
+
   const handleCloseGuidance = () => {
     if (dontShowAgain) {
       localStorage.setItem('reports-guidance-dismissed', 'true');

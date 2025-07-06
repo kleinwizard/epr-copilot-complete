@@ -230,7 +230,7 @@ export class TutorialService {
       },
       when: {
         show: () => {
-          this.navigateToReports();
+          this.navigateToReportBuilder();
         }
       }
     });
@@ -242,6 +242,11 @@ export class TutorialService {
       attachTo: {
         element: '[data-tutorial="export-center"]',
         on: 'bottom'
+      },
+      when: {
+        show: () => {
+          this.navigateToExportCenter();
+        }
       }
     });
 
@@ -321,11 +326,21 @@ export class TutorialService {
   }
 
   private navigateToReports(): void {
-    this.triggerPageChange('quarterly-reports');
+    this.triggerPageChange('quarterly-reports', 'reports');
   }
 
-  private triggerPageChange(page: string): void {
-    const event = new CustomEvent('tutorialPageChange', { detail: { page } });
+  private navigateToReportBuilder(): void {
+    this.triggerPageChange('quarterly-reports', 'reports', 'builder');
+  }
+
+  private navigateToExportCenter(): void {
+    this.triggerPageChange('quarterly-reports', 'reports', 'export');
+  }
+
+  private triggerPageChange(page: string, subPage?: string, section?: string): void {
+    const event = new CustomEvent('tutorialPageChange', { 
+      detail: { page, subPage, section } 
+    });
     window.dispatchEvent(event);
   }
 
