@@ -19,11 +19,23 @@ class Settings:
             )
         self.secret_key = secret_key
         
-        self.environment = os.getenv("ENVIRONMENT", "development")
+        self.environment = os.getenv("ENVIRONMENT", "development").lower()
         self.debug = os.getenv("DEBUG", "false").lower() == "true"
         
+        if self.environment not in ["development", "production", "testing"]:
+            raise ValueError(
+                f"Invalid ENVIRONMENT value: '{self.environment}'. "
+                "Must be one of: development, production, testing"
+            )
+        
         if self.environment == "production":
-            self.cors_origins = os.getenv("CORS_ORIGINS", "").split(",")
+            cors_origins_str = os.getenv("CORS_ORIGINS", "")
+            if not cors_origins_str.strip():
+                raise ValueError(
+                    "CORS_ORIGINS environment variable must be set in production. "
+                    "Provide a comma-separated list of allowed origins."
+                )
+            self.cors_origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
             self.cors_allow_credentials = False
         else:
             self.cors_origins = [
@@ -33,6 +45,15 @@ class Settings:
                 "http://127.0.0.1:3000"
             ]
             self.cors_allow_credentials = True
+        
+        if self.environment == "production":
+            if self.debug:
+                raise ValueError("DEBUG must be false in production environment")
+            if "sqlite" in self.database_url.lower():
+                raise ValueError(
+                    "SQLite database is not recommended for production. "
+                    "Use PostgreSQL or another production database."
+                )
 
 
 def get_settings(_env_file: Optional[str] = None) -> Settings:
