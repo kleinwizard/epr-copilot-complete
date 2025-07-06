@@ -2,7 +2,7 @@ import Shepherd from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
 
 export class TutorialService {
-  private tour: Shepherd.Tour;
+  private tour: any;
   private isFirstTimeUser: boolean = false;
 
   constructor() {
@@ -74,9 +74,7 @@ export class TutorialService {
       },
       when: {
         show: () => {
-          if (window.location.pathname !== '/company-setup') {
-            this.navigateToCompanySetup();
-          }
+          this.navigateToCompanySetup();
         }
       }
     });
@@ -101,9 +99,7 @@ export class TutorialService {
       },
       when: {
         show: () => {
-          if (window.location.pathname !== '/materials') {
-            this.navigateToMaterials();
-          }
+          this.navigateToMaterials();
         }
       },
       buttons: [
@@ -136,9 +132,7 @@ export class TutorialService {
       },
       when: {
         show: () => {
-          if (!window.location.pathname.includes('/materials/add')) {
-            this.navigateToAddMaterial();
-          }
+          this.navigateToAddMaterial();
         }
       }
     });
@@ -153,9 +147,7 @@ export class TutorialService {
       },
       when: {
         show: () => {
-          if (window.location.pathname !== '/products') {
-            this.navigateToProducts();
-          }
+          this.navigateToProducts();
         }
       },
       buttons: [
@@ -188,9 +180,7 @@ export class TutorialService {
       },
       when: {
         show: () => {
-          if (!window.location.pathname.includes('/products/add')) {
-            this.navigateToAddProduct();
-          }
+          this.navigateToAddProduct();
         }
       }
     });
@@ -205,9 +195,7 @@ export class TutorialService {
       },
       when: {
         show: () => {
-          if (window.location.pathname !== '/analytics') {
-            this.navigateToAnalytics();
-          }
+          this.navigateToAnalytics();
         }
       }
     });
@@ -242,9 +230,7 @@ export class TutorialService {
       },
       when: {
         show: () => {
-          if (window.location.pathname !== '/reports') {
-            this.navigateToReports();
-          }
+          this.navigateToReports();
         }
       }
     });
@@ -311,52 +297,36 @@ export class TutorialService {
   }
 
   private navigateToCompanySetup(): void {
-    if (window.location.pathname !== '/company-setup') {
-      window.history.pushState({}, '', '/company-setup');
-      window.dispatchEvent(new PopStateEvent('popstate'));
-    }
+    this.triggerPageChange('company');
   }
 
   private navigateToMaterials(): void {
-    if (window.location.pathname !== '/materials') {
-      window.history.pushState({}, '', '/materials');
-      window.dispatchEvent(new PopStateEvent('popstate'));
-    }
+    this.triggerPageChange('materials');
   }
 
   private navigateToAddMaterial(): void {
-    if (!window.location.pathname.includes('/materials/add')) {
-      window.history.pushState({}, '', '/materials/add');
-      window.dispatchEvent(new PopStateEvent('popstate'));
-    }
+    this.triggerPageChange('materials');
   }
 
   private navigateToProducts(): void {
-    if (window.location.pathname !== '/products') {
-      window.history.pushState({}, '', '/products');
-      window.dispatchEvent(new PopStateEvent('popstate'));
-    }
+    this.triggerPageChange('product-catalog');
   }
 
   private navigateToAddProduct(): void {
-    if (!window.location.pathname.includes('/products/add')) {
-      window.history.pushState({}, '', '/products/add');
-      window.dispatchEvent(new PopStateEvent('popstate'));
-    }
+    this.triggerPageChange('product-catalog');
   }
 
   private navigateToAnalytics(): void {
-    if (window.location.pathname !== '/analytics') {
-      window.history.pushState({}, '', '/analytics');
-      window.dispatchEvent(new PopStateEvent('popstate'));
-    }
+    this.triggerPageChange('analytics');
   }
 
   private navigateToReports(): void {
-    if (window.location.pathname !== '/reports') {
-      window.history.pushState({}, '', '/reports');
-      window.dispatchEvent(new PopStateEvent('popstate'));
-    }
+    this.triggerPageChange('quarterly-reports');
+  }
+
+  private triggerPageChange(page: string): void {
+    const event = new CustomEvent('tutorialPageChange', { detail: { page } });
+    window.dispatchEvent(event);
   }
 
   public resetTutorial(): void {

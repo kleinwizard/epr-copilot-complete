@@ -259,6 +259,23 @@ async def get_fee_history(
     return []
 
 
+@router.get("/jurisdictions")
+async def get_supported_jurisdictions(
+    db: Session = Depends(get_db)
+):
+    """Get list of supported jurisdictions for fee calculation (public endpoint)."""
+    # Return hardcoded list of supported jurisdictions for fee calculation
+    return [
+        { "code": "OR", "name": "Oregon", "model_type": "PRO-led Fee System" },
+        { "code": "CA", "name": "California", "model_type": "PRO-led Fee System" },
+        { "code": "CO", "name": "Colorado", "model_type": "Municipal Reimbursement" },
+        { "code": "ME", "name": "Maine", "model_type": "Full Municipal Reimbursement" },
+        { "code": "MD", "name": "Maryland", "model_type": "Shared Responsibility" },
+        { "code": "MN", "name": "Minnesota", "model_type": "Shared Responsibility" },
+        { "code": "WA", "name": "Washington", "model_type": "Shared Responsibility" }
+    ]
+
+
 
 @router.post("/v1/calculate-fee", response_model=FeeCalculationResponseV1)
 async def calculate_fee_v1(

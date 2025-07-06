@@ -24,6 +24,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { SupportHelpSystem } from '@/components/support/SupportHelpSystem';
 import { MobileFramework } from '@/components/mobile/MobileFramework';
 import { ProjectExport } from '@/components/admin/ProjectExport';
+import { UserProfile } from '@/components/profile/UserProfile';
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState('home');
@@ -37,6 +38,19 @@ const Index = () => {
       console.log('User found in localStorage');
     }
   }, [user]);
+
+  useEffect(() => {
+    const handleTutorialPageChange = (event: CustomEvent) => {
+      const { page } = event.detail;
+      setCurrentPage(page);
+    };
+
+    window.addEventListener('tutorialPageChange', handleTutorialPageChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('tutorialPageChange', handleTutorialPageChange as EventListener);
+    };
+  }, []);
 
   const renderCurrentPage = () => {
     switch (currentPage) {
@@ -89,6 +103,8 @@ const Index = () => {
         return <AuthPage />;
       case 'settings':
         return <Settings />;
+      case 'profile':
+        return <UserProfile />;
       case 'support-help':
         return <SupportHelpSystem />;
       case 'project-export':

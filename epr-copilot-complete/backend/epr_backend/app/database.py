@@ -39,6 +39,12 @@ class Organization(Base):
     users = relationship("User", back_populates="organization")
     products = relationship("Product", back_populates="organization")
     reports = relationship("Report", back_populates="organization")
+    team_members = relationship("TeamMember", back_populates="organization")
+    team_invitations = relationship("TeamInvitation", back_populates="organization")
+    calendar_events = relationship("CalendarEvent", back_populates="organization")
+    compliance_profiles = relationship("ComplianceProfile", back_populates="organization")
+    business_entities = relationship("BusinessEntity", back_populates="organization")
+    documents = relationship("Document", back_populates="organization")
 
 
 class User(Base):
@@ -52,6 +58,8 @@ class User(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     organization = relationship("Organization", back_populates="users")
+    profile = relationship("UserProfile", back_populates="user", uselist=False)
+    notification_settings = relationship("UserNotificationSettings", back_populates="user", uselist=False)
 
 
 class Product(Base):
@@ -287,6 +295,170 @@ class FeeOptimizationGoal(Base):
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     organization = relationship("Organization")
+
+
+class TeamMember(Base):
+    __tablename__ = "team_members"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    organization_id = Column(String, ForeignKey("organizations.id"))
+    user_id = Column(String, ForeignKey("users.id"))
+    role = Column(String(50), default="member")  # admin, manager, member, viewer
+    permissions = Column(JSON)  # Specific permissions for the user
+    status = Column(String(20), default="active")  # active, inactive, pending
+    invited_by = Column(String, ForeignKey("users.id"))
+    joined_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    organization = relationship("Organization")
+    user = relationship("User", foreign_keys=[user_id])
+    inviter = relationship("User", foreign_keys=[invited_by])
+
+
+class TeamInvitation(Base):
+    __tablename__ = "team_invitations"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    organization_id = Column(String, ForeignKey("organizations.id"))
+    email = Column(String(255), nullable=False)
+    role = Column(String(50), default="member")
+    permissions = Column(JSON)
+    invited_by = Column(String, ForeignKey("users.id"))
+    invitation_token = Column(String(255), unique=True)
+    status = Column(String(20), default="pending")  # pending, accepted, expired, cancelled
+    expires_at = Column(DateTime)
+    accepted_at = Column(DateTime)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    organization = relationship("Organization")
+    inviter = relationship("User")
+
+
+class CalendarEvent(Base):
+    __tablename__ = "calendar_events"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    organization_id = Column(String, ForeignKey("organizations.id"))
+    title = Column(String(255), nullable=False)
+    description = Column(Text)
+    event_type = Column(String(50))  # deadline, meeting, reminder, submission
+    start_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime)
+    all_day = Column(Boolean, default=False)
+    jurisdiction_id = Column(String, ForeignKey("jurisdictions.id"))
+    priority = Column(String(20), default="medium")  # low, medium, high, critical
+    status = Column(String(20), default="scheduled")  # scheduled, completed, cancelled
+    reminder_settings = Column(JSON)  # Notification preferences
+    created_by = Column(String, ForeignKey("users.id"))
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    organization = relationship("Organization")
+    jurisdiction = relationship("Jurisdiction")
+    creator = relationship("User")
+
+
+class ComplianceProfile(Base):
+    __tablename__ = "compliance_profiles"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    organization_id = Column(String, ForeignKey("organizations.id"))
+    name = Column(String(255), nullable=False)
+    jurisdiction_id = Column(String, ForeignKey("jurisdictions.id"))
+    profile_type = Column(String(50))  # producer, importer, distributor, retailer
+    registration_number = Column(String(100))
+    registration_date = Column(DateTime)
+    annual_revenue = Column(Numeric(15, 2))
+    annual_tonnage = Column(Numeric(10, 3))
+    is_active = Column(Boolean, default=True)
+    compliance_requirements = Column(JSON)  # Specific requirements for this profile
+    exemptions = Column(JSON)  # Any applicable exemptions
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    organization = relationship("Organization")
+    jurisdiction = relationship("Jurisdiction")
+
+
+class BusinessEntity(Base):
+    __tablename__ = "business_entities"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    organization_id = Column(String, ForeignKey("organizations.id"))
+    entity_name = Column(String(255), nullable=False)
+    entity_type = Column(String(50))  # corporation, llc, partnership, sole_proprietorship
+    registration_number = Column(String(100))
+    tax_id = Column(String(50))
+    jurisdiction_of_incorporation = Column(String(100))
+    business_address = Column(JSON)  # Address information
+    contact_information = Column(JSON)  # Phone, email, etc.
+    is_primary = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    organization = relationship("Organization")
+
+
+class Document(Base):
+    __tablename__ = "documents"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    organization_id = Column(String, ForeignKey("organizations.id"))
+    filename = Column(String(255), nullable=False)
+    original_filename = Column(String(255), nullable=False)
+    file_path = Column(String(500), nullable=False)
+    file_size = Column(Integer)  # Size in bytes
+    mime_type = Column(String(100))
+    document_type = Column(String(50))  # verification, certificate, report, contract
+    description = Column(Text)
+    uploaded_by = Column(String, ForeignKey("users.id"))
+    is_verified = Column(Boolean, default=False)
+    verification_date = Column(DateTime)
+    verified_by = Column(String, ForeignKey("users.id"))
+    tags = Column(JSON)  # Document tags for organization
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    organization = relationship("Organization")
+    uploader = relationship("User", foreign_keys=[uploaded_by])
+    verifier = relationship("User", foreign_keys=[verified_by])
+
+
+class UserProfile(Base):
+    __tablename__ = "user_profiles"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, ForeignKey("users.id"), unique=True)
+    first_name = Column(String(100))
+    last_name = Column(String(100))
+    phone = Column(String(20))
+    title = Column(String(100))
+    bio = Column(Text)
+    avatar_url = Column(String(500))
+    timezone = Column(String(50), default="UTC")
+    language = Column(String(10), default="en")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User")
+
+
+class UserNotificationSettings(Base):
+    __tablename__ = "user_notification_settings"
+    
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, ForeignKey("users.id"), unique=True)
+    deadline_alerts = Column(Boolean, default=True)
+    report_status = Column(Boolean, default=True)
+    fee_changes = Column(Boolean, default=True)
+    team_updates = Column(Boolean, default=False)
+    browser_notifications = Column(Boolean, default=False)
+    notification_frequency = Column(String(50), default="Real-time")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User")
 
 
 def create_tables():

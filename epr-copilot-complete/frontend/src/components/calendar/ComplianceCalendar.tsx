@@ -13,7 +13,7 @@ import { CalendarGrid } from './CalendarGrid';
 import { EventsList } from './EventsList';
 import { CalendarStats } from './CalendarStats';
 import { EventFilters } from './EventFilters';
-import { getCalendarEvents, getUpcomingEvents, type ComplianceEvent } from '@/services/calendarService';
+import { getCalendarEvents, getUpcomingEvents, addCalendarEvent, type ComplianceEvent } from '@/services/calendarService';
 import { useToast } from '@/hooks/use-toast';
 
 export function ComplianceCalendar() {
@@ -43,6 +43,7 @@ export function ComplianceCalendar() {
     eventId: '',
     recipients: 'all'
   });
+  const [refreshKey, setRefreshKey] = useState(0);
   const { toast } = useToast();
 
   const currentMonth = currentDate.getMonth();
@@ -75,22 +76,48 @@ export function ComplianceCalendar() {
       return;
     }
 
-    console.log('Adding new event:', newEvent);
-    
-    setShowAddEventDialog(false);
-    setNewEvent({
-      title: '',
-      description: '',
-      date: '',
-      type: '',
-      priority: 'medium',
-      jurisdiction: ''
-    });
-    
-    toast({
-      title: "Event Added",
-      description: `Event "${newEvent.title}" has been added successfully!`,
-    });
+    try {
+      const eventDate = new Date(newEvent.date);
+      
+      const complianceEvent: Omit<ComplianceEvent, 'id'> = {
+        title: newEvent.title,
+        description: newEvent.description,
+        date: eventDate,
+        type: newEvent.type as ComplianceEvent['type'],
+        status: 'upcoming',
+        priority: newEvent.priority as ComplianceEvent['priority'],
+        category: 'data-submission',
+        jurisdiction: newEvent.jurisdiction || undefined,
+        reminderDays: [7, 3, 1]
+      };
+
+      const addedEvent = addCalendarEvent(complianceEvent);
+      console.log('Added new event:', addedEvent);
+      
+      setRefreshKey(prev => prev + 1);
+      
+      setShowAddEventDialog(false);
+      setNewEvent({
+        title: '',
+        description: '',
+        date: '',
+        type: '',
+        priority: 'medium',
+        jurisdiction: ''
+      });
+      
+      toast({
+        title: "Event Added",
+        description: `Event "${newEvent.title}" has been added successfully and will appear on ${eventDate.toLocaleDateString()}!`,
+      });
+    } catch (error) {
+      console.error('Error adding event:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add event. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleAddNotification = () => {
@@ -366,12 +393,14 @@ export function ComplianceCalendar() {
       {/* Calendar Content */}
       {view === 'month' ? (
         <CalendarGrid 
+          key={`month-${refreshKey}`}
           currentDate={currentDate} 
           events={monthEvents}
           filters={selectedFilters}
         />
       ) : (
         <EventsList 
+          key={`list-${refreshKey}`}
           events={upcomingEvents}
           filters={selectedFilters}
           title="Upcoming Events"

@@ -157,7 +157,12 @@ export function CompanySetup() {
 
   const loadCompanyData = async () => {
     try {
-      const companyData = await apiService.getCompanyInfo();
+      const [companyData, profiles, entities, docs] = await Promise.all([
+        apiService.getCompanyInfo(),
+        apiService.get('/api/company/compliance-profiles'),
+        apiService.get('/api/company/entities'),
+        apiService.get('/api/company/documents')
+      ]);
       
       if (companyData) {
         setCompanyInfo(prev => ({
@@ -174,25 +179,10 @@ export function CompanySetup() {
         }));
       }
       
+      setComplianceProfiles(profiles || []);
+      setBusinessEntities(entities || []);
+      setDocuments(docs || []);
       setIsDataLoaded(true);
-      
-      const loadSecondaryData = async () => {
-        try {
-          const [profiles, entities, docs] = await Promise.all([
-            apiService.get('/api/company/compliance-profiles'),
-            apiService.get('/api/company/entities'),
-            apiService.get('/api/company/documents')
-          ]);
-          
-          setComplianceProfiles(profiles || []);
-          setBusinessEntities(entities || []);
-          setDocuments(docs || []);
-        } catch (error) {
-          console.error('Failed to load secondary company data:', error);
-        }
-      };
-      
-      setTimeout(loadSecondaryData, 100);
       
     } catch (error) {
       console.error('Failed to load company data:', error);
