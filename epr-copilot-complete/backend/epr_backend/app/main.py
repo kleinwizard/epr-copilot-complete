@@ -5,6 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from .database import create_tables
 from .routers import auth, products, materials, fees, reports, files, payments, epr_rates, notifications, background_jobs, admin, analytics, user, company, saved_searches, bulk, team
+from .routers import calendar
 from .routers.reports import exports_router
 from .services.scheduler import task_scheduler
 from .security import configure_security_middleware, limiter, enhanced_rate_limit_handler, check_ip_blocked
@@ -76,6 +77,7 @@ app.include_router(company.router)
 app.include_router(saved_searches.router)
 app.include_router(bulk.router)
 app.include_router(team.router)
+app.include_router(calendar.router)
 app.include_router(exports_router)
 
 

@@ -157,35 +157,59 @@ export function CompanySetup() {
 
   const loadCompanyData = async () => {
     try {
-      const [companyData, profiles, entities, docs] = await Promise.all([
-        apiService.getCompanyInfo(),
-        apiService.get('/api/company/compliance-profiles'),
-        apiService.get('/api/company/entities'),
-        apiService.get('/api/company/documents')
-      ]);
+      const setupData = await apiService.get('/api/company/setup-data');
       
-      if (companyData) {
+      if (setupData.companyData) {
         setCompanyInfo(prev => ({
           ...prev,
-          ...companyData,
+          ...setupData.companyData,
           primaryContact: {
             ...prev.primaryContact,
-            ...(companyData.primaryContact || {})
+            ...(setupData.companyData.primaryContact || {})
           },
           complianceOfficer: {
             ...prev.complianceOfficer,
-            ...(companyData.complianceOfficer || {})
+            ...(setupData.companyData.complianceOfficer || {})
           }
         }));
       }
       
-      setComplianceProfiles(profiles || []);
-      setBusinessEntities(entities || []);
-      setDocuments(docs || []);
+      setComplianceProfiles(setupData.profiles || []);
+      setBusinessEntities(setupData.entities || []);
+      setDocuments(setupData.documents || []);
       setIsDataLoaded(true);
       
     } catch (error) {
       console.error('Failed to load company data:', error);
+      try {
+        const [companyData, profiles, entities, docs] = await Promise.all([
+          apiService.getCompanyInfo(),
+          apiService.get('/api/company/compliance-profiles'),
+          apiService.get('/api/company/entities'),
+          apiService.get('/api/company/documents')
+        ]);
+        
+        if (companyData) {
+          setCompanyInfo(prev => ({
+            ...prev,
+            ...companyData,
+            primaryContact: {
+              ...prev.primaryContact,
+              ...(companyData.primaryContact || {})
+            },
+            complianceOfficer: {
+              ...prev.complianceOfficer,
+              ...(companyData.complianceOfficer || {})
+            }
+          }));
+        }
+        
+        setComplianceProfiles(profiles || []);
+        setBusinessEntities(entities || []);
+        setDocuments(docs || []);
+      } catch (fallbackError) {
+        console.error('Failed to load company data with fallback:', fallbackError);
+      }
       setIsDataLoaded(true);
     }
   };
