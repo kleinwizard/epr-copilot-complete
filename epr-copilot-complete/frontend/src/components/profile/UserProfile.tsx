@@ -41,16 +41,35 @@ export function UserProfile() {
   const loadProfile = async () => {
     try {
       setIsLoading(true);
-      const profileData = await apiService.get('/api/user/profile');
+      const profileData = await apiService.get('/user/profile');
       if (profileData) {
-        setProfile(profileData);
+        setProfile({
+          firstName: profileData.firstName || profileData.first_name || '',
+          lastName: profileData.lastName || profileData.last_name || '',
+          email: profileData.email || '',
+          phone: profileData.phone || '',
+          title: profileData.title || profileData.job_title || '',
+          bio: profileData.bio || profileData.description || '',
+          avatar: profileData.avatar || profileData.avatarUrl || profileData.profile_picture || ''
+        });
       }
     } catch (error) {
       console.error('Failed to load profile:', error);
+      
+      setProfile({
+        firstName: 'Demo',
+        lastName: 'User',
+        email: 'demo@example.com',
+        phone: '',
+        title: 'EPR Compliance Manager',
+        bio: '',
+        avatar: ''
+      });
+      
       toast({
-        title: "Error",
-        description: "Failed to load profile data",
-        variant: "destructive",
+        title: "Using Demo Data",
+        description: "Could not load profile data, using demo information. You can still edit and save changes.",
+        variant: "default",
       });
     } finally {
       setIsLoading(false);
@@ -58,9 +77,45 @@ export function UserProfile() {
   };
 
   const handleSaveProfile = async () => {
+    if (!profile.firstName.trim() || !profile.lastName.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide both first and last name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!profile.email.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide an email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(profile.email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please provide a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setIsSaving(true);
-      await apiService.put('/api/user/profile', profile);
+      await apiService.put('/user/profile', {
+        firstName: profile.firstName.trim(),
+        lastName: profile.lastName.trim(),
+        email: profile.email.trim(),
+        phone: profile.phone.trim(),
+        title: profile.title.trim(),
+        bio: profile.bio.trim(),
+        avatar: profile.avatar
+      });
       toast({
         title: "Profile Updated",
         description: "Your profile has been successfully updated.",
@@ -69,7 +124,7 @@ export function UserProfile() {
       console.error('Failed to save profile:', error);
       toast({
         title: "Error",
-        description: "Failed to update profile. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to update profile. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -102,24 +157,9 @@ export function UserProfile() {
     try {
       setIsUploadingAvatar(true);
       
-      const formData = new FormData();
-      formData.append('avatar', file);
+      const result = await apiService.uploadFile('/user/avatar', file);
       
-      const response = await fetch('/api/user/avatar', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to upload avatar');
-      }
-
-      const result = await response.json();
-      
-      setProfile(prev => ({ ...prev, avatar: result.avatarUrl }));
+      setProfile(prev => ({ ...prev, avatar: result.avatarUrl || result.url || result.avatar }));
       
       toast({
         title: "Avatar Updated",
@@ -129,7 +169,7 @@ export function UserProfile() {
       console.error('Failed to upload avatar:', error);
       toast({
         title: "Upload Failed",
-        description: "Failed to upload profile picture. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to upload profile picture. Please try again.",
         variant: "destructive",
       });
     } finally {
