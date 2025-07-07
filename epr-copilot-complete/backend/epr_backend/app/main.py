@@ -4,8 +4,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from .database import create_tables
-from .routers import auth, products, materials, fees, reports, files, payments, epr_rates, notifications, background_jobs, admin, analytics, user, company, saved_searches, bulk, team, calendar
-from .routers.reports import exports_router
 from .services.scheduler import task_scheduler
 from .security import configure_security_middleware, limiter, enhanced_rate_limit_handler, check_ip_blocked
 from .security.rate_limiting import custom_rate_limiter
@@ -44,6 +42,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="EPR Co-Pilot Backend", version="1.0.0", lifespan=lifespan)
 
 settings = get_settings()
+logger.info(f"CORS origins configured: {settings.cors_origins}")
+logger.info(f"CORS allow credentials: {settings.cors_allow_credentials}")
 configure_security_middleware(app)
 
 app.state.limiter = limiter
@@ -56,9 +56,22 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=settings.cors_allow_credentials,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=3600,
 )
+
+@app.middleware("http")
+async def debug_middleware(request, call_next):
+    logger.info(f"Request: {request.method} {request.url} - Origin: {request.headers.get('origin')}")
+    response = await call_next(request)
+    logger.info(f"Response headers: {dict(response.headers)}")
+    return response
+
+from .routers import auth, products, materials, fees, reports, files, payments, epr_rates, notifications, background_jobs, admin, analytics, user, company, saved_searches, bulk, team, calendar, security
+from .routers import settings as settings_router
+from .routers.reports import exports_router
 
 app.include_router(auth.router)
 app.include_router(products.router)
@@ -78,6 +91,8 @@ app.include_router(saved_searches.router)
 app.include_router(bulk.router)
 app.include_router(team.router)
 app.include_router(calendar.router)
+app.include_router(security.router)
+app.include_router(settings_router.router)
 app.include_router(exports_router)
 
 
