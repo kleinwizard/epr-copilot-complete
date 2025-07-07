@@ -74,7 +74,7 @@ export function ApiSettings() {
         apiService.get('/api/settings/api-usage')
       ]);
       
-      setApiKeys(keys || []);
+      setApiKeys(keys?.apiKeys || keys || []);
       setApiUsage(usage || {
         requestsToday: 0,
         successRate: 0,
@@ -228,7 +228,7 @@ export function ApiSettings() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-4">
-            {apiKeys.length === 0 ? (
+            {(!Array.isArray(apiKeys) || apiKeys.length === 0) ? (
               <div className="text-center py-8 text-muted-foreground">
                 No API keys generated yet. Create your first API key below.
               </div>

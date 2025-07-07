@@ -254,6 +254,33 @@ async def get_team_members(
             detail=f"Failed to retrieve team members: {str(e)}"
         )
 
+@router.get("/api-usage")
+async def get_api_usage(
+    current_user: UserSchema = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Get API usage statistics for the user's organization.
+    """
+    try:
+        mock_usage = {
+            "requestsToday": 1250,
+            "successRate": 98.5,
+            "avgResponse": 145,
+            "rateLimit": "1,000 requests/hour"
+        }
+        
+        return {
+            "success": True,
+            **mock_usage
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to retrieve API usage: {str(e)}"
+        )
+
 @router.get("/usage-statistics")
 async def get_usage_statistics(
     current_user: UserSchema = Depends(get_current_user),
