@@ -11,8 +11,16 @@ class Settings:
         self.database_url = os.getenv("DATABASE_URL", "sqlite:///./epr_copilot.db")
         self.redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
         
-        secret_key = os.getenv("SECRET_KEY", "your-secret-key-here")
-        if secret_key == "your-secret-key-here":
+        secret_key = os.getenv("SECRET_KEY")
+        if not secret_key:
+            try:
+                from dotenv import load_dotenv
+                load_dotenv()
+                secret_key = os.getenv("SECRET_KEY")
+            except ImportError:
+                pass
+        
+        if not secret_key or secret_key == "your-secret-key-here":
             raise ValueError(
                 "SECRET_KEY environment variable must be set to a secure value. "
                 "Do not use the default placeholder 'your-secret-key-here' in production."
