@@ -319,7 +319,7 @@ export function BulkImport() {
       </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="upload">Upload & Import</TabsTrigger>
           <TabsTrigger value="history">Import History</TabsTrigger>
         </TabsList>
