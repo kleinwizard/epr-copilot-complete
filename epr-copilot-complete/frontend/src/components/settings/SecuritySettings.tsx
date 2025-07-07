@@ -56,8 +56,8 @@ export function SecuritySettings() {
         apiService.get('/api/security/sessions')
       ]);
       
-      setSecurityEvents(events || []);
-      setSessions(sessionData || []);
+      setSecurityEvents(events?.events || events || []);
+      setSessions(sessionData?.sessions || sessionData || []);
     } catch (error) {
       console.error('Failed to load security data:', error);
     }

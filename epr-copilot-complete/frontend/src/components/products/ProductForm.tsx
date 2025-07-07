@@ -1,5 +1,6 @@
 
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { debounce } from 'lodash';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -103,7 +104,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const calculateEprFee = () => {
+  const calculateEprFee = useCallback(() => {
     // Simple EPR fee calculation based on Oregon rates
     const feeRates = {
       'Glass': 0.001,
@@ -126,7 +127,12 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
     }, 0);
 
     setFormData(prev => ({ ...prev, eprFee: totalFee }));
-  };
+  }, [formData.materials]);
+
+  const debouncedCalculateEprFee = useMemo(
+    () => debounce(calculateEprFee, 300),
+    [calculateEprFee]
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
