@@ -44,13 +44,6 @@ app = FastAPI(title="EPR Co-Pilot Backend", version="1.0.0", lifespan=lifespan)
 settings = get_settings()
 logger.info(f"CORS origins configured: {settings.cors_origins}")
 logger.info(f"CORS allow credentials: {settings.cors_allow_credentials}")
-configure_security_middleware(app)
-
-app.state.limiter = limiter
-app.add_exception_handler(429, enhanced_rate_limit_handler)
-app.add_exception_handler(RequestValidationError, validation_exception_handler)
-app.add_exception_handler(EPRException, epr_exception_handler)
-app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -61,6 +54,14 @@ app.add_middleware(
     expose_headers=["*"],
     max_age=3600,
 )
+
+configure_security_middleware(app)
+
+app.state.limiter = limiter
+app.add_exception_handler(429, enhanced_rate_limit_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(EPRException, epr_exception_handler)
+app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 
 @app.middleware("http")
 async def debug_middleware(request, call_next):
