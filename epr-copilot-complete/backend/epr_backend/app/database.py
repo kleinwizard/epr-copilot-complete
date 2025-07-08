@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 
 import os
 import pathlib
+from alembic import command
+from alembic.config import Config
 SQLALCHEMY_DATABASE_URL = os.getenv(
     "DATABASE_URL", "sqlite:///./epr_copilot.db")
 
@@ -461,8 +463,19 @@ class UserNotificationSettings(Base):
     user = relationship("User")
 
 
+def run_migrations():
+    """Apply Alembic migrations to ensure schema is up to date."""
+    here = pathlib.Path(__file__).resolve().parent
+    alembic_cfg = Config(str(here.parent / "alembic.ini"))
+    alembic_cfg.set_main_option("script_location", str(here.parent / "alembic"))
+    alembic_cfg.set_main_option("sqlalchemy.url", SQLALCHEMY_DATABASE_URL)
+    command.upgrade(alembic_cfg, "heads")
+
+
 def create_tables():
+    """Create tables if they do not exist and apply migrations."""
     Base.metadata.create_all(bind=engine)
+    run_migrations()
 
 
 def get_db():
