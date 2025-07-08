@@ -157,45 +157,59 @@ export function CompanySetup() {
 
   const loadCompanyData = async () => {
     try {
-      const companyData = await apiService.getCompanyInfo();
+      const setupData = await apiService.get('/api/company/setup-data');
       
-      if (companyData) {
+      if (setupData.companyData) {
         setCompanyInfo(prev => ({
           ...prev,
-          ...companyData,
+          ...setupData.companyData,
           primaryContact: {
             ...prev.primaryContact,
-            ...(companyData.primaryContact || {})
+            ...(setupData.companyData.primaryContact || {})
           },
           complianceOfficer: {
             ...prev.complianceOfficer,
-            ...(companyData.complianceOfficer || {})
+            ...(setupData.companyData.complianceOfficer || {})
           }
         }));
       }
       
+      setComplianceProfiles(setupData.profiles || []);
+      setBusinessEntities(setupData.entities || []);
+      setDocuments(setupData.documents || []);
       setIsDataLoaded(true);
-      
-      const loadSecondaryData = async () => {
-        try {
-          const [profiles, entities, docs] = await Promise.all([
-            apiService.get('/api/company/compliance-profiles'),
-            apiService.get('/api/company/entities'),
-            apiService.get('/api/company/documents')
-          ]);
-          
-          setComplianceProfiles(profiles || []);
-          setBusinessEntities(entities || []);
-          setDocuments(docs || []);
-        } catch (error) {
-          console.error('Failed to load secondary company data:', error);
-        }
-      };
-      
-      setTimeout(loadSecondaryData, 100);
       
     } catch (error) {
       console.error('Failed to load company data:', error);
+      try {
+        const [companyData, profiles, entities, docs] = await Promise.all([
+          apiService.getCompanyInfo(),
+          apiService.get('/api/company/compliance-profiles'),
+          apiService.get('/api/company/entities'),
+          apiService.get('/api/company/documents')
+        ]);
+        
+        if (companyData) {
+          setCompanyInfo(prev => ({
+            ...prev,
+            ...companyData,
+            primaryContact: {
+              ...prev.primaryContact,
+              ...(companyData.primaryContact || {})
+            },
+            complianceOfficer: {
+              ...prev.complianceOfficer,
+              ...(companyData.complianceOfficer || {})
+            }
+          }));
+        }
+        
+        setComplianceProfiles(profiles || []);
+        setBusinessEntities(entities || []);
+        setDocuments(docs || []);
+      } catch (fallbackError) {
+        console.error('Failed to load company data with fallback:', fallbackError);
+      }
       setIsDataLoaded(true);
     }
   };

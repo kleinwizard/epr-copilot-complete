@@ -112,9 +112,24 @@ export function AnalyticsDashboard() {
           </div>
           
           <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-            <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => {
+            <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={async () => {
               console.log('Refresh Data clicked');
-              window.location.reload();
+              try {
+                setIsLoading(true);
+                const [newAnalyticsData, newSustainabilityScore, newOptimizationPotential] = await Promise.all([
+                  getAnalyticsData(),
+                  getSustainabilityScore(),
+                  getOptimizationPotential()
+                ]);
+                
+                setAnalyticsData(newAnalyticsData);
+                setSustainabilityScore(newSustainabilityScore);
+                setOptimizationPotential(newOptimizationPotential);
+              } catch (error) {
+                console.error('Failed to refresh analytics data:', error);
+              } finally {
+                setIsLoading(false);
+              }
             }}>
               <RefreshCw className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Refresh Data</span>

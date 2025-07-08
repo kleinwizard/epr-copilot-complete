@@ -28,6 +28,14 @@ export function Header({ currentPage, onPageChange }: HeaderProps) {
     }
   };
 
+  const handleProfileClick = () => {
+    if (onPageChange) {
+      onPageChange('profile');
+    } else {
+      window.location.pathname = '/profile';
+    }
+  };
+
   const getPageTitle = (page: string) => {
     const titles: Record<string, string> = {
       dashboard: 'Dashboard',
@@ -42,7 +50,8 @@ export function Header({ currentPage, onPageChange }: HeaderProps) {
       analytics: 'Analytics',
       calendar: 'Compliance Calendar',
       team: 'Team Management',
-      settings: 'Settings'
+      settings: 'Settings',
+      profile: 'User Profile'
     };
     return titles[page] || 'Oregon EPR Platform';
   };
@@ -84,7 +93,7 @@ export function Header({ currentPage, onPageChange }: HeaderProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleProfileClick}>
               <User className="mr-2 h-4 w-4" />
               Profile
             </DropdownMenuItem>

@@ -247,12 +247,10 @@ export async function calculateMonthlyFeesV1(
 }
 
 export async function getSupportedJurisdictions(): Promise<Array<{code: string, name: string, model_type: string}>> {
-  const token = localStorage.getItem('access_token');
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
-  const response = await fetch(`${API_BASE_URL}/api/admin/jurisdictions`, {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+  const response = await fetch(`${API_BASE_URL}/api/fees/jurisdictions`, {
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
   });

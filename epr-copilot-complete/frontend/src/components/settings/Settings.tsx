@@ -7,6 +7,7 @@ import { DataSettings } from './DataSettings';
 import { ApiSettings } from './ApiSettings';
 import { SecuritySettings } from './SecuritySettings';
 import { AuthenticationSettings } from './AuthenticationSettings';
+import { UserManagement } from './UserManagement';
 
 export function Settings() {
   const [activeTab, setActiveTab] = useState('account');
@@ -21,13 +22,14 @@ export function Settings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="account">Account</TabsTrigger>
           <TabsTrigger value="auth">Authentication</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="data">Data & Export</TabsTrigger>
           <TabsTrigger value="api">API & Integrations</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="users">Team</TabsTrigger>
         </TabsList>
 
         <TabsContent value="account" className="space-y-6">
@@ -52,6 +54,10 @@ export function Settings() {
 
         <TabsContent value="security" className="space-y-6">
           <SecuritySettings />
+        </TabsContent>
+
+        <TabsContent value="users" className="space-y-6">
+          <UserManagement />
         </TabsContent>
       </Tabs>
     </div>

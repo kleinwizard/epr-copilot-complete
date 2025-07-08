@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Upload, 
   Download, 
@@ -37,17 +38,43 @@ export function BulkImport() {
   const [previewData, setPreviewData] = useState<any[]>([]);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const { toast } = useToast();
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type === 'text/csv') {
       setSelectedFile(file);
-      // Simulate CSV parsing
-      const mockData = [
-        { name: 'Organic Pasta Sauce', sku: 'OPS-001', category: 'Food & Beverage', weight: 680 },
-        { name: 'Premium Shampoo', sku: 'PS-200', category: 'Personal Care', weight: 400 }
-      ];
-      setPreviewData(mockData);
+      
+      try {
+        const text = await file.text();
+        const lines = text.split('\n').filter(line => line.trim());
+        
+        if (lines.length < 2) {
+          throw new Error('CSV file must contain at least a header row and one data row');
+        }
+        
+        const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+        const data = lines.slice(1).map((line, index) => {
+          const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+          const row: any = { _rowIndex: index + 2 };
+          
+          headers.forEach((header, i) => {
+            row[header] = values[i] || '';
+          });
+          
+          return row;
+        });
+        
+        setPreviewData(data.slice(0, 10)); // Show first 10 rows for preview
+      } catch (error) {
+        console.error('Error parsing CSV:', error);
+        setSelectedFile(null);
+        toast({
+          title: "CSV Parse Error",
+          description: error instanceof Error ? error.message : "Failed to parse CSV file",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -79,23 +106,49 @@ export function BulkImport() {
     setIsProcessing(true);
     setProgress(0);
 
-    // Simulate processing
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsProcessing(false);
-          setImportResult({
-            total: previewData.length,
-            successful: previewData.length - 1,
-            failed: 1,
-            errors: [{ row: 2, error: 'Invalid category', data: previewData[1] }]
-          });
-          return 100;
-        }
-        return prev + 10;
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('type', importType);
+
+      const endpoint = `/api/bulk/import/${importType}`;
+      
+      // Simulate progress updates
+      const progressInterval = setInterval(() => {
+        setProgress(prev => Math.min(prev + 10, 90));
+      }, 200);
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        body: formData,
       });
-    }, 200);
+
+      clearInterval(progressInterval);
+      setProgress(100);
+
+      if (!response.ok) {
+        throw new Error(`Import failed: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      setImportResult(result);
+      setIsProcessing(false);
+      
+    } catch (error) {
+      console.error('Import failed:', error);
+      setIsProcessing(false);
+      setImportResult({
+        total: previewData.length,
+        successful: 0,
+        failed: previewData.length,
+        errors: [{ row: 1, error: error instanceof Error ? error.message : 'Unknown error', data: {} }]
+      });
+      toast({
+        title: "Import Failed",
+        description: error instanceof Error ? error.message : "Failed to import CSV file",
+        variant: "destructive",
+      });
+    }
   };
 
   const resetImport = () => {
@@ -266,7 +319,7 @@ export function BulkImport() {
       </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="upload">Upload & Import</TabsTrigger>
           <TabsTrigger value="history">Import History</TabsTrigger>
         </TabsList>

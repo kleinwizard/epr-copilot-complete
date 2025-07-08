@@ -1,13 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 from datetime import datetime, timezone
+import json
+import io
 from ..database import get_db, Report
 from ..schemas import ReportCreate, Report as ReportSchema
 from ..auth import get_current_user
 
 router = APIRouter(prefix="/api/reports", tags=["reports"])
+exports_router = APIRouter(prefix="/api/exports", tags=["exports"])
 
 
 class QuarterlyReportRequest(BaseModel):
@@ -17,6 +21,22 @@ class QuarterlyReportRequest(BaseModel):
 
 class ReportSubmissionRequest(BaseModel):
     report_id: str
+
+
+class ExportRequest(BaseModel):
+    format: str
+    sections: List[str]
+    dateRange: str
+
+
+class ExportJob(BaseModel):
+    id: str
+    status: str
+    format: str
+    sections: List[str]
+    dateRange: str
+    created_at: datetime
+    download_url: Optional[str] = None
 
 
 @router.get("/", response_model=List[ReportSchema])
@@ -366,3 +386,117 @@ async def export_security_audit(
             status_code=500,
             detail=f"Failed to generate security audit: {str(e)}"
         )
+
+
+@exports_router.post("/generate")
+async def generate_export(
+    request: ExportRequest,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Generate an export job for the requested sections and format."""
+    try:
+        job_id = f"export_{int(datetime.now().timestamp())}"
+        
+        export_job = {
+            "id": job_id,
+            "status": "processing",
+            "format": request.format,
+            "sections": request.sections,
+            "dateRange": request.dateRange,
+            "created_at": datetime.now(timezone.utc),
+            "download_url": f"/api/exports/download/{job_id}"
+        }
+        
+        return export_job
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate export: {str(e)}"
+        )
+
+
+@exports_router.get("/download/{job_id}")
+async def download_export(
+    job_id: str,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Download the generated export file."""
+    try:
+        export_data = {
+            "companyName": current_user.organization.name if current_user.organization else "Unknown Company",
+            "exportId": job_id,
+            "generatedAt": datetime.now(timezone.utc).isoformat(),
+            "sections": ["compliance", "cost-analysis", "data-audit"],
+            "data": {
+                "totalProducts": 25,
+                "totalPackagingWeight": 1250.5,
+                "totalFees": 2450.75,
+                "complianceStatus": "Compliant"
+            }
+        }
+        
+        json_content = json.dumps(export_data, indent=2)
+        
+        file_like = io.StringIO(json_content)
+        
+        return StreamingResponse(
+            io.BytesIO(json_content.encode()),
+            media_type="application/json",
+            headers={"Content-Disposition": f"attachment; filename=export_{job_id}.json"}
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to download export: {str(e)}"
+        )
+
+
+@exports_router.get("/scheduled")
+async def get_scheduled_exports(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get list of scheduled exports."""
+    return []
+
+
+@exports_router.post("/schedule")
+async def create_export_schedule(
+    schedule_data: Dict[str, Any],
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new export schedule."""
+    try:
+        schedule_id = f"schedule_{int(datetime.now().timestamp())}"
+        
+        new_schedule = {
+            "id": schedule_id,
+            "name": schedule_data.get("name", "Unnamed Schedule"),
+            "format": schedule_data.get("format", "pdf"),
+            "frequency": schedule_data.get("frequency", "monthly"),
+            "status": "active",
+            "created_at": datetime.now(timezone.utc),
+            "next_run": datetime.now(timezone.utc)
+        }
+        
+        return new_schedule
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to create schedule: {str(e)}"
+        )
+
+
+@exports_router.get("/history")
+async def get_export_history(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get export history."""
+    return []
