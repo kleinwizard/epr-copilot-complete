@@ -263,53 +263,33 @@ async def get_notifications(
     db: Session = Depends(get_db)
 ) -> List[NotificationResponse]:
     """Get notifications for the current user."""
-    mock_notifications = [
-        NotificationResponse(
-            id="1",
-            title="Quarterly Report Due",
-            message="Your Q4 2024 EPR report is due in 7 days",
-            type="deadline",
-            priority="high",
-            status="unread",
-            created_at=datetime.now(timezone.utc)
-        ),
-        NotificationResponse(
-            id="2", 
-            title="Fee Payment Processed",
-            message="Your EPR fee payment of €1,250 has been processed successfully",
-            type="payment",
-            priority="medium",
-            status="read",
-            created_at=datetime.now(timezone.utc),
-            read_at=datetime.now(timezone.utc)
-        ),
-        NotificationResponse(
-            id="3",
-            title="New Team Member Added",
-            message="John Doe has joined your organization",
-            type="team",
-            priority="low",
-            status="unread",
-            created_at=datetime.now(timezone.utc)
-        ),
-        NotificationResponse(
-            id="4",
-            title="Compliance Score Updated",
-            message="Your compliance score has improved to 92%",
-            type="compliance",
-            priority="medium",
-            status="unread",
-            created_at=datetime.now(timezone.utc)
-        )
-    ]
+    from ..database import Notification
     
-    filtered = mock_notifications
+    query = db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.organization_id == current_user.organization_id
+    )
+    
     if status:
-        filtered = [n for n in filtered if n.status == status]
+        query = query.filter(Notification.status == status)
     if type:
-        filtered = [n for n in filtered if n.type == type]
+        query = query.filter(Notification.type == type)
     
-    return filtered[skip:skip + limit]
+    notifications = query.order_by(Notification.created_at.desc()).offset(skip).limit(limit).all()
+    
+    return [
+        NotificationResponse(
+            id=n.id,
+            title=n.title,
+            message=n.message,
+            type=n.type,
+            priority=n.priority,
+            status=n.status,
+            created_at=n.created_at,
+            read_at=n.read_at
+        )
+        for n in notifications
+    ]
 
 
 @router.get("/count")
@@ -318,9 +298,23 @@ async def get_notification_count(
     db: Session = Depends(get_db)
 ) -> dict:
     """Get count of unread notifications."""
+    from ..database import Notification
+    
+    total_count = db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.organization_id == current_user.organization_id
+    ).count()
+    
+    # Count unread notifications
+    unread_count = db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.organization_id == current_user.organization_id,
+        Notification.status == "unread"
+    ).count()
+    
     return {
-        "unread_count": 3,
-        "total_count": 4
+        "unread_count": unread_count,
+        "total_count": total_count
     }
 
 
@@ -331,11 +325,27 @@ async def mark_notification_read(
     db: Session = Depends(get_db)
 ) -> dict:
     """Mark a notification as read."""
+    from ..database import Notification
+    
+    notification = db.query(Notification).filter(
+        Notification.id == notification_id,
+        Notification.user_id == current_user.id,
+        Notification.organization_id == current_user.organization_id
+    ).first()
+    
+    if not notification:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    
+    notification.status = "read"
+    notification.read_at = datetime.now(timezone.utc)
+    
+    db.commit()
+    
     return {
         "message": "Notification marked as read",
         "notification_id": notification_id,
         "status": "read",
-        "read_at": datetime.now(timezone.utc).isoformat()
+        "read_at": notification.read_at.isoformat()
     }
 
 
@@ -345,9 +355,22 @@ async def mark_all_notifications_read(
     db: Session = Depends(get_db)
 ) -> dict:
     """Mark all notifications as read."""
+    from ..database import Notification
+    
+    updated_count = db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.organization_id == current_user.organization_id,
+        Notification.status == "unread"
+    ).update({
+        "status": "read",
+        "read_at": datetime.now(timezone.utc)
+    })
+    
+    db.commit()
+    
     return {
         "message": "All notifications marked as read",
-        "updated_count": 3,
+        "updated_count": updated_count,
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
@@ -359,6 +382,21 @@ async def delete_notification(
     db: Session = Depends(get_db)
 ) -> dict:
     """Delete a notification."""
+    from ..database import Notification
+    
+    notification = db.query(Notification).filter(
+        Notification.id == notification_id,
+        Notification.user_id == current_user.id,
+        Notification.organization_id == current_user.organization_id
+    ).first()
+    
+    if not notification:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    
+    # Delete notification
+    db.delete(notification)
+    db.commit()
+    
     return {
         "message": "Notification deleted successfully",
         "notification_id": notification_id
@@ -371,13 +409,29 @@ async def get_notification_preferences(
     db: Session = Depends(get_db)
 ) -> NotificationPreferences:
     """Get user notification preferences."""
+    from ..database import NotificationPreference
+    
+    preferences = db.query(NotificationPreference).filter(
+        NotificationPreference.user_id == current_user.id
+    ).first()
+    
+    if not preferences:
+        return NotificationPreferences(
+            email_notifications=True,
+            sms_notifications=False,
+            push_notifications=True,
+            deadline_reminders=True,
+            compliance_alerts=True,
+            team_notifications=True
+        )
+    
     return NotificationPreferences(
-        email_notifications=True,
-        sms_notifications=False,
-        push_notifications=True,
-        deadline_reminders=True,
-        compliance_alerts=True,
-        team_notifications=True
+        email_notifications=preferences.email_notifications,
+        sms_notifications=preferences.sms_notifications,
+        push_notifications=preferences.push_notifications,
+        deadline_reminders=preferences.deadline_reminders,
+        compliance_alerts=preferences.compliance_alerts,
+        team_notifications=preferences.team_notifications
     )
 
 
@@ -388,6 +442,34 @@ async def update_notification_preferences(
     db: Session = Depends(get_db)
 ) -> dict:
     """Update user notification preferences."""
+    from ..database import NotificationPreference
+    
+    user_preferences = db.query(NotificationPreference).filter(
+        NotificationPreference.user_id == current_user.id
+    ).first()
+    
+    if not user_preferences:
+        user_preferences = NotificationPreference(
+            user_id=current_user.id,
+            email_notifications=preferences.email_notifications,
+            sms_notifications=preferences.sms_notifications,
+            push_notifications=preferences.push_notifications,
+            deadline_reminders=preferences.deadline_reminders,
+            compliance_alerts=preferences.compliance_alerts,
+            team_notifications=preferences.team_notifications
+        )
+        db.add(user_preferences)
+    else:
+        user_preferences.email_notifications = preferences.email_notifications
+        user_preferences.sms_notifications = preferences.sms_notifications
+        user_preferences.push_notifications = preferences.push_notifications
+        user_preferences.deadline_reminders = preferences.deadline_reminders
+        user_preferences.compliance_alerts = preferences.compliance_alerts
+        user_preferences.team_notifications = preferences.team_notifications
+        user_preferences.updated_at = datetime.now(timezone.utc)
+    
+    db.commit()
+    
     return {
         "message": "Notification preferences updated successfully",
         "preferences": preferences.dict(),
@@ -401,17 +483,32 @@ async def create_test_notification(
     db: Session = Depends(get_db)
 ) -> dict:
     """Create a test notification for debugging."""
-    test_notification = {
-        "id": str(uuid.uuid4()),
-        "title": "Test Notification",
-        "message": f"This is a test notification created at {datetime.now(timezone.utc).isoformat()}",
-        "type": "system",
-        "priority": "low",
-        "status": "unread",
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
+    from ..database import Notification
+    
+    test_notification = Notification(
+        user_id=current_user.id,
+        organization_id=current_user.organization_id,
+        title="Test Notification",
+        message=f"This is a test notification created at {datetime.now(timezone.utc).isoformat()}",
+        type="system",
+        priority="low",
+        status="unread",
+        metadata={"test": True, "created_by": "api_test"}
+    )
+    
+    db.add(test_notification)
+    db.commit()
+    db.refresh(test_notification)
     
     return {
         "message": "Test notification created",
-        "notification": test_notification
+        "notification": {
+            "id": test_notification.id,
+            "title": test_notification.title,
+            "message": test_notification.message,
+            "type": test_notification.type,
+            "priority": test_notification.priority,
+            "status": test_notification.status,
+            "created_at": test_notification.created_at.isoformat()
+        }
     }
