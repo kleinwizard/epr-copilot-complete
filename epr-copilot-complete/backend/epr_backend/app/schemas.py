@@ -55,7 +55,15 @@ class ProductBase(BaseModel):
 
 
 class ProductCreate(ProductBase):
-    pass
+    class Config:
+        str_strip_whitespace = True
+        validate_assignment = True
+        
+    def dict(self, **kwargs):
+        data = super().dict(**kwargs)
+        if 'designatedProducerId' in data:
+            data['designated_producer_id'] = data.pop('designatedProducerId')
+        return data
 
 
 class Product(ProductBase):
