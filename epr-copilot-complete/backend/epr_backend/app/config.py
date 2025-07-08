@@ -27,7 +27,10 @@ class Settings:
             )
         self.secret_key = secret_key
         
-        self.environment = os.getenv("ENVIRONMENT", "development").lower()
+        env = os.getenv("ENVIRONMENT", "development").lower()
+        if env == "test":
+            env = "testing"
+        self.environment = env
         self.debug = os.getenv("DEBUG", "false").lower() == "true"
         
         if self.environment not in ["development", "production", "testing"]:

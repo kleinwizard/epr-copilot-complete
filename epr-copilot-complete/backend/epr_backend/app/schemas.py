@@ -51,7 +51,7 @@ class ProductBase(BaseModel):
     epr_fee: Optional[float] = 0.0
     designated_producer_id: Optional[str] = None
     materials: Optional[List[dict]] = []
-    last_updated: Optional[str] = None
+    last_updated: Optional[datetime] = None
 
 
 class ProductCreate(ProductBase):
