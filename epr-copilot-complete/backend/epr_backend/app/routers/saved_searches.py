@@ -4,6 +4,7 @@ from typing import List
 from ..database import get_db, SavedSearch
 from ..schemas import SavedSearchCreate, SavedSearch as SavedSearchSchema
 from ..auth import get_current_user
+from ..utils.field_converter import camel_to_snake
 
 router = APIRouter(prefix="/api/saved-searches", tags=["saved-searches"])
 
@@ -27,8 +28,9 @@ async def create_saved_search(
     db: Session = Depends(get_db)
 ):
     """Create a new saved search."""
+    search_data = camel_to_snake(search.dict())
     db_search = SavedSearch(
-        **search.dict(),
+        **search_data,
         organization_id=current_user.organization_id
     )
     db.add(db_search)

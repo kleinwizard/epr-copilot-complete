@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,33 +18,77 @@ import { NotificationItem } from './NotificationItem';
 import { NotificationFilters } from './NotificationFilters';
 
 export function NotificationCenter() {
-  const [notifications, setNotifications] = useState(getNotifications());
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [selectedTab, setSelectedTab] = useState('all');
   const [filters, setFilters] = useState({
     status: 'all',
     priority: 'all',
     type: 'all'
   });
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    total: 0,
+    unread: 0,
+    highPriority: 0,
+    byType: {
+      deadline: 0,
+      compliance: 0,
+      team: 0,
+      system: 0
+    }
+  });
 
-  const stats = getNotificationStats();
-
-  const handleMarkAsRead = (id: string) => {
-    markNotificationAsRead(id);
-    setNotifications(getNotifications());
-  };
-
-  const handleDismiss = (id: string) => {
-    dismissNotification(id);
-    setNotifications(getNotifications());
-  };
-
-  const handleMarkAllAsRead = () => {
-    notifications.forEach(notification => {
-      if (notification.status === 'unread') {
-        markNotificationAsRead(notification.id);
+  useEffect(() => {
+    const loadNotifications = async () => {
+      try {
+        setLoading(true);
+        const data = await getNotifications();
+        setNotifications(Array.isArray(data) ? data : []);
+        
+        const statsData = await getNotificationStats();
+        setStats(statsData);
+      } catch (error) {
+        console.error('Failed to load notifications:', error);
+        setNotifications([]);
+      } finally {
+        setLoading(false);
       }
-    });
-    setNotifications(getNotifications());
+    };
+
+    loadNotifications();
+  }, []);
+
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      await markNotificationAsRead(id);
+      const updatedNotifications = await getNotifications();
+      setNotifications(updatedNotifications);
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    }
+  };
+
+  const handleDismiss = async (id: string) => {
+    try {
+      await dismissNotification(id);
+      const updatedNotifications = await getNotifications();
+      setNotifications(updatedNotifications);
+    } catch (error) {
+      console.error('Failed to dismiss notification:', error);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      const unreadNotifications = notifications.filter(n => n.status === 'unread');
+      await Promise.all(
+        unreadNotifications.map(notification => markNotificationAsRead(notification.id))
+      );
+      const updatedNotifications = await getNotifications();
+      setNotifications(updatedNotifications);
+    } catch (error) {
+      console.error('Failed to mark all notifications as read:', error);
+    }
   };
 
   const getFilteredNotifications = () => {
@@ -193,7 +237,12 @@ export function NotificationCenter() {
             <TabsContent value={selectedTab} className="mt-6">
               <ScrollArea className="h-[600px]">
                 <div className="space-y-3">
-                  {filteredNotifications.length === 0 ? (
+                  {loading ? (
+                    <div className="text-center py-8">
+                      <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-pulse" />
+                      <p className="text-muted-foreground">Loading notifications...</p>
+                    </div>
+                  ) : filteredNotifications.length === 0 ? (
                     <div className="text-center py-8">
                       <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <p className="text-muted-foreground">No notifications found</p>

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
+from datetime import datetime, timezone
 from ..database import get_db
 from ..auth import get_current_user
 from ..services.email_service import email_service
@@ -38,6 +39,26 @@ class PushNotificationRequest(BaseModel):
     title: str
     body: str
     data: dict = {}
+
+
+class NotificationResponse(BaseModel):
+    id: str
+    title: str
+    message: str
+    type: str
+    priority: str
+    status: str
+    created_at: datetime
+    read_at: Optional[datetime] = None
+
+
+class NotificationPreferences(BaseModel):
+    email_notifications: bool = True
+    sms_notifications: bool = False
+    push_notifications: bool = True
+    deadline_reminders: bool = True
+    compliance_alerts: bool = True
+    team_notifications: bool = True
 
 
 @router.post("/send-invitation")
@@ -227,4 +248,82 @@ async def test_push_service(
     return {
         "message": "Test push notification sent" if success else "Test push notification failed",
         "status": "success" if success else "error",
-        "push_configured": push_notification_service.app is not None}
+        "push_configured": push_notification_service.app is not None
+    }
+
+
+@router.get("/")
+async def get_notifications(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> List[NotificationResponse]:
+    """Get notifications for the current user."""
+    mock_notifications = [
+        NotificationResponse(
+            id="1",
+            title="Quarterly Report Due",
+            message="Your Q4 2024 EPR report is due in 7 days",
+            type="deadline",
+            priority="high",
+            status="unread",
+            created_at=datetime.now(timezone.utc)
+        ),
+        NotificationResponse(
+            id="2", 
+            title="Fee Payment Processed",
+            message="Your EPR fee payment of €1,250 has been processed successfully",
+            type="payment",
+            priority="medium",
+            status="read",
+            created_at=datetime.now(timezone.utc),
+            read_at=datetime.now(timezone.utc)
+        )
+    ]
+    return mock_notifications
+
+
+@router.put("/{notification_id}/read")
+async def mark_notification_read(
+    notification_id: str,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Mark a notification as read."""
+    return {
+        "message": "Notification marked as read",
+        "notification_id": notification_id,
+        "status": "success"
+    }
+
+
+@router.delete("/{notification_id}")
+async def dismiss_notification(
+    notification_id: str,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Dismiss a notification."""
+    return {
+        "message": "Notification dismissed",
+        "notification_id": notification_id,
+        "status": "success"
+    }
+
+
+@router.get("/preferences")
+async def get_notification_preferences(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> NotificationPreferences:
+    """Get notification preferences for the current user."""
+    return NotificationPreferences()
+
+
+@router.put("/preferences")
+async def update_notification_preferences(
+    preferences: NotificationPreferences,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> NotificationPreferences:
+    """Update notification preferences for the current user."""
+    return preferences

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 from datetime import datetime
 from typing import Optional, List
 from decimal import Decimal
@@ -55,7 +55,15 @@ class ProductBase(BaseModel):
 
 
 class ProductCreate(ProductBase):
-    pass
+    class Config:
+        str_strip_whitespace = True
+        validate_assignment = True
+        
+    def dict(self, **kwargs):
+        data = super().dict(**kwargs)
+        if 'designatedProducerId' in data:
+            data['designated_producer_id'] = data.pop('designatedProducerId')
+        return data
 
 
 class Product(ProductBase):
@@ -74,7 +82,19 @@ class MaterialBase(BaseModel):
 
 
 class MaterialCreate(MaterialBase):
-    pass
+    class Config:
+        str_strip_whitespace = True
+        validate_assignment = True
+        
+    @field_validator('recyclable', mode='before')
+    @classmethod
+    def validate_recyclable(cls, v):
+        if isinstance(v, str):
+            if v.lower() in ['true', '1', 'yes', 'on']:
+                return True
+            elif v.lower() in ['false', '0', 'no', 'off', '']:
+                return False
+        return v
 
 
 class Material(MaterialBase):

@@ -4,6 +4,7 @@ from typing import List, Optional
 from ..database import get_db, Product, Material
 from ..schemas import ProductCreate, Product as ProductSchema, Material as MaterialSchema
 from ..auth import get_current_user
+from ..utils.field_converter import camel_to_snake
 
 router = APIRouter(prefix="/api/products", tags=["products"])
 
@@ -29,10 +30,7 @@ async def create_product(
     db: Session = Depends(get_db)
 ):
     """Create a new product."""
-    product_data = product.dict()
-    
-    if 'designatedProducerId' in product_data:
-        product_data['designated_producer_id'] = product_data.pop('designatedProducerId')
+    product_data = camel_to_snake(product.dict())
     
     db_product = Product(
         **product_data,
@@ -75,10 +73,7 @@ async def update_product(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    product_data = product_update.dict()
-    
-    if 'designatedProducerId' in product_data:
-        product_data['designated_producer_id'] = product_data.pop('designatedProducerId')
+    product_data = camel_to_snake(product_update.dict())
 
     for field, value in product_data.items():
         if hasattr(product, field):

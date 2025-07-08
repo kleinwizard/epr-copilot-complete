@@ -6,6 +6,7 @@ from ..database import get_db, Organization, User
 from ..auth import get_current_user
 from ..schemas import User as UserSchema
 from ..cache import cache_result
+from ..utils.field_converter import camel_to_snake
 from datetime import timedelta
 import json
 import uuid
@@ -93,7 +94,9 @@ async def update_company_profile(
         if not organization:
             raise HTTPException(status_code=404, detail="Organization not found")
         
-        for field, value in profile.dict().items():
+        profile_data = camel_to_snake(profile.dict())
+        
+        for field, value in profile_data.items():
             if hasattr(organization, field):
                 setattr(organization, field, value)
         

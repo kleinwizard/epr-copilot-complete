@@ -11,22 +11,22 @@ import { apiService } from '@/services/apiService';
 import { useToast } from '@/hooks/use-toast';
 
 interface NotificationSettings {
-  deadlineAlerts: boolean;
-  reportStatus: boolean;
-  feeChanges: boolean;
-  teamUpdates: boolean;
-  browserNotifications: boolean;
-  notificationFrequency: string;
+  email_notifications: boolean;
+  sms_notifications: boolean;
+  push_notifications: boolean;
+  deadline_reminders: boolean;
+  compliance_alerts: boolean;
+  team_notifications: boolean;
 }
 
 export function NotificationSettings() {
   const [settings, setSettings] = useState<NotificationSettings>({
-    deadlineAlerts: true,
-    reportStatus: true,
-    feeChanges: true,
-    teamUpdates: false,
-    browserNotifications: false,
-    notificationFrequency: 'Real-time'
+    email_notifications: true,
+    sms_notifications: false,
+    push_notifications: true,
+    deadline_reminders: true,
+    compliance_alerts: true,
+    team_notifications: false
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -39,7 +39,7 @@ export function NotificationSettings() {
   const loadNotificationSettings = async () => {
     try {
       setIsLoading(true);
-      const response = await apiService.get('/api/user/notification-settings');
+      const response = await apiService.get('/api/notifications/preferences');
       if (response) {
         setSettings(response);
       }
@@ -53,7 +53,7 @@ export function NotificationSettings() {
   const saveNotificationSettings = async () => {
     try {
       setIsSaving(true);
-      await apiService.put('/api/user/notification-settings', settings);
+      await apiService.put('/api/notifications/preferences', settings);
       toast({
         title: "Settings Saved",
         description: "Your notification preferences have been updated.",
@@ -96,8 +96,8 @@ export function NotificationSettings() {
               </div>
               <Switch 
                 id="deadline-alerts" 
-                checked={settings.deadlineAlerts}
-                onCheckedChange={(checked) => updateSetting('deadlineAlerts', checked)}
+                checked={settings.deadline_reminders}
+                onCheckedChange={(checked) => updateSetting('deadline_reminders', checked)}
                 disabled={isLoading}
               />
             </div>
@@ -116,8 +116,8 @@ export function NotificationSettings() {
               </div>
               <Switch 
                 id="report-status" 
-                checked={settings.reportStatus}
-                onCheckedChange={(checked) => updateSetting('reportStatus', checked)}
+                checked={settings.compliance_alerts}
+                onCheckedChange={(checked) => updateSetting('compliance_alerts', checked)}
                 disabled={isLoading}
               />
             </div>
@@ -136,8 +136,8 @@ export function NotificationSettings() {
               </div>
               <Switch 
                 id="fee-changes" 
-                checked={settings.feeChanges}
-                onCheckedChange={(checked) => updateSetting('feeChanges', checked)}
+                checked={settings.email_notifications}
+                onCheckedChange={(checked) => updateSetting('email_notifications', checked)}
                 disabled={isLoading}
               />
             </div>
@@ -156,8 +156,8 @@ export function NotificationSettings() {
               </div>
               <Switch 
                 id="team-updates" 
-                checked={settings.teamUpdates}
-                onCheckedChange={(checked) => updateSetting('teamUpdates', checked)}
+                checked={settings.team_notifications}
+                onCheckedChange={(checked) => updateSetting('team_notifications', checked)}
                 disabled={isLoading}
               />
             </div>
@@ -185,8 +185,8 @@ export function NotificationSettings() {
             </div>
             <Switch 
               id="browser-notifications" 
-              checked={settings.browserNotifications}
-              onCheckedChange={(checked) => updateSetting('browserNotifications', checked)}
+              checked={settings.push_notifications}
+              onCheckedChange={(checked) => updateSetting('push_notifications', checked)}
               disabled={isLoading}
             />
           </div>
@@ -194,18 +194,21 @@ export function NotificationSettings() {
           <Separator />
 
           <div className="flex items-center justify-between">
-            <Label htmlFor="notification-frequency">Notification Frequency</Label>
-            <select 
-              className="w-48 h-10 px-3 py-2 text-sm bg-background border border-input rounded-md"
-              value={settings.notificationFrequency}
-              onChange={(e) => updateSetting('notificationFrequency', e.target.value)}
+            <div className="flex items-center space-x-3">
+              <MessageSquare className="h-5 w-5 text-indigo-600" />
+              <div>
+                <Label htmlFor="sms-notifications">SMS Notifications</Label>
+                <p className="text-sm text-muted-foreground">
+                  Receive SMS alerts for critical updates
+                </p>
+              </div>
+            </div>
+            <Switch 
+              id="sms-notifications" 
+              checked={settings.sms_notifications}
+              onCheckedChange={(checked) => updateSetting('sms_notifications', checked)}
               disabled={isLoading}
-            >
-              <option>Real-time</option>
-              <option>Hourly digest</option>
-              <option>Daily digest</option>
-              <option>Weekly digest</option>
-            </select>
+            />
           </div>
           
           <div className="pt-4">
