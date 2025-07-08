@@ -26,6 +26,7 @@ export interface Product {
   status: string;
   lastUpdated: string;
   eprFee: number;
+  designatedProducerId?: string;
 }
 
 export interface Material {
@@ -63,13 +64,7 @@ class DataService {
   async getProducts(): Promise<Product[]> {
     try {
       const products = await apiService.getProducts();
-      return (products || []).map(product => {
-        if (product.designated_producer_id !== undefined) {
-          product.designatedProducerId = product.designated_producer_id;
-          delete product.designated_producer_id;
-        }
-        return product;
-      });
+      return products || [];
     } catch (error) {
       console.error('Failed to get products:', error);
       return [];
@@ -77,21 +72,11 @@ class DataService {
   }
 
   async saveProduct(productData: Partial<Product>): Promise<Product> {
-    const response = await apiService.saveProduct(productData);
-    if (response.designated_producer_id !== undefined) {
-      response.designatedProducerId = response.designated_producer_id;
-      delete response.designated_producer_id;
-    }
-    return response;
+    return await apiService.saveProduct(productData);
   }
 
   async updateProduct(id: number, productData: Partial<Product>): Promise<Product> {
-    const response = await apiService.updateProduct(id, productData);
-    if (response.designated_producer_id !== undefined) {
-      response.designatedProducerId = response.designated_producer_id;
-      delete response.designated_producer_id;
-    }
-    return response;
+    return await apiService.updateProduct(id, productData);
   }
 
   async getMaterials(): Promise<Material[]> {

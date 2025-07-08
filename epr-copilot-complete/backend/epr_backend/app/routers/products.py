@@ -31,9 +31,6 @@ async def create_product(
     """Create a new product."""
     product_data = product.dict()
     
-    if 'designatedProducerId' in product_data:
-        product_data['designated_producer_id'] = product_data.pop('designatedProducerId')
-    
     db_product = Product(
         **product_data,
         organization_id=current_user.organization_id
@@ -76,9 +73,6 @@ async def update_product(
         raise HTTPException(status_code=404, detail="Product not found")
 
     product_data = product_update.dict()
-    
-    if 'designatedProducerId' in product_data:
-        product_data['designated_producer_id'] = product_data.pop('designatedProducerId')
 
     for field, value in product_data.items():
         if hasattr(product, field):
