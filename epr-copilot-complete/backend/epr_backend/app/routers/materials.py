@@ -4,6 +4,7 @@ from typing import List
 from ..database import get_db, Material
 from ..schemas import MaterialCreate, Material as MaterialSchema
 from ..auth import get_current_user
+from ..utils.field_converter import camel_to_snake
 
 router = APIRouter(prefix="/api/materials", tags=["materials"])
 
@@ -72,7 +73,8 @@ async def create_material(
     current_user=Depends(get_current_user)
 ):
     """Create a new material (admin only)."""
-    db_material = Material(**material.dict())
+    material_data = camel_to_snake(material.dict())
+    db_material = Material(**material_data)
     db.add(db_material)
     db.commit()
     db.refresh(db_material)

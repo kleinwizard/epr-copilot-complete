@@ -25,6 +25,7 @@ import { SupportHelpSystem } from '@/components/support/SupportHelpSystem';
 import { MobileFramework } from '@/components/mobile/MobileFramework';
 import { ProjectExport } from '@/components/admin/ProjectExport';
 import { UserProfile } from '@/components/profile/UserProfile';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState('home');
@@ -80,13 +81,19 @@ const Index = () => {
       case 'analytics':
         return <AnalyticsDashboard />;
       case 'calendar':
-        return <ComplianceCalendar />;
+        return (
+          <ErrorBoundary>
+            <ComplianceCalendar />
+          </ErrorBoundary>
+        );
       case 'notifications':
         return (
-          <div className="space-y-6">
-            <NotificationCenter />
-            <AlertDashboard />
-          </div>
+          <ErrorBoundary>
+            <div className="space-y-6">
+              <NotificationCenter />
+              <AlertDashboard />
+            </div>
+          </ErrorBoundary>
         );
       case 'erp-integration':
         return <ERPIntegration />;
