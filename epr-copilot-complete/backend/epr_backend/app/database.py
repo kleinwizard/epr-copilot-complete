@@ -1,6 +1,8 @@
 from sqlalchemy import create_engine, Column, String, DateTime, Boolean, Numeric, ForeignKey, Integer, Text, JSON
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
+from alembic import command
+from alembic.config import Config
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from datetime import datetime, timezone
@@ -462,7 +464,18 @@ class UserNotificationSettings(Base):
 
 
 def create_tables():
+    """Create tables if they do not exist and apply migrations."""
     Base.metadata.create_all(bind=engine)
+    run_migrations()
+
+
+def run_migrations():
+    """Apply Alembic migrations to ensure schema is up to date."""
+    here = pathlib.Path(__file__).resolve().parent
+    alembic_cfg = Config(str(here.parent / "alembic.ini"))
+    alembic_cfg.set_main_option("script_location", str(here.parent / "alembic"))
+    alembic_cfg.set_main_option("sqlalchemy.url", SQLALCHEMY_DATABASE_URL)
+    command.upgrade(alembic_cfg, "heads")
 
 
 def get_db():
