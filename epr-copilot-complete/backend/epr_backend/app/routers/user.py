@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db, UserProfile as UserProfileTable
 from ..auth import get_current_user
 from ..schemas import User as UserSchema
+from ..utils.field_converter import camel_to_snake, apply_field_mapping, COMMON_FIELD_MAPPINGS
 import os
 import uuid
 from pathlib import Path
@@ -74,23 +75,16 @@ async def update_user_profile(
     try:
         existing_profile = db.query(UserProfileTable).filter(UserProfileTable.user_id == current_user.id).first()
         
+        profile_data = camel_to_snake(profile.dict())
+        
         if existing_profile:
-            existing_profile.first_name = profile.firstName
-            existing_profile.last_name = profile.lastName
-            existing_profile.phone = profile.phone
-            existing_profile.title = profile.title
-            existing_profile.bio = profile.bio
-            if profile.avatar:
-                existing_profile.avatar_url = profile.avatar
+            for field, value in profile_data.items():
+                if hasattr(existing_profile, field) and value is not None:
+                    setattr(existing_profile, field, value)
         else:
             new_profile = UserProfileTable(
                 user_id=current_user.id,
-                first_name=profile.firstName,
-                last_name=profile.lastName,
-                phone=profile.phone,
-                title=profile.title,
-                bio=profile.bio,
-                avatar_url=profile.avatar
+                **{k: v for k, v in profile_data.items() if hasattr(UserProfileTable, k)}
             )
             db.add(new_profile)
         
@@ -191,22 +185,16 @@ async def update_notification_settings(
         from ..database import UserNotificationSettings as UserNotificationSettingsTable
         existing_settings = db.query(UserNotificationSettingsTable).filter(UserNotificationSettingsTable.user_id == current_user.id).first()
         
+        settings_data = camel_to_snake(settings.dict())
+        
         if existing_settings:
-            existing_settings.deadline_alerts = settings.deadlineAlerts
-            existing_settings.report_status = settings.reportStatus
-            existing_settings.fee_changes = settings.feeChanges
-            existing_settings.team_updates = settings.teamUpdates
-            existing_settings.browser_notifications = settings.browserNotifications
-            existing_settings.notification_frequency = settings.notificationFrequency
+            for field, value in settings_data.items():
+                if hasattr(existing_settings, field):
+                    setattr(existing_settings, field, value)
         else:
             new_settings = UserNotificationSettingsTable(
                 user_id=current_user.id,
-                deadline_alerts=settings.deadlineAlerts,
-                report_status=settings.reportStatus,
-                fee_changes=settings.feeChanges,
-                team_updates=settings.teamUpdates,
-                browser_notifications=settings.browserNotifications,
-                notification_frequency=settings.notificationFrequency
+                **{k: v for k, v in settings_data.items() if hasattr(UserNotificationSettingsTable, k)}
             )
             db.add(new_settings)
         

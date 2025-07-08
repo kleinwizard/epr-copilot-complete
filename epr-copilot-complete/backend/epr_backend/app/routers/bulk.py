@@ -4,6 +4,7 @@ from typing import List, Dict, Any
 from ..database import get_db, Organization
 from ..auth import get_current_user
 from ..schemas import User as UserSchema
+from ..utils.field_converter import camel_to_snake
 import csv
 import io
 import json
@@ -92,7 +93,7 @@ def validate_material_row(row: Dict[str, Any], row_number: int) -> Dict[str, Any
     if errors:
         raise ValueError("; ".join(errors))
     
-    return {
+    material_data = {
         "id": str(uuid.uuid4()),
         "name": row['name'].strip(),
         "category": row['category'].strip(),
@@ -104,6 +105,7 @@ def validate_material_row(row: Dict[str, Any], row_number: int) -> Dict[str, Any
         "created_at": datetime.now().isoformat(),
         "imported": True
     }
+    return camel_to_snake(material_data)
 
 @router.post("/import/products")
 async def import_products(

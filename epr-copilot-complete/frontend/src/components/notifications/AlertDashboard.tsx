@@ -21,11 +21,14 @@ export function AlertDashboard() {
   
   const [complianceCalculation, setComplianceCalculation] = useState<ComplianceCalculation | null>(null);
   const [isLoadingCompliance, setIsLoadingCompliance] = useState(true);
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     loadComplianceScore();
     loadAlertCounts();
+    loadUpcomingEvents();
   }, []);
 
   const loadAlertCounts = async () => {
@@ -67,7 +70,24 @@ export function AlertDashboard() {
     }
   };
 
-  const upcomingEvents = getUpcomingEvents(7); // Next 7 days
+  const loadUpcomingEvents = async () => {
+    try {
+      setIsLoadingEvents(true);
+      const events = await getUpcomingEvents(7); // Next 7 days
+      setUpcomingEvents(Array.isArray(events) ? events : []);
+    } catch (error) {
+      console.error('Failed to load upcoming events:', error);
+      setUpcomingEvents([]);
+      toast({
+        title: "Error",
+        description: "Failed to load upcoming events.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingEvents(false);
+    }
+  };
+
   const criticalDeadlines = upcomingEvents.filter(event => 
     event.priority === 'critical' && 
     new Date(event.date).getTime() - new Date().getTime() <= 7 * 24 * 60 * 60 * 1000
@@ -150,7 +170,11 @@ export function AlertDashboard() {
             <div className="flex items-center space-x-2">
               <Calendar className="h-5 w-5 text-blue-600" />
               <div>
-                <p className="text-2xl font-bold text-blue-600">{criticalDeadlines.length}</p>
+                {isLoadingEvents ? (
+                  <p className="text-2xl font-bold text-gray-400">--</p>
+                ) : (
+                  <p className="text-2xl font-bold text-blue-600">{criticalDeadlines.length}</p>
+                )}
                 <p className="text-sm text-muted-foreground">Critical Deadlines</p>
               </div>
             </div>
@@ -239,7 +263,12 @@ export function AlertDashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {criticalDeadlines.length === 0 ? (
+            {isLoadingEvents ? (
+              <div className="text-center py-4">
+                <Calendar className="h-8 w-8 text-muted-foreground mx-auto mb-2 animate-pulse" />
+                <p className="text-muted-foreground">Loading critical deadlines...</p>
+              </div>
+            ) : criticalDeadlines.length === 0 ? (
               <div className="text-center py-4">
                 <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
                 <p className="text-muted-foreground">No critical deadlines in the next 7 days</p>
@@ -252,12 +281,13 @@ export function AlertDashboard() {
                     <div>
                       <p className="font-medium text-red-900">{deadline.title}</p>
                       <p className="text-sm text-red-700">
-                        Due: {deadline.date.toLocaleDateString()}
+                        Due: {deadline.date && deadline.date.toLocaleDateString ? deadline.date.toLocaleDateString() : 'Invalid date'}
                       </p>
                     </div>
                   </div>
                   <Badge variant="destructive">
-                    {Math.ceil((deadline.date.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days
+                    {deadline.date && deadline.date.getTime ? 
+                      Math.ceil((deadline.date.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0} days
                   </Badge>
                 </div>
               ))
