@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from ..database import get_db, Organization, User
 from ..auth import get_current_user
 from ..schemas import User as UserSchema
+from ..utils.field_converter import convert_frontend_fields
 
 router = APIRouter(prefix="/api/company", tags=["company"])
 
@@ -72,7 +73,18 @@ async def update_company_profile(
         if not organization:
             raise HTTPException(status_code=404, detail="Organization not found")
         
-        for field, value in profile.dict().items():
+        field_mapping = {
+            'legalName': 'legal_name',
+            'businessId': 'business_id',
+            'deqNumber': 'deq_number',
+            'naicsCode': 'naics_code',
+            'entityType': 'entity_type',
+            'streetAddress': 'street_address',
+            'zipCode': 'zip_code'
+        }
+        converted_data = convert_frontend_fields(profile.dict(), field_mapping)
+        
+        for field, value in converted_data.items():
             if hasattr(organization, field):
                 setattr(organization, field, value)
         

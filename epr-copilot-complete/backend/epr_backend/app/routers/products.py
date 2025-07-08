@@ -4,6 +4,7 @@ from typing import List, Optional
 from ..database import get_db, Product, Material
 from ..schemas import ProductCreate, Product as ProductSchema, Material as MaterialSchema
 from ..auth import get_current_user
+from ..utils.field_converter import convert_frontend_fields
 
 router = APIRouter(prefix="/api/products", tags=["products"])
 
@@ -29,10 +30,10 @@ async def create_product(
     db: Session = Depends(get_db)
 ):
     """Create a new product."""
-    product_data = product.dict()
-    
-    if 'designatedProducerId' in product_data:
-        product_data['designated_producer_id'] = product_data.pop('designatedProducerId')
+    field_mapping = {
+        'designatedProducerId': 'designated_producer_id'
+    }
+    product_data = convert_frontend_fields(product.dict(), field_mapping)
     
     db_product = Product(
         **product_data,
@@ -75,10 +76,10 @@ async def update_product(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    product_data = product_update.dict()
-    
-    if 'designatedProducerId' in product_data:
-        product_data['designated_producer_id'] = product_data.pop('designatedProducerId')
+    field_mapping = {
+        'designatedProducerId': 'designated_producer_id'
+    }
+    product_data = convert_frontend_fields(product_update.dict(), field_mapping)
 
     for field, value in product_data.items():
         if hasattr(product, field):

@@ -4,6 +4,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 from ..database import get_db, Base, engine
 from sqlalchemy import Column, String, Integer
+from ..utils.field_converter import convert_frontend_fields
 
 router = APIRouter(prefix="/api/user", tags=["user"])
 
@@ -74,26 +75,22 @@ async def get_user_profile(db: Session = Depends(get_db)):
 async def update_user_profile(profile: UserProfile, db: Session = Depends(get_db)):
     """Update user profile information"""
     try:
+        field_mapping = {
+            'firstName': 'first_name',
+            'lastName': 'last_name'
+        }
+        converted_profile = convert_frontend_fields(profile.dict(), field_mapping)
+        
         existing_profile = db.query(UserProfileTable).filter(UserProfileTable.id == 1).first()
         
         if existing_profile:
-            existing_profile.first_name = profile.firstName
-            existing_profile.last_name = profile.lastName
-            existing_profile.email = profile.email
-            existing_profile.phone = profile.phone
-            existing_profile.title = profile.title
-            existing_profile.bio = profile.bio
-            existing_profile.avatar = profile.avatar
+            for field, value in converted_profile.items():
+                if hasattr(existing_profile, field):
+                    setattr(existing_profile, field, value)
         else:
             new_profile = UserProfileTable(
                 id=1,
-                first_name=profile.firstName,
-                last_name=profile.lastName,
-                email=profile.email,
-                phone=profile.phone,
-                title=profile.title,
-                bio=profile.bio,
-                avatar=profile.avatar
+                **converted_profile
             )
             db.add(new_profile)
         
