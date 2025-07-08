@@ -6,7 +6,7 @@ from ..database import get_db, Organization, User
 from ..auth import get_current_user
 from ..schemas import User as UserSchema
 from ..cache import cache_result
-from ..utils.field_converter import camel_to_snake
+from ..utils.field_converter import convert_frontend_fields
 from datetime import timedelta
 import json
 import uuid
@@ -94,9 +94,18 @@ async def update_company_profile(
         if not organization:
             raise HTTPException(status_code=404, detail="Organization not found")
         
-        profile_data = camel_to_snake(profile.dict())
+        field_mapping = {
+            'legalName': 'legal_name',
+            'businessId': 'business_id',
+            'deqNumber': 'deq_number',
+            'naicsCode': 'naics_code',
+            'entityType': 'entity_type',
+            'streetAddress': 'street_address',
+            'zipCode': 'zip_code'
+        }
+        converted_data = convert_frontend_fields(profile.dict(), field_mapping)
         
-        for field, value in profile_data.items():
+        for field, value in converted_data.items():
             if hasattr(organization, field):
                 setattr(organization, field, value)
         

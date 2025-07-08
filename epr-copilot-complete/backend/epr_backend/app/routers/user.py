@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db, UserProfile as UserProfileTable
 from ..auth import get_current_user
 from ..schemas import User as UserSchema
-from ..utils.field_converter import camel_to_snake, apply_field_mapping, COMMON_FIELD_MAPPINGS
+from ..utils.field_converter import convert_frontend_fields, camel_to_snake
 import os
 import uuid
 from pathlib import Path
@@ -73,18 +73,22 @@ async def update_user_profile(
 ):
     """Update user profile information"""
     try:
+        field_mapping = {
+            'firstName': 'first_name',
+            'lastName': 'last_name'
+        }
+        converted_profile = convert_frontend_fields(profile.dict(), field_mapping)
+        
         existing_profile = db.query(UserProfileTable).filter(UserProfileTable.user_id == current_user.id).first()
         
-        profile_data = camel_to_snake(profile.dict())
-        
         if existing_profile:
-            for field, value in profile_data.items():
+            for field, value in converted_profile.items():
                 if hasattr(existing_profile, field) and value is not None:
                     setattr(existing_profile, field, value)
         else:
             new_profile = UserProfileTable(
                 user_id=current_user.id,
-                **{k: v for k, v in profile_data.items() if hasattr(UserProfileTable, k)}
+                **{k: v for k, v in converted_profile.items() if hasattr(UserProfileTable, k)}
             )
             db.add(new_profile)
         

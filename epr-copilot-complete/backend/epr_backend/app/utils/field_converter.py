@@ -4,7 +4,7 @@ Used to handle field name mismatches between frontend (camelCase) and backend (s
 """
 
 import re
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, Optional
 
 
 def camel_to_snake(data: Union[Dict[str, Any], str]) -> Union[Dict[str, Any], str]:
@@ -64,6 +64,23 @@ def snake_to_camel(data: Union[Dict[str, Any], str]) -> Union[Dict[str, Any], st
     return converted
 
 
+def convert_frontend_fields(data: Dict[str, Any], field_mapping: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    """Convert frontend camelCase fields to backend snake_case with optional custom mapping."""
+    converted = camel_to_snake(data)
+    if not isinstance(converted, dict):
+        return {}
+    
+    if field_mapping:
+        for frontend_key, backend_key in field_mapping.items():
+            if frontend_key in data:
+                converted[backend_key] = data[frontend_key]
+                auto_converted_key = re.sub(r'(?<!^)(?=[A-Z])', '_', frontend_key).lower()
+                if auto_converted_key in converted and auto_converted_key != backend_key:
+                    del converted[auto_converted_key]
+    
+    return converted
+
+
 def convert_pydantic_dict_to_snake_case(pydantic_dict: Dict[str, Any]) -> Dict[str, Any]:
     """
     Convert a Pydantic model's dict() output from camelCase to snake_case.
@@ -76,7 +93,8 @@ def convert_pydantic_dict_to_snake_case(pydantic_dict: Dict[str, Any]) -> Dict[s
     Returns:
         Dictionary with snake_case keys suitable for SQLAlchemy models
     """
-    return camel_to_snake(pydantic_dict)
+    result = camel_to_snake(pydantic_dict)
+    return result if isinstance(result, dict) else {}
 
 
 def convert_db_result_to_camel_case(db_dict: Dict[str, Any]) -> Dict[str, Any]:
@@ -90,7 +108,8 @@ def convert_db_result_to_camel_case(db_dict: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         Dictionary with camelCase keys suitable for frontend
     """
-    return snake_to_camel(db_dict)
+    result = snake_to_camel(db_dict)
+    return result if isinstance(result, dict) else {}
 
 
 COMMON_FIELD_MAPPINGS = {
