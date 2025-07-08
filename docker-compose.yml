@@ -39,7 +39,7 @@ services:
       dockerfile: Dockerfile
     container_name: epr-backend
     ports:
-      - "8000:8001"
+      - "8001:8001"
     environment:
       - SECRET_KEY=dev-secret-key-change-in-production
       - DATABASE_URL=postgresql://epr_user:epr_password@postgres:5432/epr_copilot
