@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime, timezone
+import uuid
 from ..database import get_db
 from ..auth import get_current_user
 from ..services.email_service import email_service
@@ -252,8 +253,12 @@ async def test_push_service(
     }
 
 
-@router.get("/")
+@router.get("/", response_model=List[NotificationResponse])
 async def get_notifications(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    status: Optional[str] = Query(None, pattern="^(read|unread)$"),
+    type: Optional[str] = None,
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> List[NotificationResponse]:
@@ -277,9 +282,46 @@ async def get_notifications(
             status="read",
             created_at=datetime.now(timezone.utc),
             read_at=datetime.now(timezone.utc)
+        ),
+        NotificationResponse(
+            id="3",
+            title="New Team Member Added",
+            message="John Doe has joined your organization",
+            type="team",
+            priority="low",
+            status="unread",
+            created_at=datetime.now(timezone.utc)
+        ),
+        NotificationResponse(
+            id="4",
+            title="Compliance Score Updated",
+            message="Your compliance score has improved to 92%",
+            type="compliance",
+            priority="medium",
+            status="unread",
+            created_at=datetime.now(timezone.utc)
         )
     ]
-    return mock_notifications
+    
+    filtered = mock_notifications
+    if status:
+        filtered = [n for n in filtered if n.status == status]
+    if type:
+        filtered = [n for n in filtered if n.type == type]
+    
+    return filtered[skip:skip + limit]
+
+
+@router.get("/count")
+async def get_notification_count(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> dict:
+    """Get count of unread notifications."""
+    return {
+        "unread_count": 3,
+        "total_count": 4
+    }
 
 
 @router.put("/{notification_id}/read")
@@ -287,36 +329,56 @@ async def mark_notification_read(
     notification_id: str,
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
-):
+) -> dict:
     """Mark a notification as read."""
     return {
         "message": "Notification marked as read",
         "notification_id": notification_id,
-        "status": "success"
+        "status": "read",
+        "read_at": datetime.now(timezone.utc).isoformat()
+    }
+
+
+@router.put("/mark-all-read")
+async def mark_all_notifications_read(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> dict:
+    """Mark all notifications as read."""
+    return {
+        "message": "All notifications marked as read",
+        "updated_count": 3,
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
 
 @router.delete("/{notification_id}")
-async def dismiss_notification(
+async def delete_notification(
     notification_id: str,
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
-):
-    """Dismiss a notification."""
+) -> dict:
+    """Delete a notification."""
     return {
-        "message": "Notification dismissed",
-        "notification_id": notification_id,
-        "status": "success"
+        "message": "Notification deleted successfully",
+        "notification_id": notification_id
     }
 
 
-@router.get("/preferences")
+@router.get("/preferences", response_model=NotificationPreferences)
 async def get_notification_preferences(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> NotificationPreferences:
-    """Get notification preferences for the current user."""
-    return NotificationPreferences()
+    """Get user notification preferences."""
+    return NotificationPreferences(
+        email_notifications=True,
+        sms_notifications=False,
+        push_notifications=True,
+        deadline_reminders=True,
+        compliance_alerts=True,
+        team_notifications=True
+    )
 
 
 @router.put("/preferences")
@@ -324,6 +386,32 @@ async def update_notification_preferences(
     preferences: NotificationPreferences,
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
-) -> NotificationPreferences:
-    """Update notification preferences for the current user."""
-    return preferences
+) -> dict:
+    """Update user notification preferences."""
+    return {
+        "message": "Notification preferences updated successfully",
+        "preferences": preferences.dict(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+
+
+@router.post("/test")
+async def create_test_notification(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> dict:
+    """Create a test notification for debugging."""
+    test_notification = {
+        "id": str(uuid.uuid4()),
+        "title": "Test Notification",
+        "message": f"This is a test notification created at {datetime.now(timezone.utc).isoformat()}",
+        "type": "system",
+        "priority": "low",
+        "status": "unread",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    return {
+        "message": "Test notification created",
+        "notification": test_notification
+    }
