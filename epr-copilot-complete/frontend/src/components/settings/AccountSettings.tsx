@@ -98,15 +98,26 @@ export function AccountSettings() {
   const handleSaveProfile = async () => {
     setIsLoading(true);
     try {
+      if (!userProfile.firstName || !userProfile.lastName || !userProfile.email) {
+        throw new Error('Please fill in all required fields (First Name, Last Name, and Email)');
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(userProfile.email)) {
+        throw new Error('Please enter a valid email address');
+      }
+
       await apiService.put('/api/user/profile', userProfile);
+      
       toast({
-        title: "Profile Updated",
-        description: "Your profile information has been successfully updated.",
+        title: "Success",
+        description: "Profile information saved successfully.",
       });
     } catch (error) {
+      console.error('Profile save error:', error);
       toast({
         title: "Error",
-        description: "Failed to update profile. Please try again.",
+        description: error.message || "Failed to save profile information. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -117,15 +128,21 @@ export function AccountSettings() {
   const handleSavePreferences = async () => {
     setIsLoading(true);
     try {
+      if (!preferences.timezone || !preferences.language) {
+        throw new Error('Please select both timezone and language preferences');
+      }
+
       await apiService.put('/api/user/preferences', preferences);
+      
       toast({
-        title: "Preferences Saved",
-        description: "Your preferences have been successfully updated.",
+        title: "Success",
+        description: "Preferences saved successfully.",
       });
     } catch (error) {
+      console.error('Preferences save error:', error);
       toast({
         title: "Error",
-        description: "Failed to save preferences. Please try again.",
+        description: error.message || "Failed to save preferences. Please try again.",
         variant: "destructive",
       });
     } finally {

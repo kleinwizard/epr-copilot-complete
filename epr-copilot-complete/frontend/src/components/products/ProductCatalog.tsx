@@ -162,23 +162,31 @@ export function ProductCatalog() {
 
   const handleSaveProduct = async (productData) => {
     try {
-      if (editingProduct) {
-        const updatedProduct = await dataService.updateProduct(editingProduct.id, productData);
-        setProducts(products.map(p => p.id === editingProduct.id ? updatedProduct : p));
-      } else {
-        const newProduct = await dataService.saveProduct(productData);
-        setProducts([...products, newProduct]);
+      if (!productData.name || !productData.sku) {
+        throw new Error('Product name and SKU are required');
       }
+
+      let savedProduct;
+      if (editingProduct) {
+        savedProduct = await dataService.updateProduct(editingProduct.id, productData);
+        setProducts(products.map(p => p.id === editingProduct.id ? savedProduct : p));
+      } else {
+        savedProduct = await dataService.saveProduct(productData);
+        setProducts([...products, savedProduct]);
+      }
+      
       setShowProductForm(false);
       setEditingProduct(null);
+      
       toast({
-        title: "Product Saved",
-        description: "Product has been successfully saved.",
+        title: "Success",
+        description: `Product "${savedProduct.name}" has been saved successfully.`,
       });
     } catch (error) {
+      console.error('Product save error:', error);
       toast({
         title: "Error",
-        description: "Failed to save product. Please try again.",
+        description: error.message || "Failed to save product. Please try again.",
         variant: "destructive",
       });
     }

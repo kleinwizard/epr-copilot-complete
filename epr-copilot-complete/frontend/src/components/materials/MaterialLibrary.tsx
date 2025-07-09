@@ -117,23 +117,31 @@ export function MaterialLibrary() {
 
   const handleSaveMaterial = async (materialData: Partial<Material>) => {
     try {
-      if (editingMaterial) {
-        const updatedMaterial = await dataService.updateMaterial(editingMaterial.id, materialData);
-        setMaterials(materials.map(m => m.id === editingMaterial.id ? updatedMaterial : m));
-      } else {
-        const newMaterial = await dataService.saveMaterial(materialData);
-        setMaterials([...materials, newMaterial]);
+      if (!materialData.name || !materialData.category) {
+        throw new Error('Material name and category are required');
       }
+
+      let savedMaterial;
+      if (editingMaterial) {
+        savedMaterial = await dataService.updateMaterial(editingMaterial.id, materialData);
+        setMaterials(materials.map(m => m.id === editingMaterial.id ? savedMaterial : m));
+      } else {
+        savedMaterial = await dataService.saveMaterial(materialData);
+        setMaterials([...materials, savedMaterial]);
+      }
+      
       setShowForm(false);
       setEditingMaterial(null);
+      
       toast({
-        title: "Material Saved",
-        description: "Material has been successfully saved.",
+        title: "Success",
+        description: `Material "${savedMaterial.name}" has been saved successfully.`,
       });
     } catch (error) {
+      console.error('Material save error:', error);
       toast({
         title: "Error",
-        description: "Failed to save material. Please try again.",
+        description: error.message || "Failed to save material. Please try again.",
         variant: "destructive",
       });
     }
