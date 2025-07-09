@@ -9,6 +9,7 @@ import { getUpcomingEvents } from '@/services/calendarService';
 import { getNotificationStats } from '@/services/notificationService';
 import { useToast } from '@/hooks/use-toast';
 import { complianceCalculationService, ComplianceCalculation } from '@/services/complianceCalculationService';
+import { apiService } from '@/services/apiService';
 
 export function AlertDashboard() {
   const [alertsCount, setAlertsCount] = useState({
@@ -56,7 +57,18 @@ export function AlertDashboard() {
   const loadComplianceScore = async () => {
     try {
       setIsLoadingCompliance(true);
-      const calculation = await complianceCalculationService.calculateComplianceScore();
+      const scoreData = await apiService.getComplianceScore();
+      const calculation = {
+        overallScore: scoreData.overall_score || 0,
+        breakdown: {
+          companyProfile: { score: 0, weight: 10, complete: false },
+          materials: { score: 0, weight: 20, count: 0 },
+          products: { score: 0, weight: 20, count: 0 },
+          salesData: { score: 0, weight: 25, complete: false },
+          reports: { score: 0, weight: 15, count: 0 },
+          fees: { score: 0, weight: 10, active: false }
+        }
+      };
       setComplianceCalculation(calculation);
     } catch (error) {
       console.error('Failed to load compliance score:', error);

@@ -2,8 +2,8 @@
 import { notificationDataService } from './notificationDataService';
 
 export class NotificationStatsService {
-  getNotificationStats() {
-    const notifications = notificationDataService.getNotifications();
+  async getNotificationStats() {
+    const notifications = await notificationDataService.getNotifications();
     return {
       total: notifications.length,
       unread: notifications.filter(n => n.status === 'unread').length,

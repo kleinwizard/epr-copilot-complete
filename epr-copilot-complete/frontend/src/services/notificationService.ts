@@ -13,11 +13,11 @@ import { notificationFactoryService } from './notificationFactoryService';
 import { notificationStatsService } from './notificationStatsService';
 
 // Re-export service methods for backward compatibility
-export const getNotifications = () => notificationDataService.getNotifications();
-export const getUnreadNotifications = () => notificationDataService.getUnreadNotifications();
-export const getNotificationsByType = (type: any) => notificationDataService.getNotificationsByType(type);
-export const markNotificationAsRead = (id: string) => notificationDataService.markNotificationAsRead(id);
-export const dismissNotification = (id: string) => notificationDataService.dismissNotification(id);
+export const getNotifications = async () => await notificationDataService.getNotifications();
+export const getUnreadNotifications = async () => await notificationDataService.getUnreadNotifications();
+export const getNotificationsByType = async (type: any) => await notificationDataService.getNotificationsByType(type);
+export const markNotificationAsRead = async (id: string) => await notificationDataService.markNotificationAsRead(id);
+export const dismissNotification = async (id: string) => await notificationDataService.dismissNotification(id);
 
 export const createDeadlineReminder = (
   title: string,

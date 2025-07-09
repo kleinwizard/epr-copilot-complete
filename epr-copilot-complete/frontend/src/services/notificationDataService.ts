@@ -1,123 +1,43 @@
 
 import { Notification } from '../types/notifications';
+import { apiService } from './apiService';
 
 export class NotificationDataService {
-  private notifications: Notification[] = [
-    {
-      id: '1',
-      title: 'Q4 2024 Report Due Soon',
-      message: 'Your Q4 2024 EPR report submission is due in 5 days. Please review and submit before the deadline.',
-      type: 'deadline',
-      priority: 'high',
-      status: 'unread',
-      createdAt: '2024-06-24T09:00:00Z',
-      scheduledFor: '2024-06-24T09:00:00Z',
-      relatedEntity: {
-        type: 'report',
-        id: 'q4-2024',
-        name: 'Q4 2024 EPR Report'
-      },
-      actions: [
-        {
-          id: 'view-report',
-          label: 'View Report',
-          type: 'primary',
-          action: 'navigate',
-          target: '/reports/q4-2024'
-        },
-        {
-          id: 'dismiss',
-          label: 'Dismiss',
-          type: 'secondary',
-          action: 'dismiss'
-        }
-      ]
-    },
-    {
-      id: '2',
-      title: 'Compliance Score Below Threshold',
-      message: 'Your current compliance score (89%) has dropped below the recommended threshold of 90%. Review your recent submissions.',
-      type: 'compliance',
-      priority: 'medium',
-      status: 'unread',
-      createdAt: '2024-06-24T08:30:00Z',
-      actions: [
-        {
-          id: 'view-dashboard',
-          label: 'View Dashboard',
-          type: 'primary',
-          action: 'navigate',
-          target: '/dashboard'
-        }
-      ]
-    },
-    {
-      id: '3',
-      title: 'New Team Member Added',
-      message: 'Sarah Johnson has been added to the Compliance Team with Manager role.',
-      type: 'team',
-      priority: 'low',
-      status: 'unread',
-      createdAt: '2024-06-24T07:15:00Z',
-      relatedEntity: {
-        type: 'team_member',
-        id: 'sarah-johnson',
-        name: 'Sarah Johnson'
-      },
-      actions: [
-        {
-          id: 'view-team',
-          label: 'View Team',
-          type: 'primary',
-          action: 'navigate',
-          target: '/team'
-        }
-      ]
-    }
-  ];
-
-  getNotifications(): Notification[] {
-    const hasOrganizationData = localStorage.getItem('epr_organization_initialized') === 'true';
-    if (!hasOrganizationData) {
+  async getNotifications(): Promise<Notification[]> {
+    try {
+      const data = await apiService.getNotifications();
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
       return [];
     }
-    return this.notifications.sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
   }
 
-  getUnreadNotifications(): Notification[] {
-    const hasOrganizationData = localStorage.getItem('epr_organization_initialized') === 'true';
-    if (!hasOrganizationData) {
-      return [];
-    }
-    return this.notifications.filter(n => n.status === 'unread');
+  async getUnreadNotifications(): Promise<Notification[]> {
+    const notifications = await this.getNotifications();
+    return notifications.filter(n => n.status === 'unread');
   }
 
-  getNotificationsByType(type: Notification['type']): Notification[] {
-    const hasOrganizationData = localStorage.getItem('epr_organization_initialized') === 'true';
-    if (!hasOrganizationData) {
-      return [];
-    }
-    return this.notifications.filter(n => n.type === type);
+  async getNotificationsByType(type: Notification['type']): Promise<Notification[]> {
+    const notifications = await this.getNotifications();
+    return notifications.filter(n => n.type === type);
   }
 
-  markNotificationAsRead(id: string): void {
-    const notification = this.notifications.find(n => n.id === id);
-    if (notification) {
-      notification.status = 'read';
+  async markNotificationAsRead(id: string): Promise<void> {
+    try {
+      await apiService.markNotificationAsRead(id);
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+      throw error;
     }
   }
 
-  dismissNotification(id: string): void {
-    const notification = this.notifications.find(n => n.id === id);
-    if (notification) {
-      notification.status = 'dismissed';
-    }
+  async dismissNotification(id: string): Promise<void> {
+    return this.markNotificationAsRead(id);
   }
 
-  addNotification(notification: Notification): void {
-    this.notifications.push(notification);
+  async addNotification(notification: Notification): Promise<void> {
+    console.warn('addNotification not implemented - requires backend POST endpoint');
   }
 }
 

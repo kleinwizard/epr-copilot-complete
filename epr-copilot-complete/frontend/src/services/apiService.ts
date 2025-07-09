@@ -112,6 +112,18 @@ class ApiService {
     return this.get('/api/compliance/due-dates');
   }
 
+  async getComplianceScore() {
+    return this.get('/api/compliance/score');
+  }
+
+  async getComplianceIssues() {
+    return this.get('/api/compliance/issues');
+  }
+
+  async updateComplianceIssueStatus(id: string, status: string) {
+    return this.put(`/api/compliance/issues/${id}/status`, { status });
+  }
+
   async getFeeDeadlines() {
     return this.get('/api/fees/deadlines');
   }
@@ -153,7 +165,7 @@ class ApiService {
   }
 
   async getNotifications() {
-    return this.get('/api/notifications');
+    return this.get('/api/notifications/');
   }
 
   async markNotificationAsRead(id: string) {

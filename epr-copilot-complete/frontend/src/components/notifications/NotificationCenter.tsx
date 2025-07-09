@@ -95,7 +95,7 @@ export function NotificationCenter() {
     let filtered = notifications;
 
     if (selectedTab !== 'all') {
-      filtered = getNotificationsByType(selectedTab as Notification['type']);
+      filtered = filtered.filter(n => n.type === selectedTab);
     }
 
     if (filters.status !== 'all') {
