@@ -47,6 +47,9 @@ class Organization(Base):
     compliance_profiles = relationship("ComplianceProfile", back_populates="organization")
     business_entities = relationship("BusinessEntity", back_populates="organization")
     documents = relationship("Document", back_populates="organization")
+    notifications = relationship("Notification", back_populates="organization")
+    compliance_metrics = relationship("ComplianceMetric", back_populates="organization")
+    compliance_issues = relationship("ComplianceIssue", back_populates="organization")
 
 
 class User(Base):
@@ -62,6 +65,8 @@ class User(Base):
     organization = relationship("Organization", back_populates="users")
     profile = relationship("UserProfile", back_populates="user", uselist=False)
     notification_settings = relationship("UserNotificationSettings", back_populates="user", uselist=False)
+    notifications = relationship("Notification", back_populates="user")
+    notification_preferences = relationship("NotificationPreference", back_populates="user", uselist=False)
 
 
 class Product(Base):
@@ -461,6 +466,78 @@ class UserNotificationSettings(Base):
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User")
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    organization_id = Column(String, ForeignKey("organizations.id"), nullable=False)
+    title = Column(String(255), nullable=False)
+    message = Column(Text, nullable=False)
+    type = Column(String(50), nullable=False)  # deadline, payment, team, compliance, system
+    priority = Column(String(20), nullable=False, default="medium")  # low, medium, high, critical
+    status = Column(String(20), nullable=False, default="unread")  # read, unread
+    extra_data = Column(JSON)  # Additional data like links, actions, etc.
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    read_at = Column(DateTime)
+
+    user = relationship("User", back_populates="notifications")
+    organization = relationship("Organization", back_populates="notifications")
+
+
+class NotificationPreference(Base):
+    __tablename__ = "notification_preferences"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, ForeignKey("users.id"), unique=True, nullable=False)
+    email_notifications = Column(Boolean, default=True)
+    sms_notifications = Column(Boolean, default=False)
+    push_notifications = Column(Boolean, default=True)
+    deadline_reminders = Column(Boolean, default=True)
+    compliance_alerts = Column(Boolean, default=True)
+    team_notifications = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User", back_populates="notification_preferences")
+
+
+class ComplianceMetric(Base):
+    __tablename__ = "compliance_metrics"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    organization_id = Column(String, ForeignKey("organizations.id"), nullable=False)
+    metric_type = Column(String(50), nullable=False)  # overall_score, reporting, materials, fees, documentation, data_quality
+    metric_value = Column(Numeric(5, 2), nullable=False)  # Score value (0-100)
+    category = Column(String(50))  # Additional categorization if needed
+    calculated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    extra_data = Column(JSON)  # Additional calculation details
+
+    organization = relationship("Organization", back_populates="compliance_metrics")
+
+
+class ComplianceIssue(Base):
+    __tablename__ = "compliance_issues"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    organization_id = Column(String, ForeignKey("organizations.id"), nullable=False)
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=False)
+    severity = Column(String(20), nullable=False)  # low, medium, high, critical
+    status = Column(String(20), nullable=False, default="open")  # open, in_progress, resolved, ignored
+    category = Column(String(50), nullable=False)  # materials, fees, documentation, data_quality, reporting
+    assigned_to = Column(String, ForeignKey("users.id"))
+    resolution_deadline = Column(DateTime)
+    resolution_notes = Column(Text)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    resolved_at = Column(DateTime)
+    extra_data = Column(JSON)
+
+    organization = relationship("Organization", back_populates="compliance_issues")
+    assigned_user = relationship("User", foreign_keys=[assigned_to])
 
 
 def run_migrations():

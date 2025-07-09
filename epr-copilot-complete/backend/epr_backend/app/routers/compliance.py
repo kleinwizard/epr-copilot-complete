@@ -62,22 +62,54 @@ async def get_compliance_score(
     db: Session = Depends(get_db)
 ) -> ComplianceScore:
     """Get current compliance score and breakdown."""
-    current_score = 89.5
-    previous_score = 87.2
+    from ..database import ComplianceMetric
+    
+    overall_metric = db.query(ComplianceMetric).filter(
+        ComplianceMetric.organization_id == current_user.organization_id,
+        ComplianceMetric.metric_type == "overall_score"
+    ).order_by(ComplianceMetric.calculated_at.desc()).first()
+    
+    if not overall_metric:
+        return ComplianceScore(
+            overall_score=0.0,
+            category_scores={},
+            trend="stable",
+            last_updated=datetime.now(timezone.utc)
+        )
+    
+    category_metrics = db.query(ComplianceMetric).filter(
+        ComplianceMetric.organization_id == current_user.organization_id,
+        ComplianceMetric.metric_type.in_(["reporting", "materials", "fees", "documentation", "data_quality"])
+    ).order_by(ComplianceMetric.calculated_at.desc()).all()
+    
+    category_scores = {}
+    for metric in category_metrics:
+        if metric.metric_type not in category_scores:
+            category_scores[metric.metric_type] = float(metric.metric_value)
+    
+    previous_metric = db.query(ComplianceMetric).filter(
+        ComplianceMetric.organization_id == current_user.organization_id,
+        ComplianceMetric.metric_type == "overall_score",
+        ComplianceMetric.calculated_at < overall_metric.calculated_at
+    ).order_by(ComplianceMetric.calculated_at.desc()).first()
+    
+    current_score = float(overall_metric.metric_value)
+    previous_score = float(previous_metric.metric_value) if previous_metric else current_score
+    
+    if current_score > previous_score + 1:
+        trend = "improving"
+    elif current_score < previous_score - 1:
+        trend = "declining"
+    else:
+        trend = "stable"
     
     return ComplianceScore(
         overall_score=current_score,
-        category_scores={
-            "reporting": 92.0,
-            "materials": 87.5,
-            "fees": 91.0,
-            "documentation": 86.0,
-            "data_quality": 88.5
-        },
-        trend="improving" if current_score > previous_score else "declining",
-        last_updated=datetime.now(timezone.utc),
-        previous_score=previous_score,
-        score_change=round(current_score - previous_score, 1)
+        category_scores=category_scores,
+        trend=trend,
+        last_updated=overall_metric.calculated_at,
+        previous_score=previous_score if previous_metric else None,
+        score_change=round(current_score - previous_score, 1) if previous_metric else None
     )
 
 
@@ -119,51 +151,37 @@ async def get_compliance_issues(
     db: Session = Depends(get_db)
 ) -> List[ComplianceIssue]:
     """Get compliance issues and violations."""
-    mock_issues = [
-        ComplianceIssue(
-            id="1",
-            title="Missing Material Classification",
-            description="5 products are missing required material classification for Q4 reporting",
-            severity="medium",
-            status="open",
-            category="materials",
-            created_at=datetime.now(timezone.utc) - timedelta(days=3),
-            updated_at=datetime.now(timezone.utc),
-            resolution_deadline=datetime.now(timezone.utc) + timedelta(days=4),
-            assigned_to=current_user.email
-        ),
-        ComplianceIssue(
-            id="2",
-            title="Incomplete Fee Documentation",
-            description="Supporting documents missing for €2,500 in fee payments",
-            severity="high",
-            status="in_progress",
-            category="fees",
-            created_at=datetime.now(timezone.utc) - timedelta(days=7),
-            updated_at=datetime.now(timezone.utc) - timedelta(days=1),
-            resolution_deadline=datetime.now(timezone.utc) + timedelta(days=2)
-        ),
-        ComplianceIssue(
-            id="3",
-            title="Outdated Product Weights",
-            description="12 products have packaging weights that haven't been updated in 6 months",
-            severity="low",
-            status="open",
-            category="data_quality",
-            created_at=datetime.now(timezone.utc) - timedelta(days=14),
-            updated_at=datetime.now(timezone.utc) - timedelta(days=14)
-        )
-    ]
+    from ..database import ComplianceIssue as DBComplianceIssue
     
-    filtered = mock_issues
+    query = db.query(DBComplianceIssue).filter(
+        DBComplianceIssue.organization_id == current_user.organization_id
+    )
+    
     if status:
-        filtered = [i for i in filtered if i.status == status]
+        query = query.filter(DBComplianceIssue.status == status)
     if severity:
-        filtered = [i for i in filtered if i.severity == severity]
+        query = query.filter(DBComplianceIssue.severity == severity)
     if category:
-        filtered = [i for i in filtered if i.category == category]
+        query = query.filter(DBComplianceIssue.category == category)
     
-    return filtered[skip:skip + limit]
+    issues = query.order_by(DBComplianceIssue.created_at.desc()).offset(skip).limit(limit).all()
+    
+    return [
+        ComplianceIssue(
+            id=issue.id,
+            title=issue.title,
+            description=issue.description,
+            severity=issue.severity,
+            status=issue.status,
+            category=issue.category,
+            created_at=issue.created_at,
+            updated_at=issue.updated_at,
+            resolution_deadline=issue.resolution_deadline,
+            assigned_to=issue.assigned_to,
+            resolution_notes=issue.resolution_notes
+        )
+        for issue in issues
+    ]
 
 
 @router.get("/issues/{issue_id}", response_model=ComplianceIssue)
@@ -173,21 +191,29 @@ async def get_compliance_issue(
     db: Session = Depends(get_db)
 ) -> ComplianceIssue:
     """Get details of a specific compliance issue."""
-    if issue_id == "1":
-        return ComplianceIssue(
-            id="1",
-            title="Missing Material Classification",
-            description="5 products are missing required material classification for Q4 reporting",
-            severity="medium",
-            status="open",
-            category="materials",
-            created_at=datetime.now(timezone.utc) - timedelta(days=3),
-            updated_at=datetime.now(timezone.utc),
-            resolution_deadline=datetime.now(timezone.utc) + timedelta(days=4),
-            assigned_to=current_user.email
-        )
+    from ..database import ComplianceIssue as DBComplianceIssue
     
-    raise HTTPException(status_code=404, detail="Compliance issue not found")
+    issue = db.query(DBComplianceIssue).filter(
+        DBComplianceIssue.id == issue_id,
+        DBComplianceIssue.organization_id == current_user.organization_id
+    ).first()
+    
+    if not issue:
+        raise HTTPException(status_code=404, detail="Compliance issue not found")
+    
+    return ComplianceIssue(
+        id=issue.id,
+        title=issue.title,
+        description=issue.description,
+        severity=issue.severity,
+        status=issue.status,
+        category=issue.category,
+        created_at=issue.created_at,
+        updated_at=issue.updated_at,
+        resolution_deadline=issue.resolution_deadline,
+        assigned_to=issue.assigned_to,
+        resolution_notes=issue.resolution_notes
+    )
 
 
 @router.put("/issues/{issue_id}/status")
@@ -199,11 +225,32 @@ async def update_issue_status(
     db: Session = Depends(get_db)
 ) -> dict:
     """Update the status of a compliance issue."""
+    from ..database import ComplianceIssue as DBComplianceIssue
+    
+    issue = db.query(DBComplianceIssue).filter(
+        DBComplianceIssue.id == issue_id,
+        DBComplianceIssue.organization_id == current_user.organization_id
+    ).first()
+    
+    if not issue:
+        raise HTTPException(status_code=404, detail="Compliance issue not found")
+    
+    issue.status = status
+    issue.updated_at = datetime.now(timezone.utc)
+    
+    if resolution_notes:
+        issue.resolution_notes = resolution_notes
+    
+    if status == "resolved":
+        issue.resolved_at = datetime.now(timezone.utc)
+    
+    db.commit()
+    
     return {
         "message": "Issue status updated successfully",
         "issue_id": issue_id,
         "new_status": status,
-        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": issue.updated_at.isoformat(),
         "updated_by": current_user.email
     }
 
