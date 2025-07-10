@@ -46,8 +46,6 @@ export class CustomApiService {
     if (!api) {
       throw new Error('API not found');
     }
-
-    console.log(`Testing API: ${api.name}`);
     
     const token = authService.getAccessToken();
     const response = await fetch(`${APP_CONFIG.api.baseUrl}/api/integrations/test/${api.id}`, {
@@ -56,15 +54,25 @@ export class CustomApiService {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        endpoint: api.endpoint,
+        method: api.method,
+        headers: api.headers
+      })
     });
 
-    const mockResponse = {
-      status: 200,
-      data: { message: 'API test successful', timestamp: new Date().toISOString() },
-      responseTime: Math.floor(Math.random() * 500) + 100
-    };
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'API test failed' }));
+      throw new Error(error.detail || `API test failed with status ${response.status}`);
+    }
 
-    return mockResponse;
+    const result = await response.json();
+    return {
+      status: response.status,
+      data: result.data || result,
+      responseTime: result.responseTime || 0,
+      timestamp: new Date().toISOString()
+    };
   }
 
   async callAPI(id: string, parameters: Record<string, any>): Promise<any> {
@@ -73,8 +81,6 @@ export class CustomApiService {
       throw new Error('API not found or inactive');
     }
 
-    console.log(`Calling API: ${api.name} with parameters:`, parameters);
-
     const token = authService.getAccessToken();
     const response = await fetch(`${APP_CONFIG.api.baseUrl}/api/integrations/call/${api.id}`, {
       method: 'POST',
@@ -82,17 +88,30 @@ export class CustomApiService {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ parameters }),
+      body: JSON.stringify({ 
+        parameters,
+        endpoint: api.endpoint,
+        method: api.method,
+        headers: api.headers
+      }),
     });
 
-    // Update usage statistics
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'API call failed' }));
+      throw new Error(error.detail || `API call failed with status ${response.status}`);
+    }
+
+    const result = await response.json();
+    
+    // Update local usage statistics
     api.usage++;
     api.lastUsed = new Date().toISOString();
+    this.apis.set(api.id, api);
 
     return {
       success: true,
-      data: { result: 'Mock API response', parameters },
-      timestamp: new Date().toISOString()
+      data: result.data || result,
+      timestamp: result.timestamp || new Date().toISOString()
     };
   }
 

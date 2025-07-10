@@ -1,40 +1,47 @@
 
 import { SupplyChainIntegration } from '../types/integrations';
+import { APP_CONFIG } from '../config/constants';
+import { authService } from './authService';
 
 export class SupplyChainIntegrationService {
   private integrations: Map<string, SupplyChainIntegration> = new Map();
 
   constructor() {
-    this.initializeMockIntegrations();
+    this.loadIntegrations();
   }
 
-  private initializeMockIntegrations() {
-    const mockIntegrations: SupplyChainIntegration[] = [
-      {
-        id: 'supplier-001',
-        supplier: 'Green Packaging Solutions',
-        type: 'packaging',
-        status: 'active',
-        apiEndpoint: 'https://api.greenpackaging.com/v1',
-        dataFormat: 'json',
-        lastUpdate: '2024-06-24T08:00:00Z',
-        certifications: ['FSC', 'PEFC', 'Recyclable']
-      },
-      {
-        id: 'supplier-002',
-        supplier: 'EcoMaterials Corp',
-        type: 'raw_materials',
-        status: 'active',
-        apiEndpoint: 'https://api.ecomaterials.com/v2',
-        dataFormat: 'xml',
-        lastUpdate: '2024-06-24T06:30:00Z',
-        certifications: ['Bio-based', 'Compostable', 'Carbon Neutral']
+  private async loadIntegrations() {
+    try {
+      const token = authService.getAccessToken();
+      if (!token) {
+        console.warn('No auth token available, skipping integration load');
+        return;
       }
-    ];
 
-    mockIntegrations.forEach(integration => {
-      this.integrations.set(integration.id, integration);
-    });
+      const response = await fetch(`${APP_CONFIG.api.baseUrl}/api/supply-chain/integrations`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const integrations = data.integrations || [];
+        
+        this.integrations.clear();
+        
+        integrations.forEach((integration: SupplyChainIntegration) => {
+          this.integrations.set(integration.id, integration);
+        });
+      } else if (response.status === 404) {
+        console.info('No supply chain integrations configured');
+      } else {
+        throw new Error(`Failed to load integrations: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Failed to load supply chain integrations:', error);
+    }
   }
 
   getIntegrations(): SupplyChainIntegration[] {
@@ -64,16 +71,45 @@ export class SupplyChainIntegrationService {
     return updated;
   }
 
-  async testConnection(integrationId: string): Promise<boolean> {
-    const integration = this.integrations.get(integrationId);
+  async testConnection(id: string): Promise<{ success: boolean; message: string }> {
+    const integration = this.integrations.get(id);
     if (!integration) {
       throw new Error('Integration not found');
     }
 
-    console.log(`Testing connection to ${integration.supplier}...`);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      const token = authService.getAccessToken();
+      const response = await fetch(`${APP_CONFIG.api.baseUrl}/api/supply-chain/integrations/${id}/test`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          endpoint: integration.apiEndpoint,
+          dataFormat: integration.dataFormat
+        })
+      });
 
-    return Math.random() > 0.15;
+      const result = await response.json();
+      
+      if (!response.ok) {
+        return { 
+          success: false, 
+          message: result.detail || `Connection test failed: ${response.statusText}` 
+        };
+      }
+
+      return { 
+        success: result.success || true, 
+        message: result.message || 'Connection successful' 
+      };
+    } catch (error) {
+      return { 
+        success: false, 
+        message: `Connection test failed: ${error.message}` 
+      };
+    }
   }
 
   async syncData(integrationId: string): Promise<any> {
