@@ -1,7 +1,5 @@
 import pytest
-from sqlalchemy.orm import Session
-from app.database import get_db, Organization, User, Product, Material, Report
-from app.auth import get_current_user
+from app.database import Organization, User, Product, Report
 
 
 class TestMultiTenantIsolation:

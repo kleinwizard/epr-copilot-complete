@@ -1,12 +1,12 @@
 from decimal import Decimal
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone, timedelta
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_
+from sqlalchemy import func, or_
 import statistics
 from ..database import (
-    Organization, Product, PackagingComponent, MaterialCategory, 
-    CalculatedFee, Report, ProducerProfile, FeeRate
+    Product, PackagingComponent, MaterialCategory, 
+    CalculatedFee, FeeRate
 )
 
 

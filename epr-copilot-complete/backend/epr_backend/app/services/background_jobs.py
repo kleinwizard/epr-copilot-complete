@@ -1,12 +1,8 @@
 import os
-from typing import Dict, Any, List
+from typing import Dict, Any
 import logging
-from datetime import datetime, timedelta, timezone
-from sqlalchemy.orm import Session
-from ..database import get_db
-from ..schemas import ReportCreate
+from datetime import datetime, timezone
 from .email_service import email_service
-import json
 
 logger = logging.getLogger(__name__)
 

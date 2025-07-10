@@ -1,7 +1,6 @@
 import pytest
 from decimal import Decimal
 from app.routers.fees import calculate_epr_fee
-from app.database import Organization, User, Product, Material
 
 
 class TestComplianceCalculations:
