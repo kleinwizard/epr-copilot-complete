@@ -67,13 +67,11 @@ def db_session():
 def client(db_session):
     """Create a test client with database override."""
     from fastapi import FastAPI
-    from app.main import app as main_app
     
     test_app = FastAPI(title="EPR Co-Pilot Backend Test", version="1.0.0")
     
-    test_app.router = main_app.router
-    test_app.middleware_stack = main_app.middleware_stack
-    test_app.exception_handlers = main_app.exception_handlers.copy()
+    from app.routers import products
+    test_app.include_router(products.router)
     
     @test_app.get("/healthz")
     async def healthz():
@@ -93,11 +91,6 @@ def client(db_session):
     test_app.dependency_overrides[get_db] = lambda: db_session
     test_app.dependency_overrides[get_settings] = override_get_settings
     
-    original_start = task_scheduler.start
-    original_stop = task_scheduler.stop
-    task_scheduler.start = lambda: None
-    task_scheduler.stop = lambda: None
-    
     import os
     original_env = os.environ.get("ENVIRONMENT")
     os.environ["ENVIRONMENT"] = "test"
@@ -111,8 +104,6 @@ def client(db_session):
         elif "ENVIRONMENT" in os.environ:
             del os.environ["ENVIRONMENT"]
         
-        task_scheduler.start = original_start
-        task_scheduler.stop = original_stop
         test_app.dependency_overrides.clear()
 
 

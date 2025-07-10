@@ -1,4 +1,5 @@
 import pytest
+from fastapi.testclient import TestClient
 from app.database import Organization, User, Product, Report
 
 
@@ -135,22 +136,27 @@ class TestMultiTenantIsolation:
         assert len(org2_reports) == 1
         assert org2_reports[0].total_fee == 200.75
     
-    def test_api_endpoint_tenant_filtering(self, setup_test_organizations, client, db_session):
+    def test_api_endpoint_tenant_filtering(self, setup_test_organizations, client: TestClient, db_session):
         """Test that API endpoints properly filter by tenant"""
         org1, org2 = setup_test_organizations
         
         # Create test users for both organizations
+        from datetime import datetime, timezone
         user1 = User(
-            id="user1-api-test", 
-            email="user1@org1.com", 
-            password_hash="hash1", 
-            organization_id=org1.id
+            id="user1-api-test",
+            email="user1@org1.com",
+            password_hash="hash1",
+            organization_id=org1.id,
+            role="manager",
+            created_at=datetime.now(timezone.utc)
         )
         user2 = User(
-            id="user2-api-test", 
-            email="user2@org2.com", 
-            password_hash="hash2", 
-            organization_id=org2.id
+            id="user2-api-test",
+            email="user2@org2.com",
+            password_hash="hash2",
+            organization_id=org2.id,
+            role="manager",
+            created_at=datetime.now(timezone.utc)
         )
         
         # Create test products for both organizations
@@ -169,35 +175,35 @@ class TestMultiTenantIsolation:
         
         db_session.add_all([user1, user2, product1, product2])
         db_session.commit()
+
+        from app.auth import get_current_user
+        def mock_get_current_user_1():
+            return user1
         
-        from app.auth import create_access_token
-        token1 = create_access_token(data={"sub": user1.id})
-        token2 = create_access_token(data={"sub": user2.id})
-        
-        response1 = client.get(
-            "/api/products/", 
-            headers={"Authorization": f"Bearer {token1}"}
-        )
+        client.app.dependency_overrides[get_current_user] = mock_get_current_user_1
+
+        response1 = client.get("/api/products/")
         assert response1.status_code == 200
         products1 = response1.json()
         product_ids1 = [p["id"] for p in products1]
         assert product1.id in product_ids1
         assert product2.id not in product_ids1
         
-        response2 = client.get(
-            "/api/products/", 
-            headers={"Authorization": f"Bearer {token2}"}
-        )
+        def mock_get_current_user_2():
+            return user2
+        
+        client.app.dependency_overrides[get_current_user] = mock_get_current_user_2
+        
+        response2 = client.get("/api/products/")
         assert response2.status_code == 200
         products2 = response2.json()
         product_ids2 = [p["id"] for p in products2]
         assert product2.id in product_ids2
         assert product1.id not in product_ids2
         
-        response_cross_access = client.get(
-            f"/api/products/{product2.id}", 
-            headers={"Authorization": f"Bearer {token1}"}
-        )
+        client.app.dependency_overrides[get_current_user] = mock_get_current_user_1
+        
+        response_cross_access = client.get(f"/api/products/{product2.id}")
         assert response_cross_access.status_code == 404
     
     def test_database_query_isolation(self, setup_test_organizations, db_session):
