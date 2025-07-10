@@ -552,7 +552,12 @@ def run_migrations():
 
 def create_tables():
     """Create tables if they do not exist and apply migrations."""
-    run_migrations()
+    import os
+    if os.environ.get("ENVIRONMENT") == "test":
+        Base.metadata.create_all(bind=engine)
+    else:
+        Base.metadata.create_all(bind=engine)
+        run_migrations()
 
 
 def get_db():

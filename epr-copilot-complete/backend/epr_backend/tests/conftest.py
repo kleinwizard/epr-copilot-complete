@@ -73,6 +73,10 @@ def client(db_session):
     
     test_app = FastAPI(title="EPR Co-Pilot Backend Test", version="1.0.0")
     
+    test_app.router = main_app.router
+    test_app.middleware_stack = main_app.middleware_stack
+    test_app.exception_handlers = main_app.exception_handlers.copy()
+    
     @test_app.get("/healthz")
     async def healthz():
         return {"status": "ok", "message": "EPR Co-Pilot Backend is running"}
