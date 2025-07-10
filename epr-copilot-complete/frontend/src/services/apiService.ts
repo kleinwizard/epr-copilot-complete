@@ -1,32 +1,36 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api';
+import { API_CONFIG } from '@/config/api.config';
 
 class ApiService {
   private getAuthHeaders() {
-    const token = localStorage.getItem('access_token') || 'dev-token-development';
+    const token = localStorage.getItem('access_token');
+    if (!token && import.meta.env.MODE !== 'development') {
+      throw new Error('No authentication token found');
+    }
     return {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${token || 'dev-token-development'}`,
     };
   }
 
   async request(endpoint: string, options: RequestInit = {}) {
-    const url = `${API_BASE_URL}${endpoint}`;
+    const url = API_CONFIG.getApiUrl(endpoint);
     const config = {
-      headers: this.getAuthHeaders(),
       ...options,
+      headers: {
+        ...this.getAuthHeaders(),
+        ...options.headers,
+      },
     };
 
     try {
       const response = await fetch(url, config);
-      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `API request failed: ${response.statusText}`);
+        throw new Error(errorData.detail || errorData.message || `API request failed: ${response.statusText}`);
       }
-
       return response.json();
     } catch (error) {
-      console.error(`API Error for ${endpoint}:`, error);
+      console.error('API Request Error:', error);
       throw error;
     }
   }
@@ -65,7 +69,7 @@ class ApiService {
       headers.Authorization = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(API_CONFIG.getApiUrl(endpoint), {
       method: 'POST',
       headers,
       body: formData,

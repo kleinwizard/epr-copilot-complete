@@ -86,10 +86,29 @@ class DataService {
       if (!productData.name || !productData.sku) {
         throw new Error('Product name and SKU are required');
       }
+
+      if (!productData.materials || productData.materials.length === 0) {
+        throw new Error('At least one material is required');
+      }
+
+      const invalidMaterials = productData.materials.filter(m => !m.type || m.weight <= 0);
+      if (invalidMaterials.length > 0) {
+        throw new Error('All materials must have a valid type and weight greater than 0');
+      }
+
       const result = await apiService.saveProduct(productData);
       return result;
     } catch (error) {
       console.error('Failed to save product:', error);
+      if (error.message.includes('409') || error.message.includes('duplicate')) {
+        throw new Error('A product with this SKU already exists. Please use a different SKU.');
+      } else if (error.message.includes('400') || error.message.includes('validation')) {
+        throw new Error('Invalid product data. Please check all required fields.');
+      } else if (error.message.includes('401') || error.message.includes('unauthorized')) {
+        throw new Error('You are not authorized to save products. Please log in again.');
+      } else if (error.message.includes('500') || error.message.includes('server')) {
+        throw new Error('Server error. Please try again later.');
+      }
       throw new Error(error.message || 'Failed to save product');
     }
   }
