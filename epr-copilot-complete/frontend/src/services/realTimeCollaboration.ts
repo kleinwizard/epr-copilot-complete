@@ -1,4 +1,6 @@
 
+import { apiService } from './apiService';
+
 export interface CollaborationUser {
   id: string;
   name: string;
@@ -18,8 +20,8 @@ export interface RealtimeEdit {
   reportId: string;
   section: string;
   field: string;
-  oldValue: any;
-  newValue: any;
+  oldValue: unknown;
+  newValue: unknown;
   timestamp: string;
   status: 'pending' | 'applied' | 'rejected' | 'conflict';
 }
@@ -56,86 +58,101 @@ export interface VersionSnapshot {
   isAutoSave: boolean;
 }
 
-export const mockActiveUsers: CollaborationUser[] = [];
+class RealTimeCollaborationService {
+  private websocket: WebSocket | null = null;
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 5;
+  private reconnectDelay = 1000;
 
-export const mockComments: Comment[] = [];
-
-export function subscribeToRealtimeEdits(
-  reportId: string,
-  onEdit: (edit: RealtimeEdit) => void
-): () => void {
-  // Mock WebSocket connection
-  const interval = setInterval(() => {
-    if (Math.random() > 0.8) {
-      const mockEdit: RealtimeEdit = {
-        id: `edit-${Date.now()}`,
-        userId: 'user-2',
-        reportId,
-        section: 'products',
-        field: 'unitsSold',
-        oldValue: 1000,
-        newValue: 1200,
-        timestamp: new Date().toISOString(),
-        status: 'pending'
-      };
-      onEdit(mockEdit);
+  async getActiveUsers(reportId: string): Promise<CollaborationUser[]> {
+    try {
+      const users = await apiService.get(`/api/collaboration/users?reportId=${reportId}`);
+      return users || [];
+    } catch (error) {
+      console.error('Failed to get active users:', error);
+      return [];
     }
-  }, 5000);
+  }
 
-  return () => clearInterval(interval);
-}
+  async getComments(reportId: string): Promise<Comment[]> {
+    try {
+      const comments = await apiService.get(`/api/reports/${reportId}/comments`);
+      return comments || [];
+    } catch (error) {
+      console.error('Failed to get comments:', error);
+      return [];
+    }
+  }
 
-export function applyEdit(edit: RealtimeEdit): Promise<boolean> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      console.log('Applied edit:', edit);
-      resolve(true);
-    }, 500);
-  });
-}
-
-export function createComment(
-  reportId: string,
-  section: string,
-  content: string,
-  field?: string,
-  mentions: string[] = []
-): Promise<Comment> {
-  return new Promise((resolve) => {
-    const comment: Comment = {
-      id: `comment-${Date.now()}`,
-      userId: 'current-user',
-      reportId,
-      section,
-      field,
-      content,
-      timestamp: new Date().toISOString(),
-      resolved: false,
-      replies: [],
-      mentions
+  subscribeToRealtimeEdits(
+    reportId: string,
+    onEdit: (edit: RealtimeEdit) => void
+  ): () => void {
+    // In production, this would establish a WebSocket connection
+    console.log('Real-time collaboration is not yet implemented');
+    return () => {
     };
-    
-    setTimeout(() => resolve(comment), 300);
-  });
+  }
+
+  async applyEdit(edit: RealtimeEdit): Promise<boolean> {
+    try {
+      await apiService.post(`/api/reports/${edit.reportId}/edits`, edit);
+      return true;
+    } catch (error) {
+      console.error('Failed to apply edit:', error);
+      return false;
+    }
+  }
+
+  async createComment(
+    reportId: string,
+    section: string,
+    content: string,
+    field?: string,
+    mentions: string[] = []
+  ): Promise<Comment> {
+    try {
+      const comment = await apiService.post(`/api/reports/${reportId}/comments`, {
+        section,
+        field,
+        content,
+        mentions
+      });
+      return comment;
+    } catch (error) {
+      console.error('Failed to create comment:', error);
+      throw error;
+    }
+  }
+
+  async createVersionSnapshot(
+    reportId: string,
+    description: string,
+    changes: RealtimeEdit[]
+  ): Promise<VersionSnapshot> {
+    try {
+      const snapshot = await apiService.post(`/api/reports/${reportId}/snapshots`, {
+        description,
+        changes
+      });
+      return snapshot;
+    } catch (error) {
+      console.error('Failed to create version snapshot:', error);
+      throw error;
+    }
+  }
 }
 
-export function createVersionSnapshot(
-  reportId: string,
-  description: string,
-  changes: RealtimeEdit[]
-): Promise<VersionSnapshot> {
-  return new Promise((resolve) => {
-    const snapshot: VersionSnapshot = {
-      id: `version-${Date.now()}`,
-      reportId,
-      version: `v${Math.floor(Math.random() * 100)}.${Math.floor(Math.random() * 10)}`,
-      timestamp: new Date().toISOString(),
-      createdBy: 'current-user',
-      description,
-      changes,
-      isAutoSave: false
-    };
-    
-    setTimeout(() => resolve(snapshot), 500);
-  });
-}
+export const realTimeCollaborationService = new RealTimeCollaborationService();
+
+export const subscribeToRealtimeEdits = (reportId: string, onEdit: (edit: RealtimeEdit) => void) => 
+  realTimeCollaborationService.subscribeToRealtimeEdits(reportId, onEdit);
+
+export const applyEdit = (edit: RealtimeEdit) => 
+  realTimeCollaborationService.applyEdit(edit);
+
+export const createComment = (reportId: string, section: string, content: string, field?: string, mentions: string[] = []) =>
+  realTimeCollaborationService.createComment(reportId, section, content, field, mentions);
+
+export const createVersionSnapshot = (reportId: string, description: string, changes: RealtimeEdit[]) =>
+  realTimeCollaborationService.createVersionSnapshot(reportId, description, changes);

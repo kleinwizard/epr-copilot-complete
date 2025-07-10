@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { FileText, Calendar, DollarSign, Eye, Download } from 'lucide-react';
 import type { QuarterlyReport } from '@/services/reportService';
 import { exportEnhancedReport } from '@/services/reportExportService';
+import { useToast } from '@/hooks/use-toast';
 
 interface ReportListProps {
   reports: QuarterlyReport[];
@@ -12,6 +13,8 @@ interface ReportListProps {
 }
 
 export function ReportList({ reports, onViewReport }: ReportListProps) {
+  const { toast } = useToast();
+  
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Submitted':
@@ -77,21 +80,44 @@ export function ReportList({ reports, onViewReport }: ReportListProps) {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => {
+                  onClick={async (event) => {
                     try {
-                      const exportData = exportEnhancedReport(report, 'pdf');
-                      const blob = new Blob([exportData], { type: 'application/pdf' });
+                      const button = event.currentTarget as HTMLButtonElement;
+                      const originalText = button.innerText;
+                      button.disabled = true;
+                      button.innerText = 'Exporting...';
+                      
+                      const blob = exportEnhancedReport(report, 'pdf');
+                      
                       const url = window.URL.createObjectURL(blob);
                       const a = document.createElement('a');
                       a.style.display = 'none';
                       a.href = url;
-                      a.download = `${report.quarter}_${report.year}_report.pdf`;
+                      a.download = `${report.quarter}_${report.year}_EPR_Report.pdf`;
                       document.body.appendChild(a);
                       a.click();
+                      
                       window.URL.revokeObjectURL(url);
                       document.body.removeChild(a);
+                      
+                      toast({
+                        title: "Export Successful",
+                        description: "Your report has been downloaded.",
+                      });
+                      
+                      button.disabled = false;
+                      button.innerText = originalText;
                     } catch (error) {
                       console.error('Export failed:', error);
+                      toast({
+                        title: "Export Failed",
+                        description: "Failed to export report. Please try again.",
+                        variant: "destructive",
+                      });
+                      
+                      const button = event.currentTarget as HTMLButtonElement;
+                      button.disabled = false;
+                      button.innerText = 'Export';
                     }
                   }}
                 >
