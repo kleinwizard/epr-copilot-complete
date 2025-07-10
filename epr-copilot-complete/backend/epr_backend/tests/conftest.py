@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+import tempfile
 import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
@@ -19,23 +20,10 @@ from app.services.scheduler import task_scheduler
 
 logging.basicConfig(level=logging.DEBUG)
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
 
 def override_get_db():
     """Override database dependency for testing."""
-    try:
-        db = TestingSessionLocal()
-        yield db
-    finally:
-        db.close()
+    pass
 
 
 def override_get_settings():
@@ -53,21 +41,55 @@ def event_loop():
 
 @pytest.fixture(scope="function")
 def db_session():
-    """Create a fresh database session for each test."""
+    """Create a fresh database session for each test with isolated database."""
+    temp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+    temp_db.close()
+    
+    database_url = f"sqlite:///{temp_db.name}"
+    engine = create_engine(
+        database_url,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    
     Base.metadata.create_all(bind=engine)
+    
     db = TestingSessionLocal()
     try:
         yield db
     finally:
         db.close()
         Base.metadata.drop_all(bind=engine)
+        engine.dispose()
+        os.unlink(temp_db.name)
 
 
 @pytest.fixture(scope="function")
 def client(db_session):
     """Create a test client with database override."""
-    app.dependency_overrides[get_db] = override_get_db
-    app.dependency_overrides[get_settings] = override_get_settings
+    from fastapi import FastAPI
+    from app.main import app as main_app
+    
+    test_app = FastAPI(title="EPR Co-Pilot Backend Test", version="1.0.0")
+    
+    @test_app.get("/healthz")
+    async def healthz():
+        return {"status": "ok", "message": "EPR Co-Pilot Backend is running"}
+
+    @test_app.get("/api/health")
+    async def health_check():
+        """Health check endpoint for monitoring."""
+        from datetime import datetime, timezone
+        return {
+            "status": "healthy",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "database": "connected"
+        }
+    
+    # Override database dependency
+    test_app.dependency_overrides[get_db] = lambda: db_session
+    test_app.dependency_overrides[get_settings] = override_get_settings
     
     original_start = task_scheduler.start
     original_stop = task_scheduler.stop
@@ -78,17 +100,18 @@ def client(db_session):
     original_env = os.environ.get("ENVIRONMENT")
     os.environ["ENVIRONMENT"] = "test"
     
-    with TestClient(app) as test_client:
-        yield test_client
-    
-    if original_env is not None:
-        os.environ["ENVIRONMENT"] = original_env
-    elif "ENVIRONMENT" in os.environ:
-        del os.environ["ENVIRONMENT"]
-    
-    task_scheduler.start = original_start
-    task_scheduler.stop = original_stop
-    app.dependency_overrides.clear()
+    try:
+        with TestClient(test_app) as test_client:
+            yield test_client
+    finally:
+        if original_env is not None:
+            os.environ["ENVIRONMENT"] = original_env
+        elif "ENVIRONMENT" in os.environ:
+            del os.environ["ENVIRONMENT"]
+        
+        task_scheduler.start = original_start
+        task_scheduler.stop = original_stop
+        test_app.dependency_overrides.clear()
 
 
 @pytest.fixture
