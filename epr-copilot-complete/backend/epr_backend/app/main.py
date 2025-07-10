@@ -70,9 +70,8 @@ async def debug_middleware(request, call_next):
     logger.info(f"Response headers: {dict(response.headers)}")
     return response
 
-from .routers import auth, products, materials, fees, reports, files, payments, epr_rates, notifications, background_jobs, admin, analytics, user, company, saved_searches, bulk, team, calendar, security, compliance, messages
+from .routers import auth, products, materials, fees, reports, files, payments, epr_rates, notifications, background_jobs, admin, analytics, user, company, saved_searches, bulk, team, calendar, security, compliance, messages, exports
 from .routers import settings as settings_router
-from .routers.reports import exports_router
 
 app.include_router(auth.router)
 app.include_router(products.router)
@@ -94,7 +93,7 @@ app.include_router(team.router)
 app.include_router(calendar.router)
 app.include_router(security.router)
 app.include_router(settings_router.router)
-app.include_router(exports_router)
+app.include_router(exports.router)
 app.include_router(compliance.router)
 app.include_router(messages.router)
 

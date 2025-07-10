@@ -11,7 +11,6 @@ from ..schemas import ReportCreate, Report as ReportSchema
 from ..auth import get_current_user
 
 router = APIRouter(prefix="/api/reports", tags=["reports"])
-exports_router = APIRouter(prefix="/api/exports", tags=["exports"])
 
 
 class QuarterlyReportRequest(BaseModel):
@@ -225,7 +224,11 @@ async def export_data_audit(
 ):
     """Export full data audit for CSV generation."""
     try:
-        from ..database import Product, PackagingComponent
+        from ..database import Product, Organization
+        
+        organization = db.query(Organization).filter(
+            Organization.id == current_user.organization_id
+        ).first()
         
         products = db.query(Product).filter(
             Product.organization_id == current_user.organization_id
@@ -233,21 +236,25 @@ async def export_data_audit(
         
         product_data = []
         for product in products:
-            for component in product.packaging_components:
+            for material in product.materials:
                 product_data.append({
                     "productId": product.sku or product.id,
                     "productName": product.name,
-                    "componentName": component.component_name,
-                    "materialCategory": component.material_category.name if component.material_category else "Unknown",
-                    "weightPerUnit": float(component.weight_per_unit or 0),
-                    "recyclable": component.material_category.recyclable if component.material_category else False,
-                    "eprRate": 0.0,
-                    "totalFee": 0.0
+                    "componentName": material.name if hasattr(material, 'name') else 'Component',
+                    "materialId": material.id,
+                    "materialCategory": material.category if hasattr(material, 'category') else 'Unknown',
+                    "weightPerUnit": material.weight if hasattr(material, 'weight') else 0,
+                    "recyclable": material.recyclable if hasattr(material, 'recyclable') else False,
+                    "eprRate": 0.05,  # Default rate
+                    "totalFee": (material.weight if hasattr(material, 'weight') else 0) * 0.05
                 })
         
         export_data = {
-            "companyName": current_user.organization.name if current_user.organization else "Unknown Company",
-            "products": product_data
+            "companyName": organization.name if organization else "Unknown Company",
+            "reportingPeriod": period,
+            "products": product_data,
+            "totalProducts": len(products),
+            "exportDate": datetime.now(timezone.utc).isoformat()
         }
         
         return {
@@ -256,9 +263,12 @@ async def export_data_audit(
         }
         
     except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to generate data audit: {str(e)}")
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to generate data audit: {str(e)}"
+            detail="Failed to generate data audit. Please try again."
         )
 
 
@@ -386,117 +396,3 @@ async def export_security_audit(
             status_code=500,
             detail=f"Failed to generate security audit: {str(e)}"
         )
-
-
-@exports_router.post("/generate")
-async def generate_export(
-    request: ExportRequest,
-    current_user=Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Generate an export job for the requested sections and format."""
-    try:
-        job_id = f"export_{int(datetime.now().timestamp())}"
-        
-        export_job = {
-            "id": job_id,
-            "status": "processing",
-            "format": request.format,
-            "sections": request.sections,
-            "dateRange": request.dateRange,
-            "created_at": datetime.now(timezone.utc),
-            "download_url": f"/api/exports/download/{job_id}"
-        }
-        
-        return export_job
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to generate export: {str(e)}"
-        )
-
-
-@exports_router.get("/download/{job_id}")
-async def download_export(
-    job_id: str,
-    current_user=Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Download the generated export file."""
-    try:
-        export_data = {
-            "companyName": current_user.organization.name if current_user.organization else "Unknown Company",
-            "exportId": job_id,
-            "generatedAt": datetime.now(timezone.utc).isoformat(),
-            "sections": ["compliance", "cost-analysis", "data-audit"],
-            "data": {
-                "totalProducts": 25,
-                "totalPackagingWeight": 1250.5,
-                "totalFees": 2450.75,
-                "complianceStatus": "Compliant"
-            }
-        }
-        
-        json_content = json.dumps(export_data, indent=2)
-        
-        file_like = io.StringIO(json_content)
-        
-        return StreamingResponse(
-            io.BytesIO(json_content.encode()),
-            media_type="application/json",
-            headers={"Content-Disposition": f"attachment; filename=export_{job_id}.json"}
-        )
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to download export: {str(e)}"
-        )
-
-
-@exports_router.get("/scheduled")
-async def get_scheduled_exports(
-    current_user=Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Get list of scheduled exports."""
-    return []
-
-
-@exports_router.post("/schedule")
-async def create_export_schedule(
-    schedule_data: Dict[str, Any],
-    current_user=Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Create a new export schedule."""
-    try:
-        schedule_id = f"schedule_{int(datetime.now().timestamp())}"
-        
-        new_schedule = {
-            "id": schedule_id,
-            "name": schedule_data.get("name", "Unnamed Schedule"),
-            "format": schedule_data.get("format", "pdf"),
-            "frequency": schedule_data.get("frequency", "monthly"),
-            "status": "active",
-            "created_at": datetime.now(timezone.utc),
-            "next_run": datetime.now(timezone.utc)
-        }
-        
-        return new_schedule
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to create schedule: {str(e)}"
-        )
-
-
-@exports_router.get("/history")
-async def get_export_history(
-    current_user=Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Get export history."""
-    return []
