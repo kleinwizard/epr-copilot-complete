@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,8 @@ import { CalendarGrid } from './CalendarGrid';
 import { EventsList } from './EventsList';
 import { CalendarStats } from './CalendarStats';
 import { EventFilters } from './EventFilters';
-import { getCalendarEvents, getUpcomingEvents, addCalendarEvent, type ComplianceEvent } from '@/services/calendarService';
+import { getCalendarEvents, getUpcomingEvents, type ComplianceEvent } from '@/services/calendarService';
+import { useCalendarStore } from '@/store/calendarStore';
 import { useToast } from '@/hooks/use-toast';
 
 export function ComplianceCalendar() {
@@ -45,11 +46,23 @@ export function ComplianceCalendar() {
   });
   const [refreshKey, setRefreshKey] = useState(0);
   const { toast } = useToast();
+  const { events, isLoading, error, addEvent, fetchEvents } = useCalendarStore();
 
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
-  const monthEvents = getCalendarEvents(currentMonth, currentYear);
-  const upcomingEvents = getUpcomingEvents(30);
+  
+  useEffect(() => {
+    fetchEvents(currentMonth, currentYear);
+  }, [currentDate, fetchEvents]);
+
+  const monthEvents = events.filter(event => 
+    event.date.getMonth() === currentMonth && event.date.getFullYear() === currentYear
+  );
+  const upcomingEvents = events.filter(event => {
+    const now = new Date();
+    const futureDate = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000));
+    return event.date >= now && event.date <= futureDate;
+  }).sort((a, b) => a.date.getTime() - b.date.getTime());
 
   const navigateMonth = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate);
@@ -66,7 +79,7 @@ export function ComplianceCalendar() {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  const handleAddEvent = () => {
+  const handleAddEvent = async () => {
     if (!newEvent.title || !newEvent.date || !newEvent.type) {
       toast({
         title: "Error",
@@ -91,10 +104,7 @@ export function ComplianceCalendar() {
         reminderDays: [7, 3, 1]
       };
 
-      const addedEvent = addCalendarEvent(complianceEvent);
-      console.log('Added new event:', addedEvent);
-      
-      setRefreshKey(prev => prev + 1);
+      await addEvent(complianceEvent);
       
       setShowAddEventDialog(false);
       setNewEvent({
@@ -108,13 +118,13 @@ export function ComplianceCalendar() {
       
       toast({
         title: "Event Added",
-        description: `Event "${newEvent.title}" has been added successfully and will appear on ${eventDate.toLocaleDateString()}!`,
+        description: `Event "${newEvent.title}" has been added successfully!`,
       });
     } catch (error) {
       console.error('Error adding event:', error);
       toast({
         title: "Error",
-        description: "Failed to add event. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to add event",
         variant: "destructive",
       });
     }

@@ -11,6 +11,7 @@ import { Calculator, Plus, Trash2, Info } from 'lucide-react';
 import { calculateEprFeeV1, oregonEprRates, FeeCalculationRequestV1, PackagingComponentV1, ProducerDataV1 } from '@/services/feeCalculation';
 import { JurisdictionSelector } from '@/components/common/JurisdictionSelector';
 import { FeeBreakdown } from './FeeBreakdown';
+import { useToast } from '@/hooks/use-toast';
 
 interface Material {
   type: string;
@@ -29,6 +30,8 @@ export function FeeCalculator() {
   const [selectedJurisdiction, setSelectedJurisdiction] = useState<string>('OR');
   const [calculation, setCalculation] = useState<any>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const addMaterial = () => {
     if (newMaterial.type && newMaterial.weight > 0) {
@@ -50,22 +53,36 @@ export function FeeCalculator() {
   const calculateFees = async () => {
     if (materials.length === 0) {
       setCalculation(null);
+      toast({
+        title: "No Materials",
+        description: "Please add at least one material to calculate fees.",
+        variant: "destructive",
+      });
       return;
     }
 
     setIsCalculating(true);
+    setError(null);
+    
     try {
+      const invalidMaterials = materials.filter(m => !m.type || m.weight <= 0);
+      if (invalidMaterials.length > 0) {
+        throw new Error('All materials must have a type and positive weight');
+      }
+
       const packagingData: PackagingComponentV1[] = materials.map((material, index) => ({
         material_type: material.type,
         component_name: `Component ${index + 1}`,
-        weight_per_unit: material.weight / 1000, // Convert grams to kg
+        weight_per_unit: material.weight / 1000,
         weight_unit: 'kg',
-        units_sold: monthlyVolume,
+        units_sold: monthlyVolume || 1,
         recycled_content_percentage: 0,
         recyclable: material.recyclable,
         reusable: false,
         disrupts_recycling: false,
-        recyclability_score: material.recyclable ? 75 : 25,
+        recyclability_score: material.recyclable ? 0.8 : 0.2,
+        carbon_footprint: 0,
+        water_usage: 0,
         contains_pfas: false,
         contains_phthalates: false,
         marine_degradable: false,
@@ -86,17 +103,70 @@ export function FeeCalculator() {
       };
 
       const request: FeeCalculationRequestV1 = {
-        jurisdiction_code: selectedJurisdiction,
+        jurisdiction_code: selectedJurisdiction || 'OR',
         producer_data: producerData,
         packaging_data: packagingData,
+        calculation_date: new Date().toISOString(),
         data_source: 'frontend_calculator'
       };
 
       const result = await calculateEprFeeV1(request);
-      setCalculation(result);
+      setCalculation({
+        totalFee: result.total_fee,
+        breakdown: result.calculation_breakdown,
+        calculationId: result.calculation_id,
+        timestamp: result.calculation_timestamp,
+        materials: materials.map((m, idx) => ({
+          ...m,
+          fee: result.calculation_breakdown?.material_fees?.[idx] || 0
+        })),
+        ...result
+      });
+
+      toast({
+        title: "Calculation Complete",
+        description: `Total EPR fee: $${result.total_fee.toFixed(2)}`,
+      });
     } catch (error) {
-      console.error('Failed to calculate fees:', error);
-      setCalculation(null);
+      console.error('Fee calculation error:', error);
+      let errorMessage = 'Failed to calculate fees. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('401') || error.message.includes('authentication')) {
+          errorMessage = 'Authentication required. Please log in again.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      setError(errorMessage);
+      toast({
+        title: "Calculation Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+
+      if (import.meta.env.MODE === 'development') {
+        const mockFee = materials.reduce((sum, m) => sum + (m.weight * 0.005), 0);
+        setCalculation({
+          totalFee: mockFee * monthlyVolume,
+          breakdown: {
+            base_fee: mockFee,
+            volume_multiplier: monthlyVolume,
+            total: mockFee * monthlyVolume
+          },
+          calculationId: 'mock-' + Date.now(),
+          timestamp: new Date().toISOString(),
+          materials: materials.map(m => ({
+            ...m,
+            fee: m.weight * 0.005
+          })),
+          total_fee: mockFee * monthlyVolume,
+          currency: 'USD',
+          compliance_status: 'compliant',
+          jurisdiction: selectedJurisdiction
+        });
+      }
     } finally {
       setIsCalculating(false);
     }
