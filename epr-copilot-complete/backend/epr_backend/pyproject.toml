@@ -25,6 +25,8 @@ autopep8 = "^2.3.2"
 pytest = "^8.4.1"
 pytest-cov = "^6.2.1"
 pytest-asyncio = "^1.0.0"
+ruff = "^0.8.0"
+mypy = "^1.13.0"
 
 [tool.poetry.group.cloud-services]
 optional = true
