@@ -58,7 +58,17 @@ class DataService {
   }
 
   async saveCompanyInfo(companyData: CompanyData): Promise<CompanyData> {
-    return await apiService.saveCompanyInfo(companyData);
+    try {
+      if (!companyData.legalName || !companyData.businessId) {
+        throw new Error('Legal name and business ID are required');
+      }
+      const result = await apiService.saveCompanyInfo(companyData);
+      localStorage.setItem('company_info', JSON.stringify(result));
+      return result;
+    } catch (error) {
+      console.error('Failed to save company info:', error);
+      throw new Error(error.message || 'Failed to save company information');
+    }
   }
 
   async getProducts(): Promise<Product[]> {
@@ -72,7 +82,16 @@ class DataService {
   }
 
   async saveProduct(productData: Partial<Product>): Promise<Product> {
-    return await apiService.saveProduct(productData);
+    try {
+      if (!productData.name || !productData.sku) {
+        throw new Error('Product name and SKU are required');
+      }
+      const result = await apiService.saveProduct(productData);
+      return result;
+    } catch (error) {
+      console.error('Failed to save product:', error);
+      throw new Error(error.message || 'Failed to save product');
+    }
   }
 
   async updateProduct(id: number, productData: Partial<Product>): Promise<Product> {
@@ -89,7 +108,16 @@ class DataService {
   }
 
   async saveMaterial(materialData: Partial<Material>): Promise<Material> {
-    return await apiService.saveMaterial(materialData);
+    try {
+      if (!materialData.name || !materialData.category) {
+        throw new Error('Material name and category are required');
+      }
+      const result = await apiService.saveMaterial(materialData);
+      return result;
+    } catch (error) {
+      console.error('Failed to save material:', error);
+      throw new Error(error.message || 'Failed to save material');
+    }
   }
 
   async updateMaterial(id: number, materialData: Partial<Material>): Promise<Material> {

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/services/apiService';
+import { dataService } from '@/services/dataService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -101,7 +102,7 @@ export function CompanySetup() {
   });
   const [complianceProfiles, setComplianceProfiles] = useState<ComplianceProfile[]>([]);
   const [businessEntities, setBusinessEntities] = useState<BusinessEntity[]>([]);
-  const [documents, setDocuments] = useState<any[]>([]);
+  const [documents, setDocuments] = useState<Array<{ id?: string; name?: string; filename?: string; type?: string; url?: string; uploadedAt?: string }>>([]);
   const [isAddEntityModalOpen, setIsAddEntityModalOpen] = useState(false);
   const [newEntity, setNewEntity] = useState({
     name: '',
@@ -217,16 +218,43 @@ export function CompanySetup() {
   const handleSaveCompanyInfo = async () => {
     setIsLoading(true);
     try {
-      await apiService.saveCompanyInfo(companyInfo);
+      if (!companyInfo.legalName || !companyInfo.businessId) {
+        throw new Error('Please fill in all required fields');
+      }
+
+      const dataToSave = {
+        legalName: companyInfo.legalName,
+        dbaName: companyInfo.dbaName || companyInfo.legalName,
+        businessId: companyInfo.businessId,
+        deqNumber: companyInfo.deqNumber,
+        address: companyInfo.address,
+        city: companyInfo.city,
+        zipCode: companyInfo.zipCode,
+        description: companyInfo.description,
+        legal_name: companyInfo.legalName,
+        business_id: companyInfo.businessId,
+        deq_number: companyInfo.deqNumber,
+        naics_code: companyInfo.naicsCode,
+        entity_type: companyInfo.entityType,
+        street_address: companyInfo.address,
+        zip_code: companyInfo.zipCode
+      };
+      
+      await dataService.saveCompanyInfo(dataToSave);
+      
+      localStorage.setItem('epr_organization_initialized', 'true');
       
       toast({
-        title: "Company Information Saved",
-        description: "Your company information has been successfully updated.",
+        title: "Success",
+        description: "Company information saved successfully.",
       });
+      
+      calculateVerificationStatuses();
     } catch (error) {
+      console.error('Save error:', error);
       toast({
         title: "Error",
-        description: "Failed to save company information. Please try again.",
+        description: error.message || "Failed to save company information. Please try again.",
         variant: "destructive",
       });
     } finally {

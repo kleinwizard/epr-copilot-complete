@@ -446,3 +446,53 @@ async def get_company_info(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get company info: {str(e)}")
+
+@router.put("")
+async def update_company_info(
+    company_data: dict,
+    current_user: UserSchema = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update company information - mirrors /profile endpoint for frontend compatibility"""
+    try:
+        organization = db.query(Organization).filter(
+            Organization.id == current_user.organization_id
+        ).first()
+        
+        if not organization:
+            raise HTTPException(status_code=404, detail="Organization not found")
+        
+        field_mapping = {
+            'legalName': 'legal_name',
+            'businessId': 'business_id', 
+            'deqNumber': 'deq_number',
+            'naicsCode': 'naics_code',
+            'entityType': 'entity_type',
+            'streetAddress': 'street_address',
+            'zipCode': 'zip_code'
+        }
+        
+        converted_data = convert_frontend_fields(company_data, field_mapping)
+        
+        for field, value in converted_data.items():
+            if hasattr(organization, field):
+                setattr(organization, field, value)
+        
+        organization.updated_at = datetime.now()
+        
+        db.commit()
+        db.refresh(organization)
+        
+        return {
+            "success": True,
+            "message": "Company information updated successfully",
+            "data": {
+                "id": organization.id,
+                "name": organization.name,
+                "legal_name": organization.legal_name,
+                "updated_at": organization.updated_at.isoformat() if organization.updated_at else None
+            }
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update company info: {str(e)}")
