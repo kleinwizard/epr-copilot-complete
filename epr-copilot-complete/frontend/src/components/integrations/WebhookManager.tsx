@@ -46,53 +46,94 @@ export const WebhookManager = () => {
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
-
+    
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
     const url = formData.get('url') as string;
-    const eventsStr = formData.get('events') as string;
+    const events = formData.get('events') as string;
     const secret = formData.get('secret') as string;
-    const headersStr = formData.get('headers') as string;
-    const retryCount = parseInt(formData.get('retryCount') as string) || 3;
-
-    const events = eventsStr.split(',').map(e => e.trim()).filter(e => e);
+    const retryCount = formData.get('retryCount') as string;
+    const headersJson = formData.get('headers') as string;
     
-    let headers: Record<string, string> = {};
-    try {
-      headers = headersStr ? JSON.parse(headersStr) : {};
-    } catch (error) {
+    if (!name?.trim()) {
       toast({
-        title: "Invalid Headers",
-        description: "Headers must be valid JSON format.",
+        title: "Validation Error",
+        description: "Webhook name is required",
         variant: "destructive",
       });
-      setIsLoading(false);
       return;
     }
-
+    
     try {
-      await webhookService.createWebhook({
-        name,
-        url,
-        events,
-        secret: secret || undefined,
-        isActive: true,
-        retryCount,
-        headers
-      });
-
-      toast({
-        title: "Webhook Created",
-        description: `${name} webhook has been created successfully.`,
-      });
-
-      setIsCreateDialogOpen(false);
-      loadWebhooks();
+      const urlObj = new URL(url);
+      if (!['http:', 'https:'].includes(urlObj.protocol)) {
+        throw new Error('URL must use HTTP or HTTPS protocol');
+      }
     } catch (error) {
       toast({
+        title: "Validation Error",
+        description: "Please enter a valid webhook URL",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const eventList = events.split(',').map(e => e.trim()).filter(e => e);
+    if (eventList.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "At least one event type is required",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    let headers = {};
+    if (headersJson?.trim()) {
+      try {
+        headers = JSON.parse(headersJson);
+        if (typeof headers !== 'object' || Array.isArray(headers)) {
+          throw new Error('Headers must be a JSON object');
+        }
+      } catch (error) {
+        toast({
+          title: "Validation Error",
+          description: "Invalid JSON format for headers. Example: {\"Content-Type\": \"application/json\"}",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      const webhookData = {
+        name: name.trim(),
+        url: url.trim(),
+        events: eventList,
+        secret: secret?.trim() || undefined,
+        retryCount: parseInt(retryCount) || 3,
+        headers,
+        isActive: true
+      };
+      
+      await webhookService.createWebhook(webhookData);
+      
+      toast({
+        title: "Webhook Created",
+        description: `Webhook "${name}" has been created successfully.`,
+      });
+      
+      e.currentTarget.reset();
+      setIsCreateDialogOpen(false);
+      
+      loadWebhooks();
+    } catch (error) {
+      console.error('Failed to create webhook:', error);
+      toast({
         title: "Creation Failed",
-        description: "Failed to create webhook.",
+        description: error instanceof Error ? error.message : "Failed to create webhook. Please try again.",
         variant: "destructive",
       });
     } finally {

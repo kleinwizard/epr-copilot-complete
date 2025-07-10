@@ -48,62 +48,93 @@ export const CustomAPIBuilder = () => {
     setParameters(updated);
   };
 
-  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCreateEndpoint = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
-
+    
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
-    const description = formData.get('description') as string;
+    const method = formData.get('method') as string;
     const endpoint = formData.get('endpoint') as string;
-    const method = formData.get('method') as CustomAPI['method'];
-    const authentication = formData.get('authentication') as CustomAPI['authentication'];
-    const headersStr = formData.get('headers') as string;
+    const description = formData.get('description') as string;
     
-    let headers: Record<string, string> = {};
-    try {
-      headers = headersStr ? JSON.parse(headersStr) : {};
-    } catch (error) {
+    const errors: string[] = [];
+    
+    if (!name?.trim()) {
+      errors.push('Endpoint name is required');
+    }
+    
+    if (!endpoint?.trim()) {
+      errors.push('Endpoint URL is required');
+    } else if (!endpoint.startsWith('/')) {
+      errors.push('Endpoint URL must start with /');
+    } else if (!/^\/[a-zA-Z0-9\-\/{}:]+$/.test(endpoint)) {
+      errors.push('Invalid endpoint URL format');
+    }
+    
+    if (!method) {
+      errors.push('HTTP method is required');
+    }
+    
+    for (const param of parameters) {
+      if (!param.name.trim()) {
+        errors.push(`Parameter name is required`);
+        break;
+      }
+      if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(param.name)) {
+        errors.push(`Invalid parameter name: ${param.name}`);
+        break;
+      }
+    }
+    
+    if (errors.length > 0) {
       toast({
-        title: "Invalid Headers",
-        description: "Headers must be valid JSON format.",
+        title: "Validation Error",
+        description: errors.join('\n'),
         variant: "destructive",
       });
-      setIsLoading(false);
       return;
     }
-
+    
+    setIsLoading(true);
+    
     try {
-      await customApiService.createAPI({
-        name,
-        description,
-        endpoint,
-        method,
-        authentication,
-        headers,
+      const endpointData = {
+        name: name.trim(),
+        method: method as CustomAPI['method'],
+        endpoint: endpoint.trim(),
+        description: description?.trim() || '',
         parameters,
+        headers: {},
+        authentication: 'api_key' as CustomAPI['authentication'],
         responseSchema: {},
         isActive: true
-      });
-
+      };
+      
+      await customApiService.createAPI(endpointData);
+      
       toast({
-        title: "API Created",
-        description: `${name} API has been created successfully.`,
+        title: "Endpoint Created",
+        description: `Custom endpoint "${name}" has been created successfully.`,
       });
-
-      setIsCreateDialogOpen(false);
+      
+      e.currentTarget.reset();
       setParameters([]);
+      setIsCreateDialogOpen(false);
+      
       loadAPIs();
     } catch (error) {
+      console.error('Failed to create endpoint:', error);
       toast({
         title: "Creation Failed",
-        description: "Failed to create custom API.",
+        description: error instanceof Error ? error.message : "Failed to create custom endpoint. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleCreate = handleCreateEndpoint;
 
   const handleTest = async (apiId: string) => {
     setIsLoading(true);

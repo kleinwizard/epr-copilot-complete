@@ -215,52 +215,75 @@ export function CompanySetup() {
     }
   };
 
-  const handleSaveCompanyInfo = async () => {
+  const saveCompanyData = async () => {
+    const errors: string[] = [];
+    
+    if (!companyInfo.legalName?.trim()) {
+      errors.push('Legal name is required');
+    }
+    if (!companyInfo.businessId?.trim()) {
+      errors.push('Business ID is required');
+    }
+    if (!companyInfo.address?.trim() || !companyInfo.city?.trim() || !companyInfo.zipCode?.trim()) {
+      errors.push('Complete address is required');
+    }
+    if (!companyInfo.primaryContact.email?.trim() || !companyInfo.primaryContact.phone?.trim()) {
+      errors.push('Primary contact email and phone are required');
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (companyInfo.primaryContact.email && !emailRegex.test(companyInfo.primaryContact.email)) {
+      errors.push('Invalid primary contact email format');
+    }
+    if (companyInfo.complianceOfficer.email && !emailRegex.test(companyInfo.complianceOfficer.email)) {
+      errors.push('Invalid compliance officer email format');
+    }
+    
+    const phoneRegex = /^\+?[\d\s\-\(\)]+$/;
+    if (companyInfo.primaryContact.phone && !phoneRegex.test(companyInfo.primaryContact.phone)) {
+      errors.push('Invalid primary contact phone format');
+    }
+    
+    if (errors.length > 0) {
+      toast({
+        title: "Validation Error",
+        description: errors.join('\n'),
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
-      if (!companyInfo.legalName || !companyInfo.businessId) {
-        throw new Error('Please fill in all required fields');
+      await dataService.saveCompanyInfo(companyInfo);
+      
+      for (const profile of complianceProfiles) {
+        await apiService.post('/api/company/compliance-profiles', profile);
       }
-
-      const dataToSave = {
-        legalName: companyInfo.legalName,
-        dbaName: companyInfo.dbaName || companyInfo.legalName,
-        businessId: companyInfo.businessId,
-        deqNumber: companyInfo.deqNumber,
-        address: companyInfo.address,
-        city: companyInfo.city,
-        zipCode: companyInfo.zipCode,
-        description: companyInfo.description,
-        legal_name: companyInfo.legalName,
-        business_id: companyInfo.businessId,
-        deq_number: companyInfo.deqNumber,
-        naics_code: companyInfo.naicsCode,
-        entity_type: companyInfo.entityType,
-        street_address: companyInfo.address,
-        zip_code: companyInfo.zipCode
-      };
       
-      await dataService.saveCompanyInfo(dataToSave);
-      
-      localStorage.setItem('epr_organization_initialized', 'true');
+      for (const entity of businessEntities) {
+        await apiService.post('/api/company/entities', entity);
+      }
       
       toast({
         title: "Success",
-        description: "Company information saved successfully.",
+        description: "Company information saved successfully",
       });
       
       calculateVerificationStatuses();
     } catch (error) {
-      console.error('Save error:', error);
+      console.error('Failed to save company data:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to save company information. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to save company information. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleSaveCompanyInfo = saveCompanyData;
 
   const handleDocumentUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
