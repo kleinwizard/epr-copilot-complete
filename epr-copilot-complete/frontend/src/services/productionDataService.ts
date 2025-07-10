@@ -1,5 +1,6 @@
 
-import { APP_CONFIG, LOCAL_STORAGE_KEYS } from '../config/constants';
+import { API_CONFIG } from '../config/api.config';
+import { LOCAL_STORAGE_KEYS } from '../config/constants';
 import { SecureStorage } from '../utils/storage';
 import { withRetry } from '../utils/errorHandling';
 
@@ -7,7 +8,7 @@ export class ProductionDataService {
   static async fetchProducts(filters?: any) {
     return withRetry(async () => {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${APP_CONFIG.api.baseUrl}/api/products`, {
+      const response = await fetch(API_CONFIG.getApiUrl('/products'), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -25,7 +26,7 @@ export class ProductionDataService {
   static async saveProduct(product: any) {
     return withRetry(async () => {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${APP_CONFIG.api.baseUrl}/api/products`, {
+      const response = await fetch(API_CONFIG.getApiUrl('/products'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -45,7 +46,7 @@ export class ProductionDataService {
   static async fetchMaterials() {
     return withRetry(async () => {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${APP_CONFIG.api.baseUrl}/api/materials`, {
+      const response = await fetch(API_CONFIG.getApiUrl('/materials'), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -63,7 +64,7 @@ export class ProductionDataService {
   static async generateReport(params: any) {
     return withRetry(async () => {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${APP_CONFIG.api.baseUrl}/api/reports/generate`, {
+      const response = await fetch(API_CONFIG.getApiUrl('/reports/generate'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -86,7 +87,7 @@ export class ProductionDataService {
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await fetch(`${APP_CONFIG.api.baseUrl}/api/files/upload`, {
+      const response = await fetch(API_CONFIG.getApiUrl('/files/upload'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

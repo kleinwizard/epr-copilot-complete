@@ -166,29 +166,60 @@ export function ProductCatalog() {
         throw new Error('Product name and SKU are required');
       }
 
+      if (!productData.materials || productData.materials.length === 0) {
+        throw new Error('At least one material is required');
+      }
+
+      const invalidMaterials = productData.materials.filter(m => !m.type || m.weight <= 0);
+      if (invalidMaterials.length > 0) {
+        throw new Error('All materials must have a valid type and weight greater than 0');
+      }
+
+      setIsLoading(true);
       let savedProduct;
+      
       if (editingProduct) {
         savedProduct = await dataService.updateProduct(editingProduct.id, productData);
         setProducts(products.map(p => p.id === editingProduct.id ? savedProduct : p));
+        toast({
+          title: "Success",
+          description: `Product "${savedProduct.name}" has been updated successfully.`,
+        });
       } else {
         savedProduct = await dataService.saveProduct(productData);
         setProducts([...products, savedProduct]);
+        toast({
+          title: "Success", 
+          description: `Product "${savedProduct.name}" has been created successfully.`,
+        });
       }
       
       setShowProductForm(false);
       setEditingProduct(null);
       
-      toast({
-        title: "Success",
-        description: `Product "${savedProduct.name}" has been saved successfully.`,
-      });
+      await loadProducts();
+      
     } catch (error) {
       console.error('Product save error:', error);
+      
+      let errorMessage = "Failed to save product. Please try again.";
+      if (error.message.includes('duplicate')) {
+        errorMessage = "A product with this SKU already exists. Please use a different SKU.";
+      } else if (error.message.includes('validation')) {
+        errorMessage = "Please check all required fields and try again.";
+      } else if (error.message.includes('network') || error.message.includes('fetch')) {
+        errorMessage = "Network error. Please check your connection and try again.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Failed to save product. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
