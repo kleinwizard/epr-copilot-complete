@@ -70,18 +70,27 @@ export const PWAInstaller = () => {
 
           {installResult && (
             <div className={`p-4 rounded-lg ${installResult === 'success' ? 'bg-green-50' : 'bg-orange-50'}`}>
-              <div className="flex items-center">
-                {installResult === 'success' ? (
-                  <>
-                    <Check className="h-5 w-5 text-green-600 mr-2" />
-                    <span className="text-green-800">App installed successfully!</span>
-                  </>
-                ) : (
-                  <>
-                    <X className="h-5 w-5 text-orange-600 mr-2" />
-                    <span className="text-orange-800">Installation was cancelled</span>
-                  </>
-                )}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  {installResult === 'success' ? (
+                    <>
+                      <Check className="h-5 w-5 text-green-600 mr-2" />
+                      <span className="text-green-700">App installed successfully!</span>
+                    </>
+                  ) : (
+                    <>
+                      <X className="h-5 w-5 text-orange-600 mr-2" />
+                      <span className="text-orange-700">Installation was cancelled</span>
+                    </>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setInstallResult(null)}
+                >
+                  Dismiss
+                </Button>
               </div>
             </div>
           )}

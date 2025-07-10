@@ -8,6 +8,10 @@ import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import { Download, Upload, Database, FileText, Calendar, HardDrive, RefreshCw } from 'lucide-react';
 import { authService } from '@/services/authService';
+import { exportEnhancedReport, downloadBlob } from '@/services/reportExportService';
+import { dataService } from '@/services/dataService';
+import { apiService } from '@/services/apiService';
+import { useToast } from '@/hooks/use-toast';
 
 export function DataSettings() {
   const [storageData, setStorageData] = useState({
@@ -20,6 +24,8 @@ export function DataSettings() {
     teamMembers: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [exporting, setExporting] = useState<Record<string, boolean>>({});
+  const { toast } = useToast();
 
   useEffect(() => {
     const loadStorageData = async () => {
@@ -65,23 +71,109 @@ export function DataSettings() {
     loadStorageData();
   }, []);
 
-  const handleExport = async (type: string, format: string) => {
+  const handleExport = async (dataType: string, format: string) => {
+    const exportingKey = `${dataType}-${format}`;
+    setExporting(prev => ({ ...prev, [exportingKey]: true }));
+    
     try {
-      console.log(`Exporting ${type} data in ${format} format`);
+      let data: any;
+      let filename: string;
       
-      const blob = new Blob(['Sample export data'], { type: 'text/plain' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `${type}_export.${format.toLowerCase()}`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      switch (dataType) {
+        case 'products':
+          const products = await dataService.getProducts();
+          if (format === 'CSV') {
+            data = convertProductsToCSV(products);
+            filename = `products_export_${new Date().toISOString().split('T')[0]}.csv`;
+          } else {
+            data = JSON.stringify(products, null, 2);
+            filename = `products_export_${new Date().toISOString().split('T')[0]}.json`;
+          }
+          break;
+          
+        case 'materials':
+          const materials = await dataService.getMaterials();
+          data = JSON.stringify(materials, null, 2);
+          filename = `materials_export_${new Date().toISOString().split('T')[0]}.json`;
+          break;
+          
+        case 'reports':
+          const reports = await apiService.get('/api/reports');
+          if (reports && reports.length > 0) {
+            const latestReport = reports[0];
+            const blob = exportEnhancedReport(latestReport, 'pdf');
+            downloadBlob(blob, `reports_export_${new Date().toISOString().split('T')[0]}.pdf`);
+            
+            toast({
+              title: "Export Complete",
+              description: "Your reports have been exported successfully.",
+            });
+            return;
+          } else {
+            throw new Error('No reports available to export');
+          }
+          
+        case 'full-data':
+          toast({
+            title: "Full Export Started",
+            description: "Preparing your complete data export. This may take a few minutes.",
+          });
+          
+          const fullExport = {
+            exportDate: new Date().toISOString(),
+            products: await dataService.getProducts(),
+            materials: await dataService.getMaterials(),
+            company: await dataService.getCompanyInfo(),
+            version: '1.0'
+          };
+          
+          data = JSON.stringify(fullExport, null, 2);
+          filename = `epr_full_export_${new Date().toISOString().split('T')[0]}.json`;
+          break;
+          
+        default:
+          throw new Error('Unknown export type');
+      }
+      
+      const blob = new Blob([data], { 
+        type: format === 'CSV' ? 'text/csv' : 'application/json' 
+      });
+      downloadBlob(blob, filename);
+      
+      toast({
+        title: "Export Complete",
+        description: `Your ${dataType} data has been exported successfully.`,
+      });
+      
     } catch (error) {
       console.error('Export failed:', error);
+      toast({
+        title: "Export Failed",
+        description: error instanceof Error ? error.message : "Failed to export data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setExporting(prev => ({ ...prev, [exportingKey]: false }));
     }
+  };
+
+  const convertProductsToCSV = (products: any[]): string => {
+    const headers = ['Product ID', 'Name', 'Category', 'Brand Owner', 'Units Sold', 'Status'];
+    const rows = [headers.join(',')];
+    
+    products.forEach(product => {
+      const row = [
+        product.productId || product.id,
+        `"${product.name}"`,
+        product.category,
+        `"${product.brandOwner || ''}"`,
+        product.unitsSold || 0,
+        product.status || 'active'
+      ];
+      rows.push(row.join(','));
+    });
+    
+    return rows.join('\n');
   };
 
   return (
@@ -108,9 +200,10 @@ export function DataSettings() {
                 size="sm" 
                 className="w-full"
                 onClick={() => handleExport('products', 'CSV')}
+                disabled={exporting['products-CSV']}
               >
                 <Download className="h-4 w-4 mr-2" />
-                Export CSV
+                {exporting['products-CSV'] ? 'Exporting...' : 'Export CSV'}
               </Button>
             </div>
 
@@ -127,9 +220,10 @@ export function DataSettings() {
                 size="sm" 
                 className="w-full"
                 onClick={() => handleExport('materials', 'JSON')}
+                disabled={exporting['materials-JSON']}
               >
                 <Download className="h-4 w-4 mr-2" />
-                Export JSON
+                {exporting['materials-JSON'] ? 'Exporting...' : 'Export JSON'}
               </Button>
             </div>
 
@@ -146,9 +240,10 @@ export function DataSettings() {
                 size="sm" 
                 className="w-full"
                 onClick={() => handleExport('reports', 'PDF')}
+                disabled={exporting['reports-PDF']}
               >
                 <Download className="h-4 w-4 mr-2" />
-                Export PDF
+                {exporting['reports-PDF'] ? 'Exporting...' : 'Export PDF'}
               </Button>
             </div>
           </div>
@@ -158,9 +253,12 @@ export function DataSettings() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label>Full Data Export</Label>
-              <Button onClick={() => handleExport('full-data', 'ZIP')}>
+              <Button 
+                onClick={() => handleExport('full-data', 'ZIP')}
+                disabled={exporting['full-data-ZIP']}
+              >
                 <Download className="h-4 w-4 mr-2" />
-                Request Export
+                {exporting['full-data-ZIP'] ? 'Exporting...' : 'Request Export'}
               </Button>
             </div>
             <p className="text-sm text-muted-foreground">
