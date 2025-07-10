@@ -1,5 +1,6 @@
 
 import { API_CONFIG } from '@/config/api.config';
+import { authService } from './authService';
 
 export const oregonEprRates = {
   // Paper materials
@@ -128,7 +129,7 @@ export async function calculateEprFee(materials: Array<{
   weight: number;
   recyclable: boolean;
 }>): Promise<FeeCalculation> {
-  const token = localStorage.getItem('access_token');
+  const token = authService.getAccessToken();
   const API_BASE_URL = API_CONFIG.getBaseUrl();
   const response = await fetch(`${API_BASE_URL}/api/fees/calculate`, {
     method: 'POST',
@@ -168,7 +169,7 @@ export async function calculateEprFee(materials: Array<{
 }
 
 export async function calculateEprFeeV1(request: FeeCalculationRequestV1): Promise<FeeCalculationResponseV1> {
-  const token = localStorage.getItem('access_token');
+  const token = authService.getAccessToken();
   const API_BASE_URL = API_CONFIG.getBaseUrl();
   const response = await fetch(`${API_BASE_URL}/api/fees/v1/calculate-fee`, {
     method: 'POST',
@@ -188,7 +189,7 @@ export async function calculateEprFeeV1(request: FeeCalculationRequestV1): Promi
 }
 
 export async function getCalculationTrace(calculationId: string): Promise<AuditTraceResponse> {
-  const token = localStorage.getItem('access_token');
+  const token = authService.getAccessToken();
   const API_BASE_URL = API_CONFIG.getBaseUrl();
   const response = await fetch(`${API_BASE_URL}/api/fees/v1/fees/${calculationId}/trace`, {
     method: 'GET',

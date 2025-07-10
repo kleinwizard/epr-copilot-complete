@@ -1,6 +1,7 @@
 
 import { PaymentIntent } from '../types/payment';
 import { RealTimeCalculationResult } from './realTimeFeeCalculation';
+import { authService } from './authService';
 
 export class PaymentIntentsService {
   private paymentIntents: Map<string, PaymentIntent> = new Map();
@@ -10,7 +11,7 @@ export class PaymentIntentsService {
     paymentMethodId: string,
     description: string = 'EPR Fee Payment'
   ): Promise<PaymentIntent> {
-    const token = localStorage.getItem('access_token');
+    const token = authService.getAccessToken();
     try {
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://app-mbypfbcs.fly.dev'}/api/payments/create-intent`, {
         method: 'POST',
@@ -81,7 +82,7 @@ export class PaymentIntentsService {
       throw new Error('Payment intent not found');
     }
 
-    const token = localStorage.getItem('access_token');
+    const token = authService.getAccessToken();
     try {
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://app-mbypfbcs.fly.dev'}/api/payments/confirm-payment`, {
         method: 'POST',

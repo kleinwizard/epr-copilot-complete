@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { APP_CONFIG } from '../../config/constants';
 import { tutorialService } from '../../services/tutorialService';
+import { authService } from '../../services/authService';
 
 interface User {
   id: string;
@@ -62,8 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Login failed');
       }
 
-      const { access_token } = await response.json();
-      localStorage.setItem('access_token', access_token);
+      const { access_token, refresh_token, expires_in } = await response.json();
+      authService.setTokens(access_token, refresh_token, expires_in);
 
       const userResponse = await fetch(`${APP_CONFIG.api.baseUrl}/api/auth/me`, {
         headers: {
@@ -138,8 +139,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Registration failed');
       }
 
-      const { access_token } = await response.json();
-      localStorage.setItem('access_token', access_token);
+      const { access_token, refresh_token, expires_in } = await response.json();
+      authService.setTokens(access_token, refresh_token, expires_in);
 
       const userResponse = await fetch(`${APP_CONFIG.api.baseUrl}/api/auth/me`, {
         headers: {
@@ -176,7 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      const token = localStorage.getItem('access_token');
+      const token = authService.getAccessToken();
       if (token) {
         await fetch(`${APP_CONFIG.api.baseUrl}/api/auth/logout`, {
           method: 'POST',
@@ -190,7 +191,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setUser(null);
       localStorage.removeItem('user');
-      localStorage.removeItem('access_token');
+      authService.clearTokens();
     }
   };
 

@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import { Download, Upload, Database, FileText, Calendar, HardDrive, RefreshCw } from 'lucide-react';
+import { authService } from '@/services/authService';
 
 export function DataSettings() {
   const [storageData, setStorageData] = useState({
@@ -28,7 +29,7 @@ export function DataSettings() {
         const [teamResponse] = await Promise.all([
           fetch('/api/team/members', {
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+              'Authorization': `Bearer ${authService.getAccessToken()}`,
               'Content-Type': 'application/json',
             },
           })
