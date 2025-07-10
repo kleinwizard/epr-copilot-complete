@@ -545,7 +545,8 @@ def run_migrations():
     here = pathlib.Path(__file__).resolve().parent
     alembic_cfg = Config(str(here.parent / "alembic.ini"))
     alembic_cfg.set_main_option("script_location", str(here.parent / "alembic"))
-    alembic_cfg.set_main_option("sqlalchemy.url", SQLALCHEMY_DATABASE_URL)
+    current_db_url = os.getenv("DATABASE_URL", "sqlite:///./epr_copilot.db")
+    alembic_cfg.set_main_option("sqlalchemy.url", current_db_url)
     command.upgrade(alembic_cfg, "heads")
 
 

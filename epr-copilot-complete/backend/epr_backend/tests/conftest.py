@@ -52,6 +52,7 @@ def db_session():
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     
     Base.metadata.create_all(bind=engine)
+    
     db = TestingSessionLocal()
     try:
         yield db
@@ -74,22 +75,45 @@ def client(db_session):
     test_app.middleware_stack = main_app.middleware_stack
     test_app.exception_handlers = main_app.exception_handlers.copy()
     
+    @test_app.get("/healthz")
+    async def healthz():
+        return {"status": "ok", "message": "EPR Co-Pilot Backend is running"}
+
+    @test_app.get("/api/health")
+    async def health_check():
+        """Health check endpoint for monitoring."""
+        from datetime import datetime, timezone
+        return {
+            "status": "healthy",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "database": "connected"
+        }
+    
+    # Override database dependency
     test_app.dependency_overrides[get_db] = lambda: db_session
     test_app.dependency_overrides[get_settings] = override_get_settings
+    
+    original_start = task_scheduler.start
+    original_stop = task_scheduler.stop
+    task_scheduler.start = lambda: None
+    task_scheduler.stop = lambda: None
     
     import os
     original_env = os.environ.get("ENVIRONMENT")
     os.environ["ENVIRONMENT"] = "test"
     
-    with TestClient(test_app) as test_client:
-        yield test_client
-    
-    if original_env is not None:
-        os.environ["ENVIRONMENT"] = original_env
-    elif "ENVIRONMENT" in os.environ:
-        del os.environ["ENVIRONMENT"]
-    
-    test_app.dependency_overrides.clear()
+    try:
+        with TestClient(test_app) as test_client:
+            yield test_client
+    finally:
+        if original_env is not None:
+            os.environ["ENVIRONMENT"] = original_env
+        elif "ENVIRONMENT" in os.environ:
+            del os.environ["ENVIRONMENT"]
+        
+        task_scheduler.start = original_start
+        task_scheduler.stop = original_stop
+        test_app.dependency_overrides.clear()
 
 
 @pytest.fixture
