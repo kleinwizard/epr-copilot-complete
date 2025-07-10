@@ -1,8 +1,9 @@
 import { API_CONFIG } from '@/config/api.config';
+import { authService } from './authService';
 
 class ApiService {
   private getAuthHeaders() {
-    const token = localStorage.getItem('access_token');
+    const token = authService.getAccessToken();
     if (!token && import.meta.env.MODE !== 'development') {
       throw new Error('No authentication token found');
     }
@@ -63,7 +64,7 @@ class ApiService {
     const formData = new FormData();
     formData.append('file', file);
 
-    const token = localStorage.getItem('access_token');
+    const token = authService.getAccessToken();
     const headers: HeadersInit = {};
     if (token) {
       headers.Authorization = `Bearer ${token}`;

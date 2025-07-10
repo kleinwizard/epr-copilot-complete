@@ -1,55 +1,82 @@
-import React from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 
-interface ErrorBoundaryState {
+interface Props {
+  children: ReactNode;
+  fallback?: ReactNode;
+}
+
+interface State {
   hasError: boolean;
-  error?: Error;
+  error: Error | null;
+  errorInfo: ErrorInfo | null;
 }
 
-interface ErrorBoundaryProps {
-  children: React.ReactNode;
-  fallback?: React.ReactNode;
-}
+export class ErrorBoundary extends Component<Props, State> {
+  public state: State = {
+    hasError: false,
+    error: null,
+    errorInfo: null
+  };
 
-export class ErrorBoundary extends React.Component<
-  ErrorBoundaryProps,
-  ErrorBoundaryState
-> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false };
+  public static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error, errorInfo: null };
   }
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+    this.setState({
+      error,
+      errorInfo
+    });
   }
 
-  render() {
+  private handleReset = () => {
+    this.setState({
+      hasError: false,
+      error: null,
+      errorInfo: null
+    });
+  };
+
+  public render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
         return this.props.fallback;
       }
 
       return (
-        <div className="p-4 border border-red-200 rounded-md bg-red-50">
-          <h3 className="text-red-800 font-medium">Something went wrong</h3>
-          <p className="text-red-600 text-sm mt-1">
-            Please refresh the page or contact support if the problem persists.
-          </p>
-          {import.meta.env.DEV && this.state.error && (
-            <details className="mt-2">
-              <summary className="text-red-700 text-xs cursor-pointer">
-                Error details (development only)
-              </summary>
-              <pre className="text-red-600 text-xs mt-1 whitespace-pre-wrap">
-                {this.state.error.message}
-                {this.state.error.stack}
-              </pre>
-            </details>
-          )}
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <Card className="max-w-md w-full p-6">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <AlertTriangle className="h-12 w-12 text-red-500" />
+              <h2 className="text-2xl font-semibold">Something went wrong</h2>
+              <p className="text-gray-600">
+                We're sorry, but something unexpected happened. Please try refreshing the page.
+              </p>
+              {import.meta.env.MODE === 'development' && this.state.error && (
+                <details className="w-full text-left">
+                  <summary className="cursor-pointer text-sm text-gray-500">
+                    Error details
+                  </summary>
+                  <pre className="mt-2 text-xs bg-gray-100 p-2 rounded overflow-auto">
+                    {this.state.error.toString()}
+                    {this.state.errorInfo?.componentStack}
+                  </pre>
+                </details>
+              )}
+              <div className="flex gap-4">
+                <Button onClick={() => window.location.reload()}>
+                  Refresh Page
+                </Button>
+                <Button variant="outline" onClick={this.handleReset}>
+                  Try Again
+                </Button>
+              </div>
+            </div>
+          </Card>
         </div>
       );
     }

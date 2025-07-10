@@ -1,4 +1,6 @@
 
+import { authService } from './authService';
+
 export interface ComplianceEvent {
   id: string;
   title: string;
@@ -35,7 +37,7 @@ export async function getCalendarEvents(month?: number, year?: number): Promise<
     const response = await fetch(`/api/calendar/events?${params.toString()}`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        'Authorization': `Bearer ${authService.getAccessToken()}`,
         'Content-Type': 'application/json',
       },
     });
@@ -61,7 +63,7 @@ export async function getUpcomingEvents(days: number = 30): Promise<ComplianceEv
     const response = await fetch(`/api/calendar/events/upcoming?days=${days}`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        'Authorization': `Bearer ${authService.getAccessToken()}`,
         'Content-Type': 'application/json',
       },
     });
@@ -105,7 +107,7 @@ export async function addCalendarEvent(event: Omit<ComplianceEvent, 'id'>): Prom
     const response = await fetch('/api/calendar/events', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        'Authorization': `Bearer ${authService.getAccessToken()}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(event),
@@ -137,7 +139,7 @@ export async function getCalendarStats(): Promise<{upcoming: number, overdue: nu
     const response = await fetch('/api/calendar/stats', {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        'Authorization': `Bearer ${authService.getAccessToken()}`,
         'Content-Type': 'application/json',
       },
     });

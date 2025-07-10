@@ -1,4 +1,6 @@
 
+import { authService } from './authService';
+
 export interface TeamMember {
   id: string;
   name: string;
@@ -170,7 +172,7 @@ export const getTeamMembers = async (): Promise<TeamMember[]> => {
     const response = await fetch('/api/team/members', {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        'Authorization': `Bearer ${authService.getAccessToken()}`,
         'Content-Type': 'application/json',
       },
     });
@@ -191,7 +193,7 @@ export const getTeamInvitations = async (): Promise<TeamInvitation[]> => {
     const response = await fetch('/api/team/invitations', {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        'Authorization': `Bearer ${authService.getAccessToken()}`,
         'Content-Type': 'application/json',
       },
     });
@@ -220,7 +222,7 @@ export const getTeamStats = async () => {
     const response = await fetch('/api/team/stats', {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        'Authorization': `Bearer ${authService.getAccessToken()}`,
         'Content-Type': 'application/json',
       },
     });
@@ -246,7 +248,7 @@ export const inviteTeamMember = async (invitation: Omit<TeamInvitation, 'id' | '
     const response = await fetch('/api/team/invitations', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        'Authorization': `Bearer ${authService.getAccessToken()}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({

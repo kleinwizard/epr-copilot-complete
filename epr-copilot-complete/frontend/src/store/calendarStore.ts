@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { ComplianceEvent } from '@/services/calendarService';
 import { API_CONFIG } from '@/config/api.config';
+import { authService } from '@/services/authService';
 
 interface CalendarStore {
   events: ComplianceEvent[];
@@ -57,7 +58,7 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
   addEvent: async (eventData) => {
     set({ isLoading: true, error: null });
     try {
-      const token = localStorage.getItem('access_token');
+      const token = authService.getAccessToken();
       const response = await fetch(API_CONFIG.getApiUrl('/calendar/events'), {
         method: 'POST',
         headers: {
@@ -103,7 +104,7 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
   updateEvent: async (id, eventData) => {
     set({ isLoading: true, error: null });
     try {
-      const token = localStorage.getItem('access_token');
+      const token = authService.getAccessToken();
       const response = await fetch(API_CONFIG.getApiUrl(`/calendar/events/${id}`), {
         method: 'PUT',
         headers: {
@@ -147,7 +148,7 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
   deleteEvent: async (id) => {
     set({ isLoading: true, error: null });
     try {
-      const token = localStorage.getItem('access_token');
+      const token = authService.getAccessToken();
       const response = await fetch(API_CONFIG.getApiUrl(`/calendar/events/${id}`), {
         method: 'DELETE',
         headers: {
@@ -188,7 +189,7 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
       if (month !== undefined) params.append('month', month.toString());
       if (year !== undefined) params.append('year', year.toString());
       
-      const token = localStorage.getItem('access_token');
+      const token = authService.getAccessToken();
       const response = await fetch(
         API_CONFIG.getApiUrl(`/calendar/events?${params.toString()}`),
         {

@@ -13,6 +13,7 @@ import {
   Download
 } from 'lucide-react';
 import { FeeCalculator } from './FeeCalculator';
+import { authService } from '@/services/authService';
 
 
 export function FeeManagement() {
@@ -26,7 +27,7 @@ export function FeeManagement() {
       try {
         setIsLoading(true);
         
-        const token = localStorage.getItem('access_token');
+        const token = authService.getAccessToken();
         const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
         
         const historyResponse = await fetch(`${API_BASE_URL}/api/fees/history`, {

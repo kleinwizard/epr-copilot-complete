@@ -1,5 +1,6 @@
 
 import { APP_CONFIG } from '../../config/constants';
+import { authService } from './authService';
 
 export interface QuarterlyReport {
   id: string;
@@ -50,7 +51,7 @@ export interface ReportFees {
 
 
 export async function getQuarterlyReports(): Promise<QuarterlyReport[]> {
-  const token = localStorage.getItem('access_token');
+  const token = authService.getAccessToken();
   const response = await fetch(`${APP_CONFIG.api.baseUrl}/api/reports`, {
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -89,7 +90,7 @@ export async function getQuarterlyReports(): Promise<QuarterlyReport[]> {
 }
 
 export async function getReportById(id: string): Promise<QuarterlyReport | undefined> {
-  const token = localStorage.getItem('access_token');
+  const token = authService.getAccessToken();
   const response = await fetch(`${APP_CONFIG.api.baseUrl}/api/reports/${id}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -131,7 +132,7 @@ export async function getReportById(id: string): Promise<QuarterlyReport | undef
 }
 
 export async function createNewReport(quarter: string, year: number): Promise<QuarterlyReport> {
-  const token = localStorage.getItem('access_token');
+  const token = authService.getAccessToken();
   const response = await fetch(`${APP_CONFIG.api.baseUrl}/api/reports/generate`, {
     method: 'POST',
     headers: {

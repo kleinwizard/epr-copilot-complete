@@ -3,11 +3,12 @@ import { API_CONFIG } from '../config/api.config';
 import { LOCAL_STORAGE_KEYS } from '../config/constants';
 import { SecureStorage } from '../utils/storage';
 import { withRetry } from '../utils/errorHandling';
+import { authService } from './authService';
 
 export class ProductionDataService {
   static async fetchProducts(filters?: any) {
     return withRetry(async () => {
-      const token = localStorage.getItem('access_token');
+      const token = authService.getAccessToken();
       const response = await fetch(API_CONFIG.getApiUrl('/products'), {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -25,7 +26,7 @@ export class ProductionDataService {
   
   static async saveProduct(product: any) {
     return withRetry(async () => {
-      const token = localStorage.getItem('access_token');
+      const token = authService.getAccessToken();
       const response = await fetch(API_CONFIG.getApiUrl('/products'), {
         method: 'POST',
         headers: {
@@ -45,7 +46,7 @@ export class ProductionDataService {
   
   static async fetchMaterials() {
     return withRetry(async () => {
-      const token = localStorage.getItem('access_token');
+      const token = authService.getAccessToken();
       const response = await fetch(API_CONFIG.getApiUrl('/materials'), {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -63,7 +64,7 @@ export class ProductionDataService {
   
   static async generateReport(params: any) {
     return withRetry(async () => {
-      const token = localStorage.getItem('access_token');
+      const token = authService.getAccessToken();
       const response = await fetch(API_CONFIG.getApiUrl('/reports/generate'), {
         method: 'POST',
         headers: {
@@ -83,7 +84,7 @@ export class ProductionDataService {
   
   static async uploadFile(file: File) {
     return withRetry(async () => {
-      const token = localStorage.getItem('access_token');
+      const token = authService.getAccessToken();
       const formData = new FormData();
       formData.append('file', file);
       

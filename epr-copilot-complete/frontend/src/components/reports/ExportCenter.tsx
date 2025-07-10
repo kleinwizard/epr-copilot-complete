@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/services/apiService';
+import { authService } from '@/services/authService';
 
 interface ScheduledExport {
   id: string;
@@ -121,7 +122,7 @@ export function ExportCenter() {
       const response = await fetch(`/api/exports/download/${exportJob.id}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Authorization': `Bearer ${authService.getAccessToken()}`,
         },
       });
       

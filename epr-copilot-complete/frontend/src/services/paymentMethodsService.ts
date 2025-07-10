@@ -1,11 +1,12 @@
 
 import { PaymentMethod } from '../types/payment';
+import { authService } from './authService';
 
 export class PaymentMethodsService {
   private paymentMethods: Map<string, PaymentMethod> = new Map();
 
   async addPaymentMethod(method: Omit<PaymentMethod, 'id'>): Promise<PaymentMethod> {
-    const token = localStorage.getItem('access_token');
+    const token = authService.getAccessToken();
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
     try {
       const response = await fetch(`${API_BASE_URL}/api/payments/save-payment-method`, {
@@ -47,7 +48,7 @@ export class PaymentMethodsService {
   }
 
   async getPaymentMethods(): Promise<PaymentMethod[]> {
-    const token = localStorage.getItem('access_token');
+    const token = authService.getAccessToken();
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
     try {
       const response = await fetch(`${API_BASE_URL}/api/payments/payment-methods`, {
