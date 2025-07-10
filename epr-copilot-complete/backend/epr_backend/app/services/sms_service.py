@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 import logging
 
 if os.getenv("ENABLE_SMS_SERVICES", "false").lower() == "true":

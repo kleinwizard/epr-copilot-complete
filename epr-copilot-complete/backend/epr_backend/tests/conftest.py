@@ -13,10 +13,8 @@ import logging
 
 os.environ["ENVIRONMENT"] = "test"
 
-from app.main import app
 from app.database import get_db, Base
 from app.config import get_settings
-from app.services.scheduler import task_scheduler
 
 logging.basicConfig(level=logging.DEBUG)
 

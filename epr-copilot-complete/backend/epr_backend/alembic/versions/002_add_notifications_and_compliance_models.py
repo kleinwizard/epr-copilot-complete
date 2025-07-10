@@ -7,7 +7,6 @@ Create Date: 2025-01-08 21:40:00.000000
 """
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '002_add_notifications_and_compliance_models'
