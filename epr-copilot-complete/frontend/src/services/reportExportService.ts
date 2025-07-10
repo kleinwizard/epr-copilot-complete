@@ -285,28 +285,57 @@ export function exportSecurityAuditLog(data: ExportData): Blob {
   return new Blob([doc.output('blob')], { type: 'application/pdf' });
 }
 
-export function exportEnhancedReport(report: any, format: string): string {
+export function exportEnhancedReport(report: any, format: string): Blob {
   const exportData: ExportData = {
-    companyName: "Sample Company",
-    jurisdiction: "California (SB 54)",
+    companyName: report.companyName || "Sample Company",
+    jurisdiction: report.jurisdiction || "California (SB 54)",
     reportingPeriod: `${report.quarter} ${report.year}`,
     reportId: `RPT-${report.id}`,
     totalPackagingWeight: report.summary?.totalWeight || 0,
     baseFee: report.fees?.baseFee || 0,
     ecoModulationAdjustments: report.fees?.adjustments || 0,
     totalFeeOwed: report.fees?.totalDue || 0,
-    materialBreakdown: []
+    materialBreakdown: report.materials || [],
+    products: report.products || [],
+    costBreakdown: report.costBreakdown || []
   };
 
   if (format === 'pdf') {
-    const blob = exportComplianceReport(exportData);
-    return blob.toString();
+    return exportComplianceReport(exportData);
   } else if (format === 'csv') {
-    const blob = exportFullDataAudit(exportData);
-    return blob.toString();
+    return exportFullDataAudit(exportData);
+  } else if (format === 'excel') {
+    return exportToExcel(exportData);
   }
   
-  return '';
+  return exportComplianceReport(exportData);
+}
+
+export function exportToExcel(data: ExportData): Blob {
+  const headers = [
+    'Product ID', 'Product Name', 'Material Type', 'Weight (kg)', 
+    'Recyclable', 'Fee Rate ($/kg)', 'Total Fee ($)'
+  ];
+  
+  const rows = [headers.join(',')];
+  
+  if (data.products && data.products.length > 0) {
+    data.products.forEach(product => {
+      const row = [
+        product.productId,
+        `"${product.productName}"`,
+        `"${product.materialCategory}"`,
+        product.weightPerUnit.toString(),
+        product.recyclable ? 'Yes' : 'No',
+        product.eprRate.toFixed(4),
+        product.totalFee.toFixed(2)
+      ];
+      rows.push(row.join(','));
+    });
+  }
+  
+  const csvContent = rows.join('\n');
+  return new Blob([csvContent], { type: 'application/vnd.ms-excel' });
 }
 
 export function downloadBlob(blob: Blob, filename: string): void {
