@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { supplyChainIntegrationService } from '@/services/supplyChainIntegrationService';
+import { apiService } from '@/services/apiService';
 import { SupplyChainIntegration } from '@/types/integrations';
 import { useToast } from '@/hooks/use-toast';
 
@@ -69,17 +70,50 @@ export const SupplyChainIntegrations = () => {
 
   const handleSync = async (integrationId: string) => {
     setIsLoading(true);
+    
     try {
-      const result = await supplyChainIntegrationService.syncData(integrationId);
+      const integration = integrations.find(i => i.id === integrationId);
+      if (!integration) {
+        throw new Error('Integration not found');
+      }
+      
       toast({
-        title: "Sync Complete",
-        description: `Synced ${result.materialsUpdated} materials and verified ${result.certificationsVerified} certifications.`,
+        title: "Sync Started",
+        description: `Syncing data with ${integration.supplier}...`,
       });
-      loadIntegrations();
+      
+      const syncResponse = await apiService.post(`/api/integrations/supply-chain/${integrationId}/sync`, {
+        type: integration.type,
+        lastSync: integration.lastUpdate
+      });
+      
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      if (syncResponse.success) {
+        setIntegrations(prev => 
+          prev.map(i => 
+            i.id === integrationId 
+              ? { 
+                  ...i, 
+                  lastUpdate: new Date().toISOString(),
+                  status: 'active' as const,
+                }
+              : i
+          )
+        );
+        
+        toast({
+          title: "Sync Complete",
+          description: `Successfully synced ${syncResponse.itemsImported || 0} items from ${integration.supplier}`,
+        });
+      } else {
+        throw new Error(syncResponse.error || 'Sync failed');
+      }
     } catch (error) {
+      console.error('Sync failed:', error);
       toast({
         title: "Sync Failed",
-        description: "Failed to sync supply chain data.",
+        description: error instanceof Error ? error.message : "Failed to sync data. Please try again.",
         variant: "destructive",
       });
     } finally {

@@ -23,10 +23,12 @@ import {
   getERPStats,
   type ERPSystem 
 } from '@/services/erpIntegrationService';
+import { apiService } from '@/services/apiService';
 import { useToast } from '@/hooks/use-toast';
 
 export function ERPIntegration() {
   const [erpSystems, setERPSystems] = useState(getERPSystems());
+  const [connectedSystems, setConnectedSystems] = useState(getERPSystems());
   const [syncHistory, setSyncHistory] = useState(getSyncHistory());
   const [loading, setLoading] = useState<string | null>(null);
   const { toast } = useToast();
@@ -87,25 +89,54 @@ export function ERPIntegration() {
 
   const handleTestConnection = async (systemId: string) => {
     setLoading(`test-${systemId}`);
+    
     try {
-      const success = await testConnection(systemId);
-      setERPSystems(getERPSystems());
+      const system = connectedSystems.find(s => s.id === systemId);
+      if (!system) {
+        throw new Error('System not found');
+      }
       
-      toast({
-        title: success ? "Connection Successful" : "Connection Failed",
-        description: success 
-          ? "ERP system is properly connected and responding"
-          : "Unable to establish connection to ERP system",
-        variant: success ? "default" : "destructive",
+      const response = await apiService.post(`/api/integrations/erp/${systemId}/test`, {
+        type: system.type,
+        config: {
+          apiEndpoint: system.apiEndpoint || '',
+          apiKey: '***', // Masked for security
+        }
       });
+      
+      if (response.success) {
+        toast({
+          title: "Connection Successful",
+          description: `Successfully connected to ${system.name}`,
+        });
+        
+        setConnectedSystems(prev => 
+          prev.map(s => 
+            s.id === systemId 
+              ? { ...s, status: 'connected', lastSync: new Date().toISOString() }
+              : s
+          )
+        );
+      } else {
+        throw new Error(response.error || 'Connection test failed');
+      }
     } catch (error) {
+      console.error('Connection test failed:', error);
       toast({
-        title: "Connection Test Failed",
-        description: error instanceof Error ? error.message : "Unknown error occurred",
+        title: "Connection Failed",
+        description: error instanceof Error ? error.message : "Failed to test connection. Please check your settings.",
         variant: "destructive",
       });
+      
+      setConnectedSystems(prev => 
+        prev.map(s => 
+          s.id === systemId 
+            ? { ...s, status: 'error' }
+            : s
+        )
+      );
     } finally {
-      setLoading(null);
+      setLoading('');
     }
   };
 
