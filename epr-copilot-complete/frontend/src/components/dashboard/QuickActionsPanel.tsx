@@ -107,6 +107,12 @@ export function QuickActionsPanel() {
 
   const loadActions = async () => {
     try {
+      if (!localStorage.getItem('access_token') && !window.location.hostname.includes('localhost')) {
+        console.warn('No authentication token, using default data');
+        setQuickActions(getZeroStateActions());
+        setRecentActions([]);
+        return;
+      }
       const products = await dataService.getProducts();
       const materials = await dataService.getMaterials();
       
