@@ -587,7 +587,7 @@ export class CalculationEngine {
   }>): Promise<FeeCalculation> {
     const token = authService.getAccessToken();
     const API_BASE_URL = API_CONFIG.getBaseUrl();
-    const response = await fetch(`${API_BASE_URL}/api/fees/calculate`, {
+    const response = await fetch(`${API_BASE_URL}/fees/calculate`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -630,7 +630,7 @@ export class CalculationEngine {
   static async calculateEprFeeV1(request: FeeCalculationRequestV1): Promise<FeeCalculationResponseV1> {
     const token = authService.getAccessToken();
     const API_BASE_URL = API_CONFIG.getBaseUrl();
-    const response = await fetch(`${API_BASE_URL}/api/fees/v1/calculate-fee`, {
+    const response = await fetch(`${API_BASE_URL}/fees/v1/calculate-fee`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

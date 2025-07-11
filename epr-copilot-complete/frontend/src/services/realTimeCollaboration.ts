@@ -66,7 +66,7 @@ class RealTimeCollaborationService {
 
   async getActiveUsers(reportId: string): Promise<CollaborationUser[]> {
     try {
-      const users = await apiService.get(`/api/collaboration/users?reportId=${reportId}`);
+      const users = await apiService.get(`/collaboration/users?reportId=${reportId}`);
       return users || [];
     } catch (error) {
       console.error('Failed to get active users:', error);
@@ -76,7 +76,7 @@ class RealTimeCollaborationService {
 
   async getComments(reportId: string): Promise<Comment[]> {
     try {
-      const comments = await apiService.get(`/api/reports/${reportId}/comments`);
+      const comments = await apiService.get(`/reports/${reportId}/comments`);
       return comments || [];
     } catch (error) {
       console.error('Failed to get comments:', error);
@@ -96,7 +96,7 @@ class RealTimeCollaborationService {
 
   async applyEdit(edit: RealtimeEdit): Promise<boolean> {
     try {
-      await apiService.post(`/api/reports/${edit.reportId}/edits`, edit);
+      await apiService.post(`/reports/${edit.reportId}/edits`, edit);
       return true;
     } catch (error) {
       console.error('Failed to apply edit:', error);
@@ -112,7 +112,7 @@ class RealTimeCollaborationService {
     mentions: string[] = []
   ): Promise<Comment> {
     try {
-      const comment = await apiService.post(`/api/reports/${reportId}/comments`, {
+      const comment = await apiService.post(`/reports/${reportId}/comments`, {
         section,
         field,
         content,
@@ -131,7 +131,7 @@ class RealTimeCollaborationService {
     changes: RealtimeEdit[]
   ): Promise<VersionSnapshot> {
     try {
-      const snapshot = await apiService.post(`/api/reports/${reportId}/snapshots`, {
+      const snapshot = await apiService.post(`/reports/${reportId}/snapshots`, {
         description,
         changes
       });

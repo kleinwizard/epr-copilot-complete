@@ -85,155 +85,155 @@ class ApiService {
   }
 
   async getCompanyInfo() {
-    return this.get('/api/company');
+    return this.get('/company');
   }
 
   async saveCompanyInfo(data: any) {
-    return this.put('/api/company/profile', data);
+    return this.put('/company/profile', data);
   }
 
   async getProducts() {
-    return this.get('/api/products');
+    return this.get('/products');
   }
 
   async saveProduct(data: any) {
     const backendData = convertProductToBackendFields(data);
-    return this.post('/api/products', backendData);
+    return this.post('/products', backendData);
   }
 
   async updateProduct(id: number, data: any) {
     const backendData = convertProductToBackendFields(data);
-    return this.put(`/api/products/${id}`, backendData);
+    return this.put(`/products/${id}`, backendData);
   }
 
   async getMaterials() {
-    return this.get('/api/materials');
+    return this.get('/materials');
   }
 
   async saveMaterial(data: any) {
     const backendData = convertMaterialToBackendFields(data);
-    return this.post('/api/materials', backendData);
+    return this.post('/materials', backendData);
   }
 
   async updateMaterial(id: number, data: any) {
     const backendData = convertMaterialToBackendFields(data);
-    return this.put(`/api/materials/${id}`, backendData);
+    return this.put(`/materials/${id}`, backendData);
   }
 
   async getAnalytics() {
-    return this.get('/api/analytics');
+    return this.get('/analytics');
   }
 
   async getComplianceDueDates() {
-    return this.get('/api/compliance/due-dates');
+    return this.get('/compliance/due-dates');
   }
 
   async getComplianceScore() {
-    return this.get('/api/compliance/score');
+    return this.get('/compliance/score');
   }
 
   async getComplianceIssues() {
-    return this.get('/api/compliance/issues');
+    return this.get('/compliance/issues');
   }
 
   async updateComplianceIssueStatus(id: string, status: string) {
-    return this.put(`/api/compliance/issues/${id}/status`, { status });
+    return this.put(`/compliance/issues/${id}/status`, { status });
   }
 
   async getFeeDeadlines() {
-    return this.get('/api/fees/deadlines');
+    return this.get('/fees/deadlines');
   }
 
   async getFeeHistory() {
-    return this.get('/api/fees/history');
+    return this.get('/fees/history');
   }
 
   async getActiveVendorsCount() {
-    return this.get('/api/vendors/count?status=active');
+    return this.get('/vendors/count?status=active');
   }
 
   async getConnectedVendorsCount() {
-    return this.get('/api/vendors/count?status=connected');
+    return this.get('/vendors/count?status=connected');
   }
 
   async getWorkspacesCount() {
-    return this.get('/api/workspaces/count');
+    return this.get('/workspaces/count');
   }
 
   async getUnreadMessagesCount() {
-    return this.get('/api/messages/count?unread=true');
+    return this.get('/messages/count?unread=true');
   }
 
   async getEcommerceIntegrationsCount() {
-    return this.get('/api/integrations/count?type=ecommerce');
+    return this.get('/integrations/count?type=ecommerce');
   }
 
   async getSupplyChainIntegrationsCount() {
-    return this.get('/api/integrations/count?type=supply-chain');
+    return this.get('/integrations/count?type=supply-chain');
   }
 
   async getCustomApiIntegrationsCount() {
-    return this.get('/api/integrations/count?type=custom-api');
+    return this.get('/integrations/count?type=custom-api');
   }
 
   async getWebhookIntegrationsCount() {
-    return this.get('/api/integrations/count?type=webhook');
+    return this.get('/integrations/count?type=webhook');
   }
 
   async getNotifications() {
-    return this.get('/api/notifications/');
+    return this.get('/notifications/');
   }
 
   async markNotificationAsRead(id: string) {
-    return this.put(`/api/notifications/${id}/read`, {});
+    return this.put(`/notifications/${id}/read`, {});
   }
 
   async getDataUsage() {
-    return this.get('/api/data/usage');
+    return this.get('/data/usage');
   }
 
   async exportData(type: string, format: string) {
-    return this.get(`/api/export/${type}?format=${format}`);
+    return this.get(`/export/${type}?format=${format}`);
   }
 
   async exportProducts(format: string = 'csv') {
-    return this.get(`/api/export/products?format=${format}`);
+    return this.get(`/export/products?format=${format}`);
   }
 
   async exportMaterials(format: string = 'json') {
-    return this.get(`/api/export/materials?format=${format}`);
+    return this.get(`/export/materials?format=${format}`);
   }
 
   async exportReports(format: string = 'pdf') {
-    return this.get(`/api/export/reports?format=${format}`);
+    return this.get(`/export/reports?format=${format}`);
   }
 
   async exportFullData() {
-    return this.get('/api/export/full-data');
+    return this.get('/export/full-data');
   }
 
   async getAnalyticsOverview() {
-    return this.get('/api/analytics/overview');
+    return this.get('/analytics/overview');
   }
 
   async getComplianceMetrics() {
-    return this.get('/api/analytics/compliance-metrics');
+    return this.get('/analytics/compliance-metrics');
   }
 
   async getCostAnalysis() {
-    return this.get('/api/analytics/cost-analysis');
+    return this.get('/analytics/cost-analysis');
   }
 
   async getProjections() {
-    return this.get('/api/analytics/projections');
+    return this.get('/analytics/projections');
   }
 
   async getImportHistory() {
-    return this.get('/api/imports/history');
+    return this.get('/imports/history');
   }
 
   async downloadErrorReport(importId: number) {
-    return this.get(`/api/imports/${importId}/error-report`);
+    return this.get(`/imports/${importId}/error-report`);
   }
 
   async calculateMaterialProperties(materialData: {
@@ -241,15 +241,15 @@ class ApiService {
     category: string;
     pcrContent: number;
   }) {
-    return this.post('/api/materials/calculate-properties', materialData);
+    return this.post('/materials/calculate-properties', materialData);
   }
 
   async getUserProfile() {
-    return this.get('/api/user/profile');
+    return this.get('/user/profile');
   }
 
   async updateUserProfile(profileData: any) {
-    return this.put('/api/user/profile', profileData);
+    return this.put('/user/profile', profileData);
   }
 }
 

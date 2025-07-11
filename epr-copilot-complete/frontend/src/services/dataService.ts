@@ -189,7 +189,7 @@ class DataService {
 
   async uploadDocument(file: File): Promise<{ success: boolean; filename: string }> {
     try {
-      const result = await apiService.uploadFile('/api/documents/upload', file);
+      const result = await apiService.uploadFile('/documents/upload', file);
       return {
         success: true,
         filename: result.filename || file.name
@@ -202,7 +202,7 @@ class DataService {
 
   async getSavedSearches(): Promise<any[]> {
     try {
-      const searches = await apiService.get('/api/saved-searches');
+      const searches = await apiService.get('/saved-searches');
       return searches || [];
     } catch (error) {
       console.error('Failed to get saved searches:', error);
@@ -212,7 +212,7 @@ class DataService {
 
   async saveSearch(searchData: { name: string; criteria: any }): Promise<any> {
     try {
-      const savedSearch = await apiService.post('/api/saved-searches', searchData);
+      const savedSearch = await apiService.post('/saved-searches', searchData);
       return savedSearch;
     } catch (error) {
       console.error('Failed to save search:', error);
@@ -222,7 +222,7 @@ class DataService {
 
   async deleteSavedSearch(searchId: string): Promise<void> {
     try {
-      await apiService.delete(`/api/saved-searches/${searchId}`);
+      await apiService.delete(`/saved-searches/${searchId}`);
     } catch (error) {
       console.error('Failed to delete saved search:', error);
       throw error;
