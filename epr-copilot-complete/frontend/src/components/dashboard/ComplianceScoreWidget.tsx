@@ -168,22 +168,27 @@ export function ComplianceScoreWidget() {
         <div className="space-y-2">
           <h4 className="text-sm font-medium">30-Day Trend</h4>
           <div className="relative">
-            <ChartContainer config={chartConfig} className="h-[100px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data.trendData}>
-                  <XAxis dataKey="date" hide />
-                  <YAxis domain={[80, 100]} hide />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="score" 
-                    stroke="var(--color-score)" 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartContainer>
+            <div className="h-[100px] w-full min-h-[80px]">
+              <ChartContainer config={chartConfig} className="h-full w-full">
+                <ResponsiveContainer 
+                  width="100%" 
+                  height="100%"
+                  minWidth={100}>
+                  <LineChart data={data.trendData}>
+                    <XAxis dataKey="date" hide />
+                    <YAxis domain={[80, 100]} hide />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Line 
+                      type="monotone" 
+                      dataKey="score" 
+                      stroke="var(--color-score)" 
+                      strokeWidth={2}
+                      dot={{ r: 2 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </div>
             {data.trendData.length === 0 && (
               <div className="absolute inset-0 flex items-center justify-center bg-white/80">
                 <div className="text-center">
