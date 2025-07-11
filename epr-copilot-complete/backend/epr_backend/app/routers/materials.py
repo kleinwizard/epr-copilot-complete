@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from typing import List
 from ..database import get_db, Material
 from ..schemas import MaterialCreate, Material as MaterialSchema, MaterialForm

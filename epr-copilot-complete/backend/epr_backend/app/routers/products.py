@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from typing import List, Optional
 from ..database import get_db, Product, Material
 from ..schemas import ProductCreate, Product as ProductSchema, ProductForm, Material as MaterialSchema
@@ -17,9 +17,11 @@ async def get_products(
     db: Session = Depends(get_db)
 ):
     """Get all products for the current user's organization."""
-    products = db.query(Product).filter(
+    query = db.query(Product).filter(
         Product.organization_id == current_user.organization_id
-    ).offset(skip).limit(limit).all()
+    ).options(selectinload(Product.packaging_components))
+    
+    products = query.offset(skip).limit(limit).all()
     return products
 
 
