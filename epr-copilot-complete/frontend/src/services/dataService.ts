@@ -1,7 +1,5 @@
 import { CalculationUtils } from './calculationEngine';
 import { apiService } from './apiService';
-import { CompanyData, Product, Material } from '../../shared/types/company';
-import { Product as SharedProduct, Material as SharedMaterial } from '../../shared/types/product';
 
 function getAuthToken(): string | null {
   const token = localStorage.getItem('access_token');
@@ -14,8 +12,57 @@ function getAuthToken(): string | null {
   return token;
 }
 
-export type { CompanyData } from '../../shared/types/company';
-export type { Product, Material } from '../../shared/types/product';
+export interface CompanyData {
+  legalName: string;
+  dbaName?: string;
+  businessId: string;
+  deqNumber?: string;
+  naicsCode?: string;
+  entityType?: string;
+  address: string;
+  city: string;
+  state?: string;
+  zipCode: string;
+  description?: string;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  sku: string;
+  category?: string;
+  weight?: number;
+  materials?: Array<{
+    type: string;
+    weight: number;
+    recyclable: boolean;
+  }>;
+  status?: string;
+  lastUpdated?: string;
+  eprFee?: number;
+  designatedProducerId?: string;
+  description?: string;
+  upc?: string;
+  manufacturer?: string;
+}
+
+export interface Material {
+  id: string;
+  name: string;
+  eprRate?: number;
+  recyclable: boolean;
+  category?: string;
+  type?: string;
+  densityRange?: { min: number; max: number };
+  sustainabilityScore?: number;
+  alternatives?: string[];
+  complianceStatus?: 'Compliant' | 'Restricted' | 'Banned';
+  lastUpdated?: string;
+  description?: string;
+  carbonFootprint?: number;
+  recyclingProcess?: string;
+  endOfLife?: string[];
+}
 
 class DataService {
   async getCompanyInfo(): Promise<CompanyData | null> {
