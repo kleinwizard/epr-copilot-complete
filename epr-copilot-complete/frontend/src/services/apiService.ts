@@ -1,5 +1,6 @@
 import { API_CONFIG } from '@/config/api.config';
 import { authService } from './authService';
+import { convertProductToBackendFields, convertMaterialToBackendFields } from '@/utils/fieldConverter';
 
 class ApiService {
   private getAuthHeaders() {
@@ -96,11 +97,13 @@ class ApiService {
   }
 
   async saveProduct(data: any) {
-    return this.post('/api/products', data);
+    const backendData = convertProductToBackendFields(data);
+    return this.post('/api/products', backendData);
   }
 
   async updateProduct(id: number, data: any) {
-    return this.put(`/api/products/${id}`, data);
+    const backendData = convertProductToBackendFields(data);
+    return this.put(`/api/products/${id}`, backendData);
   }
 
   async getMaterials() {
@@ -108,11 +111,13 @@ class ApiService {
   }
 
   async saveMaterial(data: any) {
-    return this.post('/api/materials', data);
+    const backendData = convertMaterialToBackendFields(data);
+    return this.post('/api/materials', backendData);
   }
 
   async updateMaterial(id: number, data: any) {
-    return this.put(`/api/materials/${id}`, data);
+    const backendData = convertMaterialToBackendFields(data);
+    return this.put(`/api/materials/${id}`, backendData);
   }
 
   async getAnalytics() {
@@ -237,6 +242,14 @@ class ApiService {
     pcrContent: number;
   }) {
     return this.post('/api/materials/calculate-properties', materialData);
+  }
+
+  async getUserProfile() {
+    return this.get('/api/user/profile');
+  }
+
+  async updateUserProfile(profileData: any) {
+    return this.put('/api/user/profile', profileData);
   }
 }
 

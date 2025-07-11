@@ -541,3 +541,51 @@ async def set_fee_optimization_goal(
             status_code=500,
             detail=f"Failed to save fee optimization goal: {str(e)}"
         )
+
+
+@router.get("/compliance-score")
+async def get_compliance_score(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Calculate comprehensive compliance score based on multiple factors.
+    
+    Factors include:
+    - Recyclability rate (40% weight)
+    - Fee optimization performance (30% weight)
+    - Regulatory compliance factors (20% weight)
+    - Sustainability metrics (10% weight)
+    """
+    try:
+        analytics_service = AnalyticsService(db)
+        
+        has_sufficient_data = analytics_service._has_sufficient_historical_data(current_user.organization_id)
+        
+        if not has_sufficient_data:
+            return {
+                "success": True,
+                "compliance_score": 0,
+                "score_breakdown": {},
+                "status": "insufficient_data",
+                "message": "More data required. Compliance score will be available after 3 months of data is collected.",
+                "recommendations": []
+            }
+        
+        compliance_data = analytics_service._calculate_compliance_score(current_user.organization_id)
+        
+        return {
+            "success": True,
+            "compliance_score": compliance_data["overall_score"],
+            "score_breakdown": compliance_data["breakdown"],
+            "status": "calculated",
+            "grade": compliance_data["grade"],
+            "recommendations": compliance_data["recommendations"],
+            "message": f"Overall compliance score: {compliance_data['overall_score']}/100 (Grade: {compliance_data['grade']})"
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to calculate compliance score: {str(e)}"
+        )

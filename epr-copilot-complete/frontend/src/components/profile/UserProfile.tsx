@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Camera, Save, Upload } from 'lucide-react';
+import { Camera, Save, Upload, AlertCircle } from 'lucide-react';
 import { apiService } from '@/services/apiService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -31,6 +31,7 @@ export function UserProfile() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -41,7 +42,8 @@ export function UserProfile() {
   const loadProfile = async () => {
     try {
       setIsLoading(true);
-      const profileData = await apiService.get('/user/profile');
+      setLoadError(null);
+      const profileData = await apiService.getUserProfile();
       if (profileData) {
         setProfile({
           firstName: profileData.firstName || profileData.first_name || '',
@@ -55,21 +57,13 @@ export function UserProfile() {
       }
     } catch (error) {
       console.error('Failed to load profile:', error);
-      
-      setProfile({
-        firstName: 'Demo',
-        lastName: 'User',
-        email: 'demo@example.com',
-        phone: '',
-        title: 'EPR Compliance Manager',
-        bio: '',
-        avatar: ''
-      });
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load profile data';
+      setLoadError(errorMessage);
       
       toast({
-        title: "Using Demo Data",
-        description: "Could not load profile data, using demo information. You can still edit and save changes.",
-        variant: "default",
+        title: "Failed to Load Profile",
+        description: errorMessage,
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -107,7 +101,7 @@ export function UserProfile() {
 
     try {
       setIsSaving(true);
-      await apiService.put('/user/profile', {
+      await apiService.updateUserProfile({
         firstName: profile.firstName.trim(),
         lastName: profile.lastName.trim(),
         email: profile.email.trim(),
@@ -193,6 +187,39 @@ export function UserProfile() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">User Profile</h1>
+          <p className="text-muted-foreground">
+            Manage your personal information and profile settings.
+          </p>
+        </div>
+        
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-3 text-destructive">
+              <AlertCircle className="h-5 w-5" />
+              <div>
+                <h3 className="font-medium">Failed to Load Profile</h3>
+                <p className="text-sm text-muted-foreground mt-1">{loadError}</p>
+              </div>
+            </div>
+            <Button 
+              onClick={loadProfile} 
+              variant="outline" 
+              className="mt-4"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Retrying...' : 'Retry'}
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
