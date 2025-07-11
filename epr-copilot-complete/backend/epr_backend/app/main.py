@@ -22,22 +22,39 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    logger.info("Starting up EPR Co-Pilot backend...")
     create_tables()
-    try:
-        task_scheduler.start()
-        if task_scheduler.enabled:
-            logger.info("Background task scheduler started")
-        else:
-            logger.info("Background task scheduler disabled via ENABLE_SCHEDULER environment variable")
-    except Exception as e:
-        logger.error(f"Failed to start task scheduler: {str(e)}")
+    
+    import os
+    if os.getenv("LOAD_SAMPLE_DATA") == "true":
+        try:
+            from .utils.sample_data import load_sample_data
+            load_sample_data()
+        except ImportError:
+            logger.info("Sample data module not available")
+    
+    if os.getenv("ENABLE_SCHEDULER", "true").lower() != "false":
+        try:
+            task_scheduler.start()
+            if task_scheduler.enabled:
+                logger.info("Background task scheduler started")
+            else:
+                logger.info("Background task scheduler disabled via ENABLE_SCHEDULER environment variable")
+        except Exception as e:
+            logger.error(f"Failed to start task scheduler: {str(e)}")
+    else:
+        logger.info("Background task scheduler disabled via ENABLE_SCHEDULER environment variable")
+    
     yield
-    try:
-        task_scheduler.stop()
-        if task_scheduler.enabled:
-            logger.info("Background task scheduler stopped")
-    except Exception as e:
-        logger.error(f"Error stopping task scheduler: {str(e)}")
+    
+    logger.info("Shutting down...")
+    if os.getenv("ENABLE_SCHEDULER", "true").lower() != "false":
+        try:
+            task_scheduler.stop()
+            if task_scheduler.enabled:
+                logger.info("Background task scheduler stopped")
+        except Exception as e:
+            logger.error(f"Error stopping task scheduler: {str(e)}")
 
 app = FastAPI(title="EPR Co-Pilot Backend", version="1.0.0", lifespan=lifespan)
 
