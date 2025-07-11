@@ -1366,3 +1366,152 @@ class AnalyticsService:
         except Exception as e:
             print(f"Error calculating current annual fees: {str(e)}")
             return 0
+    
+    def _calculate_compliance_score(self, organization_id: str) -> Dict[str, Any]:
+        """
+        Calculate comprehensive compliance score based on multiple factors.
+        
+        Scoring factors:
+        - Recyclability rate (40% weight): Higher recyclability = higher score
+        - Fee optimization performance (30% weight): Better optimization = higher score  
+        - Regulatory compliance factors (20% weight): Meeting targets = higher score
+        - Sustainability metrics (10% weight): Environmental impact = higher score
+        """
+        try:
+            recyclability_rate = self._calculate_recyclability_rate(organization_id)
+            optimization_potential = self._calculate_optimization_potential(organization_id)
+            sustainability_score = self._calculate_sustainability_score(organization_id)
+            overview_metrics = self._calculate_overview_metrics(organization_id)
+            
+            # Calculate individual component scores (0-100)
+            
+            recyclability_score = min(100, (recyclability_rate / 75) * 100)
+            
+            current_fees = overview_metrics.get('total_epr_fees', 1)
+            if current_fees > 0:
+                optimization_percentage = min(50, (optimization_potential / current_fees) * 100)
+                fee_optimization_score = optimization_percentage * 2  # Scale to 0-100
+            else:
+                fee_optimization_score = 0
+            
+            regulatory_score = 50  # Base score
+            
+            if recyclability_rate >= 75:
+                regulatory_score += 30
+            elif recyclability_rate >= 65:
+                regulatory_score += 20
+            elif recyclability_rate >= 50:
+                regulatory_score += 10
+            
+            # Penalty for very low recyclability
+            if recyclability_rate < 30:
+                regulatory_score -= 20
+            
+            regulatory_score = max(0, min(100, regulatory_score))
+            
+            sustainability_component_score = min(100, sustainability_score)
+            
+            # Calculate weighted overall score
+            overall_score = (
+                (recyclability_score * 0.40) +
+                (fee_optimization_score * 0.30) +
+                (regulatory_score * 0.20) +
+                (sustainability_component_score * 0.10)
+            )
+            
+            overall_score = round(overall_score, 1)
+            
+            if overall_score >= 90:
+                grade = "A+"
+            elif overall_score >= 85:
+                grade = "A"
+            elif overall_score >= 80:
+                grade = "A-"
+            elif overall_score >= 75:
+                grade = "B+"
+            elif overall_score >= 70:
+                grade = "B"
+            elif overall_score >= 65:
+                grade = "B-"
+            elif overall_score >= 60:
+                grade = "C+"
+            elif overall_score >= 55:
+                grade = "C"
+            elif overall_score >= 50:
+                grade = "C-"
+            else:
+                grade = "D"
+            
+            # Generate recommendations
+            recommendations = []
+            
+            if recyclability_score < 70:
+                recommendations.append({
+                    "category": "Recyclability",
+                    "priority": "High",
+                    "action": f"Increase recyclability rate from {recyclability_rate:.1f}% to 75% target",
+                    "impact": "40% of compliance score"
+                })
+            
+            if fee_optimization_score < 60:
+                recommendations.append({
+                    "category": "Cost Optimization",
+                    "priority": "Medium",
+                    "action": f"Implement material substitutions to realize ${optimization_potential:.0f} in potential savings",
+                    "impact": "30% of compliance score"
+                })
+            
+            if regulatory_score < 70:
+                recommendations.append({
+                    "category": "Regulatory Compliance",
+                    "priority": "High",
+                    "action": "Review and align with current EPR regulations and industry standards",
+                    "impact": "20% of compliance score"
+                })
+            
+            if sustainability_component_score < 60:
+                recommendations.append({
+                    "category": "Sustainability",
+                    "priority": "Low",
+                    "action": "Improve overall sustainability metrics and environmental impact",
+                    "impact": "10% of compliance score"
+                })
+            
+            return {
+                "overall_score": overall_score,
+                "grade": grade,
+                "breakdown": {
+                    "recyclability": {
+                        "score": round(recyclability_score, 1),
+                        "weight": "40%",
+                        "current_rate": f"{recyclability_rate:.1f}%",
+                        "target_rate": "75%"
+                    },
+                    "fee_optimization": {
+                        "score": round(fee_optimization_score, 1),
+                        "weight": "30%",
+                        "potential_savings": f"${optimization_potential:.0f}",
+                        "current_fees": f"${current_fees:.0f}"
+                    },
+                    "regulatory_compliance": {
+                        "score": round(regulatory_score, 1),
+                        "weight": "20%",
+                        "status": "Meeting standards" if regulatory_score >= 70 else "Needs improvement"
+                    },
+                    "sustainability": {
+                        "score": round(sustainability_component_score, 1),
+                        "weight": "10%",
+                        "sustainability_score": f"{sustainability_score:.1f}"
+                    }
+                },
+                "recommendations": recommendations
+            }
+            
+        except Exception as e:
+            print(f"Error calculating compliance score: {str(e)}")
+            return {
+                "overall_score": 0,
+                "grade": "F",
+                "breakdown": {},
+                "recommendations": []
+            }

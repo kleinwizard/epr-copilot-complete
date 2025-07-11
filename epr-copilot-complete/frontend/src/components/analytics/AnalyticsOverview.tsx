@@ -272,7 +272,12 @@ export function AnalyticsOverview({ data }: AnalyticsOverviewProps) {
               <span className="text-sm">{overview.recyclabilityRate}% / 75%</span>
             </div>
             <Progress value={(overview.recyclabilityRate / 75) * 100} className="h-2" />
-            <p className="text-xs text-muted-foreground mt-1">2.8% to goal</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {overview.recyclabilityRate >= 75 
+                ? `Goal achieved! ${(overview.recyclabilityRate - 75).toFixed(1)}% above target`
+                : `${(75 - overview.recyclabilityRate).toFixed(1)}% to goal`
+              }
+            </p>
           </div>
           
           <div>
