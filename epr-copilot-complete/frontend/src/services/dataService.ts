@@ -1,6 +1,17 @@
 import { CalculationUtils } from './calculationEngine';
 import { apiService } from './apiService';
 
+function getAuthToken(): string | null {
+  const token = localStorage.getItem('access_token');
+  if (!token) {
+    console.warn('No authentication token found');
+    if (window.location.hostname === 'localhost' || window.location.hostname.includes('devinapps.com')) {
+      return 'dev-token-' + Date.now();
+    }
+  }
+  return token;
+}
+
 export interface CompanyData {
   legalName: string;
   dbaName: string;
@@ -72,6 +83,7 @@ class DataService {
   }
 
   async getProducts(): Promise<Product[]> {
+    const token = getAuthToken();
     try {
       const products = await apiService.getProducts();
       return products || [];
@@ -118,6 +130,7 @@ class DataService {
   }
 
   async getMaterials(): Promise<Material[]> {
+    const token = getAuthToken();
     try {
       return await apiService.getMaterials();
     } catch (error) {
@@ -144,6 +157,7 @@ class DataService {
   }
 
   async getAnalytics() {
+    const token = getAuthToken();
     try {
       return await apiService.getAnalytics();
     } catch (error) {

@@ -65,6 +65,11 @@ export function FinancialOverview() {
 
   const loadFinancialData = async () => {
     try {
+      if (!localStorage.getItem('access_token') && !window.location.hostname.includes('localhost')) {
+        console.warn('No authentication token, using default data');
+        setData(getZeroStateFinancialData());
+        return;
+      }
       const analyticsData = await dataService.getAnalytics();
       const products = await dataService.getProducts();
       const materials = await dataService.getMaterials();
