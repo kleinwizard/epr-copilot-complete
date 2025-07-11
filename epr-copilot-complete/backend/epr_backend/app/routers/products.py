@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from ..database import get_db, Product, Material
-from ..schemas import ProductCreate, Product as ProductSchema, Material as MaterialSchema
+from ..schemas import ProductCreate, Product as ProductSchema, ProductForm, Material as MaterialSchema
 from ..auth import get_current_user
 from ..utils.field_converter import convert_frontend_fields
 
@@ -25,15 +25,12 @@ async def get_products(
 
 @router.post("/", response_model=ProductSchema)
 async def create_product(
-    product: ProductCreate,
+    product: ProductForm,
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Create a new product."""
-    field_mapping = {
-        'designatedProducerId': 'designated_producer_id'
-    }
-    product_data = convert_frontend_fields(product.dict(), field_mapping)
+    product_data = product.to_backend_fields()
     
     db_product = Product(
         **product_data,
@@ -64,7 +61,7 @@ async def get_product(
 @router.put("/{product_id}", response_model=ProductSchema)
 async def update_product(
     product_id: str,
-    product_update: ProductCreate,
+    product_update: ProductForm,
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -76,10 +73,7 @@ async def update_product(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    field_mapping = {
-        'designatedProducerId': 'designated_producer_id'
-    }
-    product_data = convert_frontend_fields(product_update.dict(), field_mapping)
+    product_data = product_update.to_backend_fields()
 
     for field, value in product_data.items():
         if hasattr(product, field):

@@ -4,7 +4,7 @@ from typing import Optional, List
 from pydantic import BaseModel
 from ..database import get_db, Organization, User
 from ..auth import get_current_user
-from ..schemas import User as UserSchema
+from ..schemas import User as UserSchema, CompanyProfileForm, CompanyProfile as CompanyProfileSchema
 from ..cache import cache_result
 from ..utils.field_converter import convert_frontend_fields
 from datetime import timedelta
@@ -81,7 +81,7 @@ async def get_company_profile(
 
 @router.put("/profile")
 async def update_company_profile(
-    profile: CompanyProfile,
+    profile: CompanyProfileForm,
     current_user: UserSchema = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -94,20 +94,13 @@ async def update_company_profile(
         if not organization:
             raise HTTPException(status_code=404, detail="Organization not found")
         
-        field_mapping = {
-            'legalName': 'legal_name',
-            'businessId': 'business_id',
-            'deqNumber': 'deq_number',
-            'naicsCode': 'naics_code',
-            'entityType': 'entity_type',
-            'streetAddress': 'street_address',
-            'zipCode': 'zip_code'
-        }
-        converted_data = convert_frontend_fields(profile.dict(), field_mapping)
+        converted_data = profile.to_backend_fields()
         
         for field, value in converted_data.items():
             if hasattr(organization, field):
                 setattr(organization, field, value)
+        
+        organization.updated_at = datetime.now()
         
         db.commit()
         db.refresh(organization)
@@ -449,7 +442,7 @@ async def get_company_info(
 
 @router.put("")
 async def update_company_info(
-    company_data: dict,
+    company_data: CompanyProfileForm,
     current_user: UserSchema = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -462,17 +455,7 @@ async def update_company_info(
         if not organization:
             raise HTTPException(status_code=404, detail="Organization not found")
         
-        field_mapping = {
-            'legalName': 'legal_name',
-            'businessId': 'business_id', 
-            'deqNumber': 'deq_number',
-            'naicsCode': 'naics_code',
-            'entityType': 'entity_type',
-            'streetAddress': 'street_address',
-            'zipCode': 'zip_code'
-        }
-        
-        converted_data = convert_frontend_fields(company_data, field_mapping)
+        converted_data = company_data.to_backend_fields()
         
         for field, value in converted_data.items():
             if hasattr(organization, field):
@@ -489,7 +472,7 @@ async def update_company_info(
             "data": {
                 "id": organization.id,
                 "name": organization.name,
-                "legal_name": organization.legal_name,
+                "legal_name": getattr(organization, 'legal_name', None),
                 "updated_at": organization.updated_at.isoformat() if organization.updated_at else None
             }
         }

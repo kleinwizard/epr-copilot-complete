@@ -14,48 +14,54 @@ function getAuthToken(): string | null {
 
 export interface CompanyData {
   legalName: string;
-  dbaName: string;
+  dbaName?: string;
   businessId: string;
-  deqNumber: string;
+  deqNumber?: string;
+  naicsCode?: string;
+  entityType?: string;
   address: string;
   city: string;
+  state?: string;
   zipCode: string;
-  description: string;
+  description?: string;
 }
 
 export interface Product {
-  id: number;
+  id: string;
   name: string;
   sku: string;
-  category: string;
-  weight: number;
-  materials: Array<{
+  category?: string;
+  weight?: number;
+  materials?: Array<{
     type: string;
     weight: number;
     recyclable: boolean;
   }>;
-  status: string;
-  lastUpdated: string;
-  eprFee: number;
+  status?: string;
+  lastUpdated?: string;
+  eprFee?: number;
   designatedProducerId?: string;
+  description?: string;
+  upc?: string;
+  manufacturer?: string;
 }
 
 export interface Material {
-  id: number;
+  id: string;
   name: string;
-  category: string;
-  type: string;
+  eprRate?: number;
   recyclable: boolean;
-  eprRate: number;
-  densityRange: { min: number; max: number };
-  sustainabilityScore: number;
-  alternatives: string[];
-  complianceStatus: 'Compliant' | 'Restricted' | 'Banned';
-  lastUpdated: string;
-  description: string;
-  carbonFootprint: number;
-  recyclingProcess: string;
-  endOfLife: string[];
+  category?: string;
+  type?: string;
+  densityRange?: { min: number; max: number };
+  sustainabilityScore?: number;
+  alternatives?: string[];
+  complianceStatus?: 'Compliant' | 'Restricted' | 'Banned';
+  lastUpdated?: string;
+  description?: string;
+  carbonFootprint?: number;
+  recyclingProcess?: string;
+  endOfLife?: string[];
 }
 
 class DataService {

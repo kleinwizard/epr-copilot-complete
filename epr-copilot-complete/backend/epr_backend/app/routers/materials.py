@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from ..database import get_db, Material
-from ..schemas import MaterialCreate, Material as MaterialSchema
+from ..schemas import MaterialCreate, Material as MaterialSchema, MaterialForm
 from ..auth import get_current_user
 from ..utils.field_converter import camel_to_snake
 
@@ -76,12 +76,12 @@ async def get_material_epr_rates(
 
 @router.post("/", response_model=MaterialSchema)
 async def create_material(
-    material: MaterialCreate,
+    material: MaterialForm,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
     """Create a new material (admin only)."""
-    material_data = camel_to_snake(material.dict())
+    material_data = material.to_backend_fields()
     db_material = Material(
         **material_data,
         organization_id=current_user.organization_id
