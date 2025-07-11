@@ -1,5 +1,5 @@
 
-import { getSupportedJurisdictions } from './feeCalculation';
+import { CalculationEngine } from './calculationEngine';
 
 export interface ComplianceRequirement {
   id: string;
@@ -97,7 +97,7 @@ export class ComplianceLibraryService {
 
   private async loadSupportedJurisdictions() {
     try {
-      this.supportedJurisdictions = await getSupportedJurisdictions();
+      this.supportedJurisdictions = await CalculationEngine.getSupportedJurisdictions();
     } catch (error) {
       console.error('Failed to load supported jurisdictions:', error);
       this.supportedJurisdictions = [

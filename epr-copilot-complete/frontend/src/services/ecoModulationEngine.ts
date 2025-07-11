@@ -1,5 +1,4 @@
-import { EnhancedMaterial } from './enhancedFeeCalculation';
-import { calculateEprFeeV1, FeeCalculationRequestV1, PackagingComponentV1, ProducerDataV1 } from './feeCalculation';
+import { EnhancedMaterial, FeeCalculationRequestV1, PackagingComponentV1, ProducerDataV1, CalculationEngine } from './calculationEngine';
 
 export interface EcoModulationFactors {
   carbonFootprint: number;
@@ -120,7 +119,7 @@ export class EcoModulationEngine {
         data_source: 'frontend_eco_modulation'
       };
 
-      const baseResult = await calculateEprFeeV1(baseRequest);
+      const baseResult = await CalculationEngine.calculateEprFeeV1(baseRequest);
       const baseFee = baseResult.total_fee;
 
       // Calculate modulated fee with eco factors
@@ -131,7 +130,7 @@ export class EcoModulationEngine {
         data_source: 'frontend_eco_modulation'
       };
 
-      const modulatedResult = await calculateEprFeeV1(modulatedRequest);
+      const modulatedResult = await CalculationEngine.calculateEprFeeV1(modulatedRequest);
       const modulatedFee = modulatedResult.total_fee;
 
       const totalAdjustment = modulatedFee - baseFee;

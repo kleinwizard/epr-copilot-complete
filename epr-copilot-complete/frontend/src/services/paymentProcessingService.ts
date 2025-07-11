@@ -1,6 +1,6 @@
 
 import { PaymentMethod, PaymentIntent, Invoice, PaymentHistory } from '../types/payment';
-import { RealTimeCalculationResult } from './realTimeFeeCalculation';
+import { RealTimeCalculationResult } from './calculationEngine';
 import { paymentMethodsService } from './paymentMethodsService';
 import { paymentIntentsService } from './paymentIntentsService';
 import { invoiceService } from './invoiceService';
@@ -14,11 +14,11 @@ export class PaymentProcessingService {
   }
 
   // Payment Methods Management - delegate to paymentMethodsService
-  addPaymentMethod(method: Omit<PaymentMethod, 'id'>): PaymentMethod {
+  async addPaymentMethod(method: Omit<PaymentMethod, 'id'>): Promise<PaymentMethod> {
     return paymentMethodsService.addPaymentMethod(method);
   }
 
-  getPaymentMethods(): PaymentMethod[] {
+  async getPaymentMethods(): Promise<PaymentMethod[]> {
     return paymentMethodsService.getPaymentMethods();
   }
 
@@ -35,11 +35,11 @@ export class PaymentProcessingService {
   }
 
   // Payment Intent Management - delegate to paymentIntentsService
-  createPaymentIntent(
+  async createPaymentIntent(
     feeCalculation: RealTimeCalculationResult,
     paymentMethodId: string,
     description: string = 'EPR Fee Payment'
-  ): PaymentIntent {
+  ): Promise<PaymentIntent> {
     return paymentIntentsService.createPaymentIntent(feeCalculation, paymentMethodId, description);
   }
 

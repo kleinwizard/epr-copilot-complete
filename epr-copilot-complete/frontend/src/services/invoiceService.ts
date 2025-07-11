@@ -1,6 +1,6 @@
 
 import { Invoice } from '../types/payment';
-import { RealTimeCalculationResult } from './realTimeFeeCalculation';
+import { RealTimeCalculationResult } from './calculationEngine';
 
 export class InvoiceService {
   private invoices: Map<string, Invoice> = new Map();

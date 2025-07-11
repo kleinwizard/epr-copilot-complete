@@ -1,5 +1,5 @@
 
-import { RealTimeCalculationResult } from './realTimeFeeCalculation';
+import { RealTimeCalculationResult } from './calculationEngine';
 import { Invoice } from './paymentProcessingService';
 
 export interface InvoiceTemplate {
