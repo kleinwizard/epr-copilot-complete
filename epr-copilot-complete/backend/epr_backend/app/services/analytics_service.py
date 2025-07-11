@@ -1366,3 +1366,31 @@ class AnalyticsService:
         except Exception as e:
             print(f"Error calculating current annual fees: {str(e)}")
             return 0
+
+    def _calculate_total_fees(self, organization_id: str) -> float:
+        """Calculate total EPR fees for the organization."""
+        try:
+            from sqlalchemy import func
+            from ..database import CalculatedFee
+            
+            total = self.db.query(func.sum(CalculatedFee.total_fee)).filter(
+                CalculatedFee.producer_id == organization_id
+            ).scalar()
+            
+            return float(total) if total else 0.0
+        except Exception:
+            return 0.0
+
+    def _calculate_active_products(self, organization_id: str) -> int:
+        """Count active products for the organization."""
+        try:
+            from ..database import Product
+            
+            count = self.db.query(Product).filter(
+                Product.organization_id == organization_id,
+                Product.status.in_(['Active', 'active', None])
+            ).count()
+            
+            return count
+        except Exception:
+            return 0
