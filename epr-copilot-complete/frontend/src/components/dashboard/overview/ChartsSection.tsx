@@ -27,15 +27,17 @@ export function ChartsSection() {
           <CardDescription>EPR fees and submission volume over time</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="fees" fill="#3b82f6" />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="h-[300px] w-full min-h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthlyData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="fees" fill="#3b82f6" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
 
@@ -45,15 +47,17 @@ export function ChartsSection() {
           <CardDescription>Quarterly compliance performance</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={complianceData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="quarter" />
-              <YAxis domain={[70, 100]} />
-              <Tooltip />
-              <Line type="monotone" dataKey="score" stroke="#10b981" strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="h-[300px] w-full min-h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={complianceData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="quarter" />
+                <YAxis domain={[70, 100]} />
+                <Tooltip />
+                <Line type="monotone" dataKey="score" stroke="#10b981" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
     </div>
