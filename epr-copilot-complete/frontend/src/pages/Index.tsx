@@ -31,12 +31,9 @@ const Index = () => {
   const [currentPage, setCurrentPage] = useState('home');
   const { user } = useAuth();
 
-  // Initialize user from localStorage on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser && !user) {
-      // This would be handled by the AuthProvider in a real app
-      console.log('User found in localStorage');
+    if (!user) {
+      console.log('User state managed by AuthProvider');
     }
   }, [user]);
 

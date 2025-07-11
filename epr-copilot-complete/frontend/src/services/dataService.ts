@@ -1,11 +1,13 @@
 import { CalculationUtils } from './calculationEngine';
 import { apiService } from './apiService';
+import { authService } from './authService';
+import { browserUtils } from '@/utils/browserUtils';
 
 function getAuthToken(): string | null {
-  const token = localStorage.getItem('access_token');
+  const token = authService.getAccessToken();
   if (!token) {
     console.warn('No authentication token found');
-    if (window.location.hostname === 'localhost' || window.location.hostname.includes('devinapps.com')) {
+    if (browserUtils.isDevelopment()) {
       return 'dev-token-' + Date.now();
     }
   }
@@ -80,7 +82,6 @@ class DataService {
         throw new Error('Legal name and business ID are required');
       }
       const result = await apiService.saveCompanyInfo(companyData);
-      localStorage.setItem('company_info', JSON.stringify(result));
       return result;
     } catch (error) {
       console.error('Failed to save company info:', error);

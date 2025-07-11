@@ -3,6 +3,7 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 import { APP_CONFIG } from '../../config/constants';
 import { tutorialService } from '../../services/tutorialService';
 import { authService } from '../../services/authService';
+import { browserUtils } from '@/utils/browserUtils';
 
 interface User {
   id: string;
@@ -30,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      if (window.location.hostname.includes('devinapps.com') || window.location.hostname === 'localhost') {
+      if (browserUtils.isDevelopment()) {
         const user: User = {
           id: 'dev-user-1',
           email: email,
@@ -41,8 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
         
         setUser(user);
-        localStorage.setItem('user', JSON.stringify(user));
-        localStorage.setItem('access_token', 'dev-token-' + Date.now());
+        authService.setTokens('dev-token-' + Date.now());
         
         setTimeout(() => {
           tutorialService.checkAndStartTutorial();
@@ -87,7 +87,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
       
       setUser(user);
-      localStorage.setItem('user', JSON.stringify(user));
       
       setTimeout(() => {
         tutorialService.checkAndStartTutorial();
@@ -102,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (email: string, password: string, name: string, company: string) => {
     setIsLoading(true);
     try {
-      if (window.location.hostname.includes('devinapps.com') || window.location.hostname === 'localhost') {
+      if (browserUtils.isDevelopment()) {
         const user: User = {
           id: 'dev-user-1',
           email: email,
@@ -113,8 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
         
         setUser(user);
-        localStorage.setItem('user', JSON.stringify(user));
-        localStorage.setItem('access_token', 'dev-token-' + Date.now());
+        authService.setTokens('dev-token-' + Date.now());
         
         setTimeout(() => {
           tutorialService.checkAndStartTutorial();
@@ -163,7 +161,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
       
       setUser(user);
-      localStorage.setItem('user', JSON.stringify(user));
       
       setTimeout(() => {
         tutorialService.checkAndStartTutorial();
@@ -190,7 +187,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Logout error:', error);
     } finally {
       setUser(null);
-      localStorage.removeItem('user');
       authService.clearTokens();
     }
   };
