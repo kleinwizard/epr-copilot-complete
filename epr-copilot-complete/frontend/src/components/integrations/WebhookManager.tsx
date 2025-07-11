@@ -12,6 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { webhookService } from '@/services/webhookService';
 import { Webhook, WebhookLog } from '@/types/integrations';
 import { useToast } from '@/hooks/use-toast';
+import { ValidationService } from '@/services/validationService';
+import { ValidationMessage } from '@/components/common/ValidationMessage';
 
 export const WebhookManager = () => {
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);

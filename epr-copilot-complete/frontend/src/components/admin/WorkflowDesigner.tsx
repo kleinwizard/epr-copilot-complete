@@ -7,12 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { workflowDesignerService } from '@/services/workflowDesignerService';
 import { CustomWorkflow, WorkflowNode } from '@/types/admin';
+import { ValidationMessage } from '@/components/common/ValidationMessage';
 
 export const WorkflowDesigner = () => {
   const [workflows, setWorkflows] = useState<CustomWorkflow[]>([]);
   const [selectedWorkflow, setSelectedWorkflow] = useState<CustomWorkflow | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [newNodeType, setNewNodeType] = useState<string>('');
+  const [validationResult, setValidationResult] = useState<{ isValid: boolean; errors: string[] } | null>(null);
 
   useEffect(() => {
     loadWorkflows();
@@ -92,12 +94,7 @@ export const WorkflowDesigner = () => {
     if (!selectedWorkflow) return;
 
     const validation = workflowDesignerService.validateWorkflow(selectedWorkflow.id);
-    
-    if (validation.isValid) {
-      alert('Workflow is valid!');
-    } else {
-      alert(`Workflow validation failed:\n${validation.errors.join('\n')}`);
-    }
+    setValidationResult(validation);
   };
 
   const nodeTypes = workflowDesignerService.getNodeTypes();
@@ -167,6 +164,17 @@ export const WorkflowDesigner = () => {
               </div>
             </CardHeader>
             <CardContent>
+              {validationResult && (
+                <div className="mb-4">
+                  <ValidationMessage
+                    type={validationResult.isValid ? 'success' : 'error'}
+                    message={validationResult.isValid 
+                      ? 'Workflow is valid!' 
+                      : `Workflow validation failed: ${validationResult.errors.join(', ')}`
+                    }
+                  />
+                </div>
+              )}
               {isEditing ? (
                 <div className="space-y-6">
                   {/* Add New Node */}

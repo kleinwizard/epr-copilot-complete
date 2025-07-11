@@ -10,6 +10,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ArrowLeft, Save, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/services/apiService';
+import { ValidationService } from '@/services/validationService';
+import { ValidationMessage } from '@/components/common/ValidationMessage';
 
 interface Material {
   id?: number;
@@ -132,10 +134,17 @@ export function MaterialForm({ material, onSave, onCancel }: MaterialFormProps) 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.category || !formData.materialType || !formData.packagingComponentType) {
+    const validation = ValidationService.validateMaterial({
+      name: formData.name,
+      category: formData.category,
+      materialType: formData.materialType,
+      packagingComponentType: formData.packagingComponentType
+    });
+
+    if (!validation.isValid) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields in Part A.",
+        description: validation.errors.join(', '),
         variant: "destructive"
       });
       return;
