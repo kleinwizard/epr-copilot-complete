@@ -2,6 +2,8 @@ import os
 from typing import List, Optional
 import logging
 from jinja2 import Template
+from ..core.simulation import SimulationResult
+from ..core.config import NotificationConfig
 
 if os.getenv("ENABLE_EMAIL_SERVICES", "false").lower() == "true":
     from sendgrid import SendGridAPIClient
@@ -31,13 +33,13 @@ class EmailService:
         subject: str,
         html_content: str,
         plain_content: Optional[str] = None
-    ) -> bool:
+    ) -> SimulationResult:
         """Send an email using SendGrid."""
 
         if not self.client:
             logger.info(
                 f"Email simulation - To: {to_emails}, Subject: {subject}")
-            return True
+            return SimulationResult.simulated_success(f"Email to {', '.join(to_emails)}")
 
         try:
             from_email = Email(self.from_email)
@@ -56,11 +58,11 @@ class EmailService:
             response = self.client.send(mail)
             logger.info(
                 f"Email sent successfully. Status code: {response.status_code}")
-            return response.status_code < 400
+            return SimulationResult.actual_success() if response.status_code < 400 else SimulationResult.actual_failure(f"SendGrid error: {response.status_code}")
 
         except Exception as e:
             logger.error(f"Failed to send email: {str(e)}")
-            return False
+            return SimulationResult.actual_failure(str(e))
 
     async def send_invitation_email(
         self,
@@ -68,7 +70,7 @@ class EmailService:
         inviter_name: str,
         organization_name: str,
         invitation_link: str
-    ) -> bool:
+    ) -> SimulationResult:
         """Send team invitation email."""
 
         subject = f"You're invited to join {organization_name} on EPR Co-Pilot"
@@ -115,10 +117,11 @@ class EmailService:
         deadline_type: str,
         due_date: str,
         days_remaining: int
-    ) -> bool:
+    ) -> SimulationResult:
         """Send compliance deadline reminder email."""
 
         subject = f"Reminder: {deadline_type} due in {days_remaining} days"
+        dashboard_url = NotificationConfig.get_dashboard_url()
 
         html_template = """
         <html>
@@ -129,7 +132,7 @@ class EmailService:
                 <p>This is a reminder that your <strong>{{ deadline_type }}</strong> is due in <strong>{{ days_remaining }} days</strong>.</p>
                 <p><strong>Due Date:</strong> {{ due_date }}</p>
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="https://app.epr-copilot.com/reports"
+                    <a href="{{ dashboard_url }}"
                        style="background-color: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
                         View Reports Dashboard
                     </a>
@@ -147,7 +150,8 @@ class EmailService:
             user_name=user_name,
             deadline_type=deadline_type,
             due_date=due_date,
-            days_remaining=days_remaining
+            days_remaining=days_remaining,
+            dashboard_url=dashboard_url
         )
 
         return await self.send_email([to_email], subject, html_content)
@@ -159,7 +163,7 @@ class EmailService:
         report_type: str,
         status: str,
         report_link: str
-    ) -> bool:
+    ) -> SimulationResult:
         """Send report status notification email."""
 
         subject = f"Report {status}: {report_type}"

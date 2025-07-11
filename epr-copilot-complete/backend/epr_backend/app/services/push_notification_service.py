@@ -1,6 +1,7 @@
 import os
 from typing import List, Dict, Optional
 import logging
+from ..core.simulation import SimulationResult
 
 if os.getenv("ENABLE_PUSH_SERVICES", "false").lower() == "true":
     from firebase_admin import credentials, messaging, initialize_app
@@ -33,13 +34,13 @@ class PushNotificationService:
         title: str,
         body: str,
         data: Optional[Dict[str, str]] = None
-    ) -> bool:
+    ) -> SimulationResult:
         """Send a push notification to multiple devices."""
 
         if not self.app:
             logger.info(
                 f"Push notification simulation - Title: {title}, Body: {body}, Tokens: {len(device_tokens)}")
-            return True
+            return SimulationResult.simulated_success(f"Push notification to {len(device_tokens)} devices")
 
         try:
             message = messaging.MulticastMessage(
@@ -61,18 +62,18 @@ class PushNotificationService:
                         logger.error(
                             f"Failed to send to token {device_tokens[idx]}: {resp.exception}")
 
-            return response.success_count > 0
+            return SimulationResult.actual_success() if response.success_count > 0 else SimulationResult.actual_failure("All notifications failed")
 
         except Exception as e:
             logger.error(f"Failed to send push notification: {str(e)}")
-            return False
+            return SimulationResult.actual_failure(str(e))
 
     async def send_deadline_notification(
         self,
         device_tokens: List[str],
         deadline_type: str,
         days_remaining: int
-    ) -> bool:
+    ) -> SimulationResult:
         """Send a deadline reminder push notification."""
 
         if days_remaining <= 1:
@@ -99,7 +100,7 @@ class PushNotificationService:
         report_type: str,
         status: str,
         report_id: str
-    ) -> bool:
+    ) -> SimulationResult:
         """Send a report status update push notification."""
 
         status_emojis = {
@@ -128,7 +129,7 @@ class PushNotificationService:
         device_tokens: List[str],
         alert_type: str,
         message: str
-    ) -> bool:
+    ) -> SimulationResult:
         """Send a system alert push notification."""
 
         title = f"🚨 System Alert: {alert_type}"
@@ -146,7 +147,7 @@ class PushNotificationService:
         self,
         device_tokens: List[str],
         user_name: str
-    ) -> bool:
+    ) -> SimulationResult:
         """Send a welcome push notification to new users."""
 
         title = "Welcome to EPR Co-Pilot! 🎉"

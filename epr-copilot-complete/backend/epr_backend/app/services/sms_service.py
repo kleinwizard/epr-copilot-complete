@@ -1,5 +1,6 @@
 import os
 import logging
+from ..core.simulation import SimulationResult
 
 if os.getenv("ENABLE_SMS_SERVICES", "false").lower() == "true":
     from twilio.rest import Client
@@ -26,13 +27,13 @@ class SMSService:
         self,
         to_number: str,
         message: str
-    ) -> bool:
+    ) -> SimulationResult:
         """Send an SMS message using Twilio."""
 
         if not self.client or not self.from_number:
             logger.info(
                 f"SMS simulation - To: {to_number}, Message: {message}")
-            return True
+            return SimulationResult.simulated_success(f"SMS to {to_number}")
 
         try:
             message = self.client.messages.create(
@@ -41,18 +42,18 @@ class SMSService:
                 to=to_number
             )
             logger.info(f"SMS sent successfully. SID: {message.sid}")
-            return True
+            return SimulationResult.actual_success()
 
         except Exception as e:
             logger.error(f"Failed to send SMS: {str(e)}")
-            return False
+            return SimulationResult.actual_failure(str(e))
 
     async def send_critical_alert(
         self,
         to_number: str,
         alert_type: str,
         details: str
-    ) -> bool:
+    ) -> SimulationResult:
         """Send a critical alert SMS."""
 
         message = f"🚨 CRITICAL ALERT: {alert_type}\n\n{details}\n\nLog in to EPR Co-Pilot immediately to address this issue."
@@ -64,7 +65,7 @@ class SMSService:
         to_number: str,
         deadline_type: str,
         days_remaining: int
-    ) -> bool:
+    ) -> SimulationResult:
         """Send a deadline alert SMS."""
 
         if days_remaining <= 1:
@@ -83,7 +84,7 @@ class SMSService:
         to_number: str,
         report_type: str,
         submission_id: str
-    ) -> bool:
+    ) -> SimulationResult:
         """Send a submission confirmation SMS."""
 
         message = f"✅ SUCCESS: Your {report_type} has been submitted successfully. Confirmation ID: {submission_id}. Check EPR Co-Pilot for details."
