@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Calculator, Plus, Trash2, Info } from 'lucide-react';
-import { calculateEprFeeV1, oregonEprRates, FeeCalculationRequestV1, PackagingComponentV1, ProducerDataV1 } from '@/services/feeCalculation';
+import { CalculationEngine, oregonEprRates, FeeCalculationRequestV1, PackagingComponentV1, ProducerDataV1 } from '@/services/calculationEngine';
 import { JurisdictionSelector } from '@/components/common/JurisdictionSelector';
 import { FeeBreakdown } from './FeeBreakdown';
 import { useToast } from '@/hooks/use-toast';
@@ -110,7 +110,7 @@ export function FeeCalculator() {
         data_source: 'frontend_calculator'
       };
 
-      const result = await calculateEprFeeV1(request);
+      const result = await CalculationEngine.calculateEprFeeV1(request);
       setCalculation({
         totalFee: result.total_fee,
         breakdown: result.calculation_breakdown,

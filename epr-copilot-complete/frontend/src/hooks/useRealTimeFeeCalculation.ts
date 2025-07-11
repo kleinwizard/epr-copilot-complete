@@ -1,7 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { realTimeFeeEngine, RealTimeCalculationResult } from '@/services/realTimeFeeCalculation';
-import { EnhancedMaterial } from '@/services/enhancedFeeCalculation';
+import { CalculationEngine, RealTimeCalculationResult, EnhancedMaterial } from '@/services/calculationEngine';
 
 interface UseRealTimeFeeCalculationProps {
   productId: string;
@@ -34,7 +33,7 @@ export function useRealTimeFeeCalculation({
     setError(null);
 
     try {
-      const calculationResult = await realTimeFeeEngine.calculateFeesWithDebounce(
+      const calculationResult = await CalculationEngine.calculateFeesWithDebounce(
         productId,
         materials,
         volume,
@@ -58,7 +57,7 @@ export function useRealTimeFeeCalculation({
 
   // Subscribe to real-time updates
   useEffect(() => {
-    const unsubscribe = realTimeFeeEngine.subscribe(productId, (newResult) => {
+    const unsubscribe = CalculationEngine.subscribe(productId, (newResult) => {
       setResult(newResult);
       setIsCalculating(false);
     });
@@ -67,7 +66,7 @@ export function useRealTimeFeeCalculation({
   }, [productId]);
 
   const refresh = useCallback(() => {
-    realTimeFeeEngine.clearCache(productId);
+    CalculationEngine.clearCache(productId);
     calculateFees();
   }, [productId, calculateFees]);
 

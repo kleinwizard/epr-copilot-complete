@@ -1,6 +1,6 @@
 
 import { PaymentIntent } from '../types/payment';
-import { RealTimeCalculationResult } from './realTimeFeeCalculation';
+import { RealTimeCalculationResult } from './calculationEngine';
 import { authService } from './authService';
 
 export class PaymentIntentsService {

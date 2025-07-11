@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, field_validator
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from decimal import Decimal
 
 
@@ -149,3 +149,107 @@ class SavedSearch(SavedSearchBase):
 
     class Config:
         from_attributes = True
+
+
+class CompanyProfileBase(BaseModel):
+    name: str
+    legal_name: Optional[str] = None
+    business_id: Optional[str] = None
+    deq_number: Optional[str] = None
+    naics_code: Optional[str] = None
+    entity_type: Optional[str] = None
+    description: Optional[str] = None
+    street_address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    zip_code: Optional[str] = None
+
+
+class CompanyProfileCreate(CompanyProfileBase):
+    pass
+
+
+class CompanyProfile(CompanyProfileBase):
+    id: str
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class CompanyProfileForm(BaseModel):
+    legalName: str
+    dbaName: Optional[str] = None
+    businessId: str
+    deqNumber: Optional[str] = None
+    naicsCode: Optional[str] = None
+    entityType: Optional[str] = None
+    description: Optional[str] = None
+    address: str
+    city: str
+    state: Optional[str] = None
+    zipCode: str
+
+    def to_backend_fields(self) -> Dict[str, Any]:
+        """Convert camelCase frontend fields to snake_case backend fields"""
+        return {
+            'name': self.legalName,
+            'legal_name': self.legalName,
+            'dba_name': self.dbaName,
+            'business_id': self.businessId,
+            'deq_number': self.deqNumber,
+            'naics_code': self.naicsCode,
+            'entity_type': self.entityType,
+            'description': self.description,
+            'street_address': self.address,
+            'city': self.city,
+            'state': self.state,
+            'zip_code': self.zipCode
+        }
+
+
+class ProductForm(BaseModel):
+    name: str
+    sku: str
+    category: Optional[str] = None
+    weight: Optional[float] = 0.0
+    status: Optional[str] = "Active"
+    description: Optional[str] = None
+    upc: Optional[str] = None
+    manufacturer: Optional[str] = None
+    eprFee: Optional[float] = 0.0
+    designatedProducerId: Optional[str] = None
+    materials: Optional[List[dict]] = []
+    lastUpdated: Optional[datetime] = None
+
+    def to_backend_fields(self) -> Dict[str, Any]:
+        """Convert camelCase frontend fields to snake_case backend fields"""
+        return {
+            'name': self.name,
+            'sku': self.sku,
+            'category': self.category,
+            'weight': self.weight,
+            'status': self.status,
+            'description': self.description,
+            'upc': self.upc,
+            'manufacturer': self.manufacturer,
+            'epr_fee': self.eprFee,
+            'designated_producer_id': self.designatedProducerId,
+            'materials': self.materials,
+            'last_updated': self.lastUpdated
+        }
+
+
+class MaterialForm(BaseModel):
+    name: str
+    eprRate: Optional[float] = None
+    recyclable: bool = False
+
+    def to_backend_fields(self) -> Dict[str, Any]:
+        """Convert camelCase frontend fields to snake_case backend fields"""
+        return {
+            'name': self.name,
+            'epr_rate': self.eprRate,
+            'recyclable': self.recyclable
+        }

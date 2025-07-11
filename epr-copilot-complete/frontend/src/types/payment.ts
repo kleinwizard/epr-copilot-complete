@@ -1,5 +1,5 @@
 
-import { RealTimeCalculationResult } from '../services/realTimeFeeCalculation';
+import { RealTimeCalculationResult } from '../services/calculationEngine';
 
 export interface PaymentMethod {
   id: string;

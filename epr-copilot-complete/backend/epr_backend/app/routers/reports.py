@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload, joinedload
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 from datetime import datetime, timezone
 import json
 import io
-from ..database import get_db, Report
+from ..database import get_db, Report, Product, PackagingComponent, MaterialCategory
 from ..schemas import ReportCreate, Report as ReportSchema
 from ..auth import get_current_user
 
@@ -232,7 +232,7 @@ async def export_data_audit(
         
         products = db.query(Product).filter(
             Product.organization_id == current_user.organization_id
-        ).all()
+        ).options(selectinload(Product.packaging_components)).all()
         
         product_data = []
         for product in products:
@@ -283,6 +283,8 @@ async def export_product_catalog(
         
         products = db.query(Product).filter(
             Product.organization_id == current_user.organization_id
+        ).options(
+            selectinload(Product.packaging_components).selectinload(PackagingComponent.material_category)
         ).all()
         
         product_data = []
@@ -325,7 +327,9 @@ async def export_material_catalog(
     try:
         from ..database import MaterialCategory
         
-        materials = db.query(MaterialCategory).all()
+        materials = db.query(MaterialCategory).options(
+            joinedload(MaterialCategory.jurisdiction)
+        ).all()
         
         material_data = []
         for material in materials:

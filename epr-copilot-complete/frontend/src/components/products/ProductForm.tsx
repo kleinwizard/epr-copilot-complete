@@ -21,6 +21,8 @@ import {
   Info
 } from 'lucide-react';
 import { PackagingMaterials } from './PackagingMaterials';
+import { ValidationService } from '@/services/validationService';
+import { ValidationMessage } from '@/components/common/ValidationMessage';
 
 interface Material {
   type: string;
@@ -92,16 +94,16 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
   ];
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {};
+    const validation = ValidationService.validateProduct(formData);
     
-    if (!formData.name.trim()) newErrors.name = 'Product name is required';
-    if (!formData.sku.trim()) newErrors.sku = 'SKU is required';
-    if (!formData.category) newErrors.category = 'Category is required';
-    if (formData.weight <= 0) newErrors.weight = 'Weight must be greater than 0';
-    if (formData.materials.length === 0) newErrors.materials = 'At least one packaging material is required';
+    if (formData.materials.length === 0) {
+      validation.fieldErrors.materials = 'At least one packaging material is required';
+      validation.errors.push('At least one packaging material is required');
+      validation.isValid = false;
+    }
     
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setErrors(validation.fieldErrors);
+    return validation.isValid;
   };
 
   const calculateEprFee = useCallback(() => {
@@ -191,7 +193,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                       onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                       placeholder="Enter product name"
                     />
-                    {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
+                    {errors.name && <ValidationMessage type="error" message={errors.name} className="mt-1" />}
                   </div>
                   
                   <div className="space-y-2">
@@ -202,7 +204,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                       onChange={(e) => setFormData(prev => ({ ...prev, sku: e.target.value }))}
                       placeholder="Enter SKU"
                     />
-                    {errors.sku && <p className="text-sm text-red-600">{errors.sku}</p>}
+                    {errors.sku && <ValidationMessage type="error" message={errors.sku} className="mt-1" />}
                   </div>
                   
                   <div className="space-y-2">
@@ -217,7 +219,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                         ))}
                       </SelectContent>
                     </Select>
-                    {errors.category && <p className="text-sm text-red-600">{errors.category}</p>}
+                    {errors.category && <ValidationMessage type="error" message={errors.category} className="mt-1" />}
                   </div>
                   
                   <div className="space-y-2">

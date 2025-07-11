@@ -1,6 +1,6 @@
 
 import { PaymentMethod, PaymentIntent, Invoice, PaymentHistory } from '../types/payment';
-import { RealTimeCalculationResult } from './realTimeFeeCalculation';
+import { RealTimeCalculationResult } from './calculationEngine';
 import { paymentMethodsService } from './paymentMethodsService';
 import { paymentIntentsService } from './paymentIntentsService';
 import { invoiceService } from './invoiceService';
@@ -14,32 +14,32 @@ export class PaymentProcessingService {
   }
 
   // Payment Methods Management - delegate to paymentMethodsService
-  addPaymentMethod(method: Omit<PaymentMethod, 'id'>): PaymentMethod {
+  async addPaymentMethod(method: Omit<PaymentMethod, 'id'>): Promise<PaymentMethod> {
     return paymentMethodsService.addPaymentMethod(method);
   }
 
-  getPaymentMethods(): PaymentMethod[] {
+  async getPaymentMethods(): Promise<PaymentMethod[]> {
     return paymentMethodsService.getPaymentMethods();
   }
 
-  getDefaultPaymentMethod(): PaymentMethod | null {
-    return paymentMethodsService.getDefaultPaymentMethod();
+  async getDefaultPaymentMethod(): Promise<PaymentMethod | null> {
+    return await paymentMethodsService.getDefaultPaymentMethod();
   }
 
-  setDefaultPaymentMethod(paymentMethodId: string): boolean {
-    return paymentMethodsService.setDefaultPaymentMethod(paymentMethodId);
+  async setDefaultPaymentMethod(paymentMethodId: string): Promise<boolean> {
+    return await paymentMethodsService.setDefaultPaymentMethod(paymentMethodId);
   }
 
-  removePaymentMethod(paymentMethodId: string): boolean {
-    return paymentMethodsService.removePaymentMethod(paymentMethodId);
+  async removePaymentMethod(paymentMethodId: string): Promise<boolean> {
+    return await paymentMethodsService.removePaymentMethod(paymentMethodId);
   }
 
   // Payment Intent Management - delegate to paymentIntentsService
-  createPaymentIntent(
+  async createPaymentIntent(
     feeCalculation: RealTimeCalculationResult,
     paymentMethodId: string,
     description: string = 'EPR Fee Payment'
-  ): PaymentIntent {
+  ): Promise<PaymentIntent> {
     return paymentIntentsService.createPaymentIntent(feeCalculation, paymentMethodId, description);
   }
 
@@ -47,8 +47,8 @@ export class PaymentProcessingService {
     return paymentIntentsService.processPayment(paymentIntentId);
   }
 
-  getPaymentIntent(paymentIntentId: string): PaymentIntent | null {
-    return paymentIntentsService.getPaymentIntent(paymentIntentId);
+  async getPaymentIntent(paymentIntentId: string): Promise<PaymentIntent | null> {
+    return await paymentIntentsService.getPaymentIntent(paymentIntentId);
   }
 
   // Invoice Management - delegate to invoiceService

@@ -1265,7 +1265,7 @@ class AnalyticsService:
             ).first()
             
             if not goal:
-                return None
+                return {}
             
             # Calculate current progress value
             current_value = 0
@@ -1285,7 +1285,7 @@ class AnalyticsService:
             
         except Exception as e:
             print(f"Error getting fee optimization goal: {str(e)}")
-            return None
+            return {}
     
     def _set_fee_optimization_goal(self, organization_id: str, goal_data: Dict[str, Any]) -> Dict[str, Any]:
         """Set or update the fee optimization goal for an organization."""

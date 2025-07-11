@@ -1,5 +1,5 @@
 import { QuarterlyReport, ReportProduct } from './reportService';
-import { calculateEnhancedEprFee, EnhancedMaterial } from './enhancedFeeCalculation';
+import { EnhancedMaterial, CalculationEngine } from './calculationEngine';
 import { validateReport, ReportValidation } from './reportValidationService';
 import { calculateEnhancedSummary, EnhancedReportSummary } from './reportSummaryService';
 import { calculateDueDate } from './reportUtilsService';
@@ -26,7 +26,7 @@ export function generateEnhancedReport(
       biodegradable: material.type.includes('Paper') || material.type.includes('Cardboard')
     }));
     
-    const calculation = calculateEnhancedEprFee(enhancedMaterials, region, product.unitsSold);
+    const calculation = CalculationEngine.calculateEnhancedEprFee(enhancedMaterials, region, product.unitsSold);
     
     return {
       ...product,

@@ -63,8 +63,8 @@ def create_jurisdictions(db: Session) -> Dict[str, str]:
             "name": "Maine",
             "country": "US",
             "model_type": "State-Run Municipal Reimbursement",
-            "small_producer_revenue_threshold": Decimal("2000000"),
-            "small_producer_tonnage_threshold": Decimal("1.0"),
+            "small_producer_revenue_threshold": Decimal("1000000"),
+            "small_producer_tonnage_threshold": Decimal("10.0"),
             "effective_date": datetime(2024, 1, 1, tzinfo=timezone.utc)
         },
         {
@@ -72,8 +72,8 @@ def create_jurisdictions(db: Session) -> Dict[str, str]:
             "name": "Maryland",
             "country": "US",
             "model_type": "Shared Responsibility",
-            "small_producer_revenue_threshold": Decimal("2000000"),
-            "small_producer_tonnage_threshold": Decimal("1.0"),
+            "small_producer_revenue_threshold": Decimal("1000000"),
+            "small_producer_tonnage_threshold": None,
             "effective_date": datetime(2028, 7, 1, tzinfo=timezone.utc)
         },
         {
@@ -81,8 +81,8 @@ def create_jurisdictions(db: Session) -> Dict[str, str]:
             "name": "Minnesota",
             "country": "US",
             "model_type": "Shared Responsibility",
-            "small_producer_revenue_threshold": Decimal("5000000"),
-            "small_producer_tonnage_threshold": Decimal("1.0"),
+            "small_producer_revenue_threshold": Decimal("2000000"),
+            "small_producer_tonnage_threshold": None,
             "effective_date": datetime(2029, 2, 1, tzinfo=timezone.utc)
         },
         {

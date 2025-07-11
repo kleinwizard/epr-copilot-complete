@@ -12,6 +12,8 @@ import { Switch } from '@/components/ui/switch';
 import { customApiService } from '@/services/customApiService';
 import { CustomAPI, APIParameter } from '@/types/integrations';
 import { useToast } from '@/hooks/use-toast';
+import { ValidationService } from '@/services/validationService';
+import { ValidationMessage } from '@/components/common/ValidationMessage';
 
 export const CustomAPIBuilder = () => {
   const [apis, setApis] = useState<CustomAPI[]>([]);
