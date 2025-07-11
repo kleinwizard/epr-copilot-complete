@@ -281,16 +281,16 @@ class SharedResponsibilityStrategy(FeeCalculationStrategy):
         """Return state-specific small producer thresholds."""
         thresholds = {
             'MD': {
-                'revenue_threshold': Decimal('2000000'),  # $2M global revenue
-                'tonnage_threshold': Decimal('1.0')       # 1 ton of material
+                'revenue_threshold': Decimal('1000000'),  # $1M global revenue
+                'tonnage_threshold': None                 # No tonnage threshold for MD
             },
             'MN': {
-                'revenue_threshold': None,                # No revenue threshold for MN
-                'tonnage_threshold': Decimal('1.0')       # 1 ton of material
+                'revenue_threshold': Decimal('2000000'),  # $2M global revenue
+                'tonnage_threshold': None                 # No tonnage threshold for MN
             },
             'WA': {
                 'revenue_threshold': Decimal('5000000'),  # $5M global revenue
-                'tonnage_threshold': Decimal('1.0')       # 1 ton of material
+                'tonnage_threshold': None                 # No tonnage threshold for WA
             }
         }
         

@@ -39,6 +39,18 @@ def validate_product_row(row: Dict[str, Any], row_number: int) -> Dict[str, Any]
         errors.append(f"Row {row_number}: Invalid weight value")
         weight = 0
     
+    try:
+        units_sold = int(row.get('units_sold', 0))
+        if units_sold < 0:
+            errors.append(f"Row {row_number}: Units sold cannot be negative")
+    except (ValueError, TypeError):
+        errors.append(f"Row {row_number}: Invalid units sold value")
+        units_sold = 0
+    
+    material_type = row.get('material_type', '').strip()
+    if not material_type:
+        errors.append(f"Row {row_number}: Material type is required")
+    
     if errors:
         raise ValueError("; ".join(errors))
     
@@ -48,6 +60,12 @@ def validate_product_row(row: Dict[str, Any], row_number: int) -> Dict[str, Any]
         "sku": row['sku'].strip(),
         "category": row.get('category', '').strip(),
         "weight": weight,
+        "units_sold": units_sold,
+        "material_type": material_type,
+        "weight_unit": row.get('weight_unit', 'kg').strip(),
+        "recycled_content_percentage": float(row.get('recycled_content_percentage', 0)),
+        "recyclable": row.get('recyclable', '').lower() in ['true', '1', 'yes'],
+        "reusable": row.get('reusable', '').lower() in ['true', '1', 'yes'],
         "description": row.get('description', '').strip(),
         "upc": row.get('upc', '').strip(),
         "manufacturer": row.get('manufacturer', '').strip(),
@@ -99,13 +117,13 @@ def validate_material_row(row: Dict[str, Any], row_number: int) -> Dict[str, Any
         "category": row['category'].strip(),
         "type": row.get('type', '').strip(),
         "recyclable": recyclable,
-        "eprRate": epr_rate,
-        "sustainabilityScore": sustainability_score,
+        "epr_rate": epr_rate,
+        "sustainability_score": sustainability_score,
         "description": row.get('description', '').strip(),
         "created_at": datetime.now().isoformat(),
         "imported": True
     }
-    return camel_to_snake(material_data)
+    return material_data
 
 @router.post("/import/products")
 async def import_products(

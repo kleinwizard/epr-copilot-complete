@@ -268,8 +268,8 @@ class MaineFeeCalculationStrategy(FeeCalculationStrategy):
     def get_small_producer_thresholds(self) -> Dict[str, Any]:
         """Return Maine's small producer thresholds with v2.0 operator logic."""
         return {
-            'revenue_threshold': Decimal('2000000'),  # $2M gross revenue
-            'tonnage_threshold': Decimal('1.0'),      # 1 ton of packaging
+            'revenue_threshold': Decimal('1000000'),  # $1M gross revenue
+            'tonnage_threshold': Decimal('10.0'),     # 10 tons of packaging
             'operator': 'OR'  # Either condition qualifies for exemption
         }
         
@@ -346,7 +346,7 @@ class MaineFeeCalculationStrategy(FeeCalculationStrategy):
             "fee_type": "small_producer_exemption",
             "final_fee": Decimal('0'),
             "calculation_breakdown": {
-                "exemption_reason": "Revenue < $2M OR tonnage < 1 ton"
+                "exemption_reason": "Revenue < $1M OR tonnage < 10 tons"
             }
         }
         
