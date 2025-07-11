@@ -97,9 +97,13 @@ class Material(Base):
     __tablename__ = "materials"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    organization_id = Column(String, ForeignKey("organizations.id"))
     name = Column(String(255), nullable=False)
     epr_rate = Column(Numeric(10, 4))
     recyclable = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    organization = relationship("Organization")
 
 
 class Report(Base):

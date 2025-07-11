@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload, joinedload
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, validator
 from decimal import Decimal
@@ -131,7 +131,10 @@ async def list_jurisdictions(
     """List all jurisdictions in the system."""
     verify_admin_access(current_user)
     
-    jurisdictions = db.query(Jurisdiction).all()
+    jurisdictions = db.query(Jurisdiction).options(
+        selectinload(Jurisdiction.material_categories),
+        selectinload(Jurisdiction.fee_rates)
+    ).all()
     return [
         {
             "id": j.id,
@@ -209,7 +212,10 @@ async def get_fee_rates(
             (FeeRate.expiry_date.is_(None)) | (FeeRate.expiry_date > current_time)
         )
     
-    fee_rates = query.all()
+    fee_rates = query.options(
+        joinedload(FeeRate.material_category),
+        joinedload(FeeRate.jurisdiction)
+    ).all()
     
     response = []
     for rate in fee_rates:
@@ -327,7 +333,9 @@ async def get_eco_modulation_rules(
             (EcoModificationRule.expiry_date > current_time)
         )
     
-    rules = query.all()
+    rules = query.options(
+        joinedload(EcoModificationRule.jurisdiction)
+    ).all()
     
     return [
         EcoModulationRuleResponse(
@@ -469,7 +477,10 @@ async def list_material_categories(
     if jurisdiction_id:
         query = query.filter(MaterialCategory.jurisdiction_id == jurisdiction_id)
     
-    categories = query.all()
+    categories = query.options(
+        joinedload(MaterialCategory.jurisdiction),
+        joinedload(MaterialCategory.parent)
+    ).all()
     
     return [
         {

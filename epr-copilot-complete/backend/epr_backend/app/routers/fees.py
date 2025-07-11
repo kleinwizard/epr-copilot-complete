@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload, joinedload
 from typing import List, Optional, Dict, Any, Union
 from pydantic import BaseModel
 from decimal import Decimal, ROUND_HALF_EVEN
@@ -190,7 +190,9 @@ async def calculate_fees(
 ):
     """Calculate EPR fees for given materials using Decimal precision for legal compliance."""
 
-    db_materials = db.query(Material).all()
+    db_materials = db.query(Material).filter(
+        Material.organization_id == current_user.organization_id
+    ).options(joinedload(Material.organization)).all()
     material_rates = {m.name: Decimal(str(m.epr_rate))
                       for m in db_materials if m.epr_rate}
 
