@@ -22,16 +22,16 @@ export class PaymentProcessingService {
     return paymentMethodsService.getPaymentMethods();
   }
 
-  getDefaultPaymentMethod(): PaymentMethod | null {
-    return paymentMethodsService.getDefaultPaymentMethod();
+  async getDefaultPaymentMethod(): Promise<PaymentMethod | null> {
+    return await paymentMethodsService.getDefaultPaymentMethod();
   }
 
-  setDefaultPaymentMethod(paymentMethodId: string): boolean {
-    return paymentMethodsService.setDefaultPaymentMethod(paymentMethodId);
+  async setDefaultPaymentMethod(paymentMethodId: string): Promise<boolean> {
+    return await paymentMethodsService.setDefaultPaymentMethod(paymentMethodId);
   }
 
-  removePaymentMethod(paymentMethodId: string): boolean {
-    return paymentMethodsService.removePaymentMethod(paymentMethodId);
+  async removePaymentMethod(paymentMethodId: string): Promise<boolean> {
+    return await paymentMethodsService.removePaymentMethod(paymentMethodId);
   }
 
   // Payment Intent Management - delegate to paymentIntentsService
@@ -47,8 +47,8 @@ export class PaymentProcessingService {
     return paymentIntentsService.processPayment(paymentIntentId);
   }
 
-  getPaymentIntent(paymentIntentId: string): PaymentIntent | null {
-    return paymentIntentsService.getPaymentIntent(paymentIntentId);
+  async getPaymentIntent(paymentIntentId: string): Promise<PaymentIntent | null> {
+    return await paymentIntentsService.getPaymentIntent(paymentIntentId);
   }
 
   // Invoice Management - delegate to invoiceService
