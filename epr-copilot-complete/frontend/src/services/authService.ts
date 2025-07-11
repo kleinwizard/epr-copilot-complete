@@ -1,13 +1,40 @@
 import { APP_CONFIG } from '../config/constants';
 
+class BrowserStorage {
+  private isAvailable(): boolean {
+    try {
+      return typeof window !== 'undefined' && window.localStorage !== undefined;
+    } catch {
+      return false;
+    }
+  }
+
+  getItem(key: string): string | null {
+    return this.isAvailable() ? localStorage.getItem(key) : null;
+  }
+
+  setItem(key: string, value: string): void {
+    if (this.isAvailable()) {
+      localStorage.setItem(key, value);
+    }
+  }
+
+  removeItem(key: string): void {
+    if (this.isAvailable()) {
+      localStorage.removeItem(key);
+    }
+  }
+}
+
 class AuthService {
   private tokenKey = 'access_token';
   private refreshTokenKey = 'refresh_token';
   private tokenExpiryKey = 'token_expiry';
+  private storage = new BrowserStorage();
 
   getAccessToken(): string | null {
-    const token = localStorage.getItem(this.tokenKey);
-    const expiry = localStorage.getItem(this.tokenExpiryKey);
+    const token = this.storage.getItem(this.tokenKey);
+    const expiry = this.storage.getItem(this.tokenExpiryKey);
     
     if (token && expiry) {
       const expiryTime = parseInt(expiry, 10);
@@ -21,7 +48,7 @@ class AuthService {
   }
 
   async refreshToken(): Promise<boolean> {
-    const refreshToken = localStorage.getItem(this.refreshTokenKey);
+    const refreshToken = this.storage.getItem(this.refreshTokenKey);
     if (!refreshToken) return false;
 
     try {
@@ -49,22 +76,22 @@ class AuthService {
   }
 
   setTokens(accessToken: string, refreshToken?: string, expiresIn?: number) {
-    localStorage.setItem(this.tokenKey, accessToken);
+    this.storage.setItem(this.tokenKey, accessToken);
     
     if (refreshToken) {
-      localStorage.setItem(this.refreshTokenKey, refreshToken);
+      this.storage.setItem(this.refreshTokenKey, refreshToken);
     }
     
     if (expiresIn) {
       const expiryTime = Date.now() + (expiresIn * 1000);
-      localStorage.setItem(this.tokenExpiryKey, expiryTime.toString());
+      this.storage.setItem(this.tokenExpiryKey, expiryTime.toString());
     }
   }
 
   clearTokens() {
-    localStorage.removeItem(this.tokenKey);
-    localStorage.removeItem(this.refreshTokenKey);
-    localStorage.removeItem(this.tokenExpiryKey);
+    this.storage.removeItem(this.tokenKey);
+    this.storage.removeItem(this.refreshTokenKey);
+    this.storage.removeItem(this.tokenExpiryKey);
   }
 }
 
