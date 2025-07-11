@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import Dict, Any, Optional
+from datetime import datetime, timezone
 from ..database import get_db
 from ..auth import get_current_user
 from ..services.analytics_service import AnalyticsService
@@ -541,3 +542,92 @@ async def set_fee_optimization_goal(
             status_code=500,
             detail=f"Failed to save fee optimization goal: {str(e)}"
         )
+
+
+@router.get("/overview")
+async def get_analytics_overview(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """Get analytics overview data for the dashboard."""
+    try:
+        analytics_service = AnalyticsService(db)
+        
+        total_epr_fees = analytics_service._calculate_total_fees(current_user.organization_id)
+        active_products = analytics_service._calculate_active_products(current_user.organization_id)
+        total_weight = float(analytics_service._calculate_total_weight(current_user.organization_id))
+        recyclability_rate = analytics_service._calculate_recyclability_rate(current_user.organization_id)
+        
+        target_rate = 75.0
+        progress_to_goal = max(0, min(100, (recyclability_rate / target_rate) * 100))
+        
+        return {
+            "totalEprFees": total_epr_fees,
+            "activeProducts": active_products,
+            "totalWeight": total_weight,
+            "recyclabilityRate": recyclability_rate,
+            "recyclabilityTarget": target_rate,
+            "progressToGoal": round(progress_to_goal, 1),
+            "percentageToGoal": round(target_rate - recyclability_rate, 1)
+        }
+        
+    except Exception as e:
+        print(f"Error in analytics overview: {str(e)}")
+        return {
+            "totalEprFees": 0,
+            "activeProducts": 0,
+            "totalWeight": 0,
+            "recyclabilityRate": 0,
+            "recyclabilityTarget": 75.0,
+            "progressToGoal": 0,
+            "percentageToGoal": 75.0
+        }
+
+
+@router.get("/compliance-score")
+async def get_compliance_score(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """Get compliance score for the widget."""
+    try:
+        analytics_service = AnalyticsService(db)
+        
+        recyclability_rate = analytics_service._calculate_recyclability_rate(current_user.organization_id)
+        active_products = analytics_service._calculate_active_products(current_user.organization_id)
+        
+        base_score = 50
+        recyclability_bonus = min(30, recyclability_rate * 0.3)
+        product_bonus = min(20, active_products * 2)
+        
+        compliance_score = round(base_score + recyclability_bonus + product_bonus)
+        
+        trend = "stable"
+        if compliance_score > 70:
+            trend = "up"
+        elif compliance_score < 50:
+            trend = "down"
+        
+        return {
+            "score": compliance_score,
+            "trend": trend,
+            "lastUpdated": datetime.now(timezone.utc).isoformat(),
+            "factors": {
+                "recyclability": recyclability_rate,
+                "productCount": active_products,
+                "dataCompleteness": 85
+            }
+        }
+        
+    except Exception as e:
+        print(f"Error calculating compliance score: {str(e)}")
+        return {
+            "score": 0,
+            "trend": "stable",
+            "lastUpdated": datetime.now(timezone.utc).isoformat(),
+            "factors": {
+                "recyclability": 0,
+                "productCount": 0,
+                "dataCompleteness": 0
+            }
+        }
